@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSourcePanel } from "./diagram-layout";
 import { Button } from "@/components/ui/button";
@@ -9,16 +9,25 @@ import { Code, Copy, Check, Save, X } from "lucide-react";
 export function SourceToggle() {
   const { toggle } = useSourcePanel();
   return (
-    <button
-      onClick={toggle}
-      className="px-3 min-h-[40px] text-xs font-medium rounded-md transition-[background-color] duration-150 cursor-pointer bg-secondary text-secondary-foreground hover:bg-secondary/80"
-    >
+    <Button variant="outline" size="sm" onClick={toggle}>
       Source
-    </button>
+    </Button>
   );
 }
 
-export function SourcePanel({
+export function SourcePanel(props: {
+  content: string;
+  diagramId: string;
+  editId?: string;
+}) {
+  return (
+    <Suspense fallback={null}>
+      <SourcePanelInner {...props} />
+    </Suspense>
+  );
+}
+
+function SourcePanelInner({
   content,
   diagramId,
   editId,
@@ -35,11 +44,6 @@ export function SourcePanel({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
-
-  // Sync source when content prop changes (version switch)
-  useEffect(() => {
-    setSource(content);
-  }, [content]);
 
   const hasChanges = source !== content;
 

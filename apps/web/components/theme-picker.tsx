@@ -1,31 +1,19 @@
 "use client";
 
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { THEMES, type MermaidTheme } from "@/lib/mermaid-client";
 
-export function ThemePicker({
-  current,
-  diagramId,
-}: {
+export function ThemePicker(props: {
   current: MermaidTheme;
-  diagramId: string;
+  onSelectTheme: (theme: MermaidTheme) => void;
 }) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
-
-  function selectTheme(theme: MermaidTheme) {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("theme", theme);
-    router.push(`${pathname}?${params.toString()}`);
-  }
+  const { current, onSelectTheme } = props;
 
   return (
     <div className="flex items-center gap-1">
       {THEMES.map((t) => (
         <button
           key={t.id}
-          onClick={() => selectTheme(t.id)}
+          onClick={() => onSelectTheme(t.id)}
           aria-label={t.label}
           aria-pressed={current === t.id}
           className={`w-7 h-7 rounded-full border-2 cursor-pointer transition-[border-color,transform] duration-150 active:scale-[0.96] ${

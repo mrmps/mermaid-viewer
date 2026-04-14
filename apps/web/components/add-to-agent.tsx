@@ -11,6 +11,16 @@ function getPrompt() {
 
 ## Quick start
 
+### 0. Install the CLI (recommended)
+
+Install the mermaidsh CLI globally so both you and I can use it:
+
+\`\`\`bash
+npm i -g mermaidsh
+\`\`\`
+
+This gives you \`mermaidsh create\`, \`mermaidsh push\`, \`mermaidsh get\`, \`mermaidsh open\`, and more. Secrets are saved locally so you never need to track them manually.
+
 ### 1. Install the skill
 
 **Claude Code:**
@@ -52,11 +62,7 @@ For native tool integration, also add to your MCP settings:
 If you can't modify MCP settings, skip this — the skill file has everything you need to use the REST API directly.`;
 }
 
-export function AddToAgent({
-  variant = "full",
-}: {
-  variant?: "full" | "button";
-}) {
+export function AddToAgent() {
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const prompt = getPrompt();

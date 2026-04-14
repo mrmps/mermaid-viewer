@@ -16,6 +16,14 @@ const nextConfig: NextConfig = {
         source: "/install.md",
         destination: "/api/install",
       },
+      {
+        source: "/llms.txt",
+        destination: "/api/llms-txt",
+      },
+      {
+        source: "/llms-full.txt",
+        destination: "/api/llms-full-txt",
+      },
     ];
   },
 };

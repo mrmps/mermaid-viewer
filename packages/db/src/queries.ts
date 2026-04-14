@@ -1,4 +1,4 @@
-import { eq, asc, desc, count } from "drizzle-orm";
+import { eq, and, asc, desc, count } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { db } from "./client";
 import { diagrams, versions } from "./schema";
@@ -69,6 +69,29 @@ export async function addVersion(opts: {
   return { version: newVersion };
 }
 
+export async function deleteDiagram(opts: {
+  diagramId: string;
+  secret?: string;
+  editId?: string;
+}) {
+  const diagram = await db.query.diagrams.findFirst({
+    where: eq(diagrams.id, opts.diagramId),
+  });
+
+  if (!diagram) return { error: "not_found" as const };
+
+  const authorized =
+    (opts.secret && diagram.secret === opts.secret) ||
+    (opts.editId && diagram.editId === opts.editId);
+
+  if (!authorized) return { error: "unauthorized" as const };
+
+  await db.delete(versions).where(eq(versions.diagramId, opts.diagramId));
+  await db.delete(diagrams).where(eq(diagrams.id, opts.diagramId));
+
+  return { id: opts.diagramId };
+}
+
 export async function getDiagram(opts: { id: string; version?: number }) {
   const diagram = await db.query.diagrams.findFirst({
     where: eq(diagrams.id, opts.id),
@@ -117,6 +140,32 @@ export async function getDiagramByEditId(opts: { editId: string; version?: numbe
   };
 }
 
+export async function updateTitle(opts: {
+  diagramId: string;
+  secret?: string;
+  editId?: string;
+  title: string;
+}) {
+  const diagram = await db.query.diagrams.findFirst({
+    where: eq(diagrams.id, opts.diagramId),
+  });
+
+  if (!diagram) return { error: "not_found" as const };
+
+  const authorized =
+    (opts.secret && diagram.secret === opts.secret) ||
+    (opts.editId && diagram.editId === opts.editId);
+
+  if (!authorized) return { error: "unauthorized" as const };
+
+  await db
+    .update(diagrams)
+    .set({ title: opts.title, updatedAt: new Date() })
+    .where(eq(diagrams.id, opts.diagramId));
+
+  return { title: opts.title };
+}
+
 export async function getDiagramCount() {
   const [result] = await db.select({ count: count() }).from(diagrams);
   return result.count;
@@ -128,4 +177,26 @@ export async function getRecentDiagrams(limit = 3) {
     orderBy: [desc(diagrams.updatedAt)],
     columns: { id: true, title: true, updatedAt: true },
   });
+}
+
+export async function getRecentDiagramsWithContent(limit = 50) {
+  const rows = await db
+    .select({
+      id: diagrams.id,
+      title: diagrams.title,
+      updatedAt: diagrams.updatedAt,
+      content: versions.content,
+    })
+    .from(diagrams)
+    .innerJoin(
+      versions,
+      and(
+        eq(versions.diagramId, diagrams.id),
+        eq(versions.version, diagrams.currentVersion)
+      )
+    )
+    .orderBy(desc(diagrams.updatedAt))
+    .limit(limit);
+
+  return rows;
 }

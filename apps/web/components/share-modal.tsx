@@ -187,11 +187,18 @@ function ShareContent({
             <CopyRow value={`curl ${apiUrl}`} />
           </Block>
           {secret && (
-            <Block label="Update" desc="Creates a new version.">
-              <CopyBlock
-                value={`curl -X PUT ${apiUrl} \\\n  -H "Authorization: Bearer ${secret}" \\\n  -H "Content-Type: text/plain" \\\n  -d 'YOUR_MERMAID_CONTENT'`}
-              />
-            </Block>
+            <>
+              <Block label="Update" desc="Creates a new version.">
+                <CopyBlock
+                  value={`curl -X PUT ${apiUrl} \\\n  -H "Authorization: Bearer ${secret}" \\\n  -H "Content-Type: text/plain" \\\n  -d 'YOUR_MERMAID_CONTENT'`}
+                />
+              </Block>
+              <Block label="Delete" desc="Permanently removes the diagram and all versions.">
+                <CopyBlock
+                  value={`curl -X DELETE ${apiUrl} \\\n  -H "Authorization: Bearer ${secret}"`}
+                />
+              </Block>
+            </>
           )}
         </div>
       </details>
@@ -228,7 +235,10 @@ function CopyRow({ value }: { value: string }) {
 
   return (
     <div
+      role="button"
+      tabIndex={0}
       onClick={copy}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); copy(); } }}
       className="flex items-center gap-2 rounded-lg p-3 bg-muted border border-border cursor-pointer group hover:border-ring/40 transition-[border-color] duration-150"
     >
       <pre className="flex-1 min-w-0 text-xs font-mono text-muted-foreground truncate">
@@ -281,7 +291,10 @@ function CopyBlock({ value }: { value: string }) {
 
   return (
     <div
+      role="button"
+      tabIndex={0}
       onClick={copy}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); copy(); } }}
       className="relative rounded-lg border border-border bg-muted cursor-pointer group hover:border-ring/40 transition-[border-color] duration-150"
     >
       <pre className="p-3 text-xs font-mono text-muted-foreground whitespace-pre-wrap break-words max-h-48 overflow-y-auto">

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { ThemeInit } from "@/components/theme-init";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
+import Script from "next/script";
+import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -53,6 +55,9 @@ export const metadata: Metadata = {
     description:
       "Dead-simple versioned Mermaid diagrams for AI agents. Create, update, and share diagrams via a single API call.",
   },
+  icons: {
+    icon: "/icon.svg",
+  },
   robots: {
     index: true,
     follow: true,
@@ -74,14 +79,20 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body
-        className="min-h-full flex flex-col bg-background text-foreground"
-      >
-        <ThemeInit />
-        {children}
+      <body className="min-h-full flex flex-col bg-background text-foreground">
+        <ThemeProvider>
+          <NuqsAdapter>{children}</NuqsAdapter>
+        </ThemeProvider>
+        {process.env.NODE_ENV === "development" && (
+          <Script
+            src="//unpkg.com/react-grab/dist/index.global.js"
+            crossOrigin="anonymous"
+            strategy="afterInteractive"
+          />
+        )}
       </body>
     </html>
   );

@@ -33,7 +33,7 @@ Hosted on [mermaidsh](${baseUrl}/d/${id}).
 curl ${baseUrl}/api/d/${id}
 \`\`\`
 
-Returns JSON with \`content\` (mermaid source), \`version\`, and all \`versions\`.`;
+Returns JSON with \`content\` (mermaid source), \`version\`, and a \`versions\` array containing every version's content and timestamp. Append \`?v=N\` to fetch a specific version (e.g. \`${baseUrl}/api/d/${id}?v=1\`).`;
 
   if (secret) {
     skill += `

@@ -1,17 +1,24 @@
+import type { Metadata } from "next";
+import Link from "next/link";
 import { connection } from "next/server";
-import { getDiagramCount, getRecentDiagrams } from "@mermaid-viewer/db";
+import { getDiagramCount, getRecentDiagramsWithContent } from "@mermaid-viewer/db";
 import { DiagramsList } from "./diagrams-list";
+
+export const metadata: Metadata = {
+  title: "All Diagrams — mermaid-viewer",
+  description: "Browse all versioned Mermaid diagrams created on mermaid-viewer.",
+};
 
 export default async function DiagramsPage() {
   await connection();
   const [count, serverRecent] = await Promise.all([
     getDiagramCount(),
-    getRecentDiagrams(50),
+    getRecentDiagramsWithContent(50),
   ]);
 
   return (
     <main className="max-w-[692px] mx-auto w-full px-6 py-24">
-      <a
+      <Link
         href="/"
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors duration-150 mb-8"
       >
@@ -27,9 +34,9 @@ export default async function DiagramsPage() {
           <path d="M19 12H5M12 19l-7-7 7-7" />
         </svg>
         Back
-      </a>
+      </Link>
 
-      <div className="flex items-baseline justify-between mb-10">
+      <div className="flex items-baseline justify-between mb-6">
         <h1 className="text-[28px] font-semibold leading-[1.15] tracking-[-0.02em] text-foreground">
           All diagrams
         </h1>
@@ -43,6 +50,7 @@ export default async function DiagramsPage() {
           id: d.id,
           title: d.title,
           updatedAt: d.updatedAt.toISOString(),
+          content: d.content,
         }))}
       />
     </main>

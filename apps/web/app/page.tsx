@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Image from "next/image";
+import Link from "next/link";
 import { connection } from "next/server";
 import { getDiagramCount, getRecentDiagrams } from "@mermaid-viewer/db";
 import { RecentDiagrams } from "@/components/recent-diagrams";
@@ -142,6 +144,14 @@ export default async function HomePage() {
       <p className="text-base leading-[26px] text-secondary-foreground mt-5 mb-4">
         Dead-simple versioned Mermaid diagrams built for AI agents. One API call
         to create, update, and share — with full version history baked in.
+        Or{" "}
+        <Link
+          href="/chat"
+          className="text-foreground underline underline-offset-2 decoration-border hover:decoration-foreground transition-[text-decoration-color] duration-150"
+        >
+          describe one in chat
+        </Link>
+        .
       </p>
 
       {/* Recent diagrams — data fetched at page level, no Suspense = zero layout shift */}
@@ -162,7 +172,11 @@ export default async function HomePage() {
 
       {/* CTA */}
       <div className="mt-10">
-        <AddToAgent variant="button" />
+        <AddToAgent />
+        <p className="mt-3 text-xs text-muted-foreground">
+          Or install the CLI:{" "}
+          <code className="font-mono text-foreground/70">npm i -g mermaidsh</code>
+        </p>
       </div>
 
       {/* How it works */}
@@ -203,8 +217,26 @@ export default async function HomePage() {
           Install
         </div>
         <p className="text-base leading-[26px] text-secondary-foreground mb-5">
-          Set up mermaid-viewer in your agent. Pick one method — MCP server gives you native tools, skill file works everywhere.
+          Set up mermaid-viewer in your agent or terminal.
         </p>
+
+        {/* CLI option */}
+        <div className="rounded-lg border border-border bg-card/50 px-4 py-3 mb-4">
+          <p className="text-sm text-secondary-foreground mb-3">
+            <span className="text-foreground font-medium">CLI:</span>{" "}
+            Create, version, and share diagrams from the terminal.
+          </p>
+          <pre className="rounded-md bg-muted/50 px-3 py-2 overflow-x-auto">
+            <code className="text-sm font-mono text-secondary-foreground">
+              {"npm i -g mermaidsh"}
+            </code>
+          </pre>
+          <p className="text-xs text-muted-foreground mt-2">
+            Then: <code className="font-mono">mermaidsh create diagram.mmd</code>,{" "}
+            <code className="font-mono">mermaidsh push &lt;id&gt; updated.mmd</code>,{" "}
+            <code className="font-mono">mermaidsh open &lt;id&gt;</code>. Secrets are saved locally.
+          </p>
+        </div>
 
         {/* Agent install */}
         <div className="rounded-lg border border-border bg-card/50 px-4 py-3 mb-4">
@@ -295,28 +327,31 @@ export default async function HomePage() {
 
         <p className="text-sm text-muted-foreground">
           Full installation guide at{" "}
-          <a href="/install.md" className="text-foreground hover:underline underline-offset-2">
+          <Link href="/install.md" className="text-foreground hover:underline underline-offset-2">
             /install.md
-          </a>
+          </Link>
         </p>
       </div>
 
       {/* Hero image */}
       <div className="mt-32 -mx-6 sm:-mx-10 md:-mx-16">
-        <a
+        <Link
           href="/d/kv8RfUmtlb"
           className="block rounded-2xl p-1 shadow-[0_0_0_1px_rgba(255,255,255,0.13)] hover:shadow-[0_0_0_1px_rgba(255,255,255,0.2)] transition-shadow duration-200"
         >
-          <div className="rounded-xl border border-border overflow-hidden">
-            <img
+          <div className="rounded-xl border border-border overflow-hidden relative aspect-[16/9]">
+            <Image
               src="/hero.png"
               alt="Mermaid diagram viewer showing a versioned flowchart with version history sidebar"
-              className="w-full block"
+              fill
+              sizes="(max-width: 768px) 100vw, 692px"
+              className="object-cover"
+              priority
             />
           </div>
-        </a>
+        </Link>
         <div className="flex justify-center mt-3">
-          <a
+          <Link
             href="/d/kv8RfUmtlb"
             className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors duration-150"
           >
@@ -332,7 +367,7 @@ export default async function HomePage() {
             >
               <path d="M7 17L17 7M7 7h10v10" />
             </svg>
-          </a>
+          </Link>
         </div>
       </div>
 
@@ -451,7 +486,11 @@ export default async function HomePage() {
         <p className="text-base leading-[26px] text-secondary-foreground mb-5">
           One paste. Your agent handles the rest.
         </p>
-        <AddToAgent variant="button" />
+        <AddToAgent />
+        <p className="mt-3 text-xs text-muted-foreground">
+          Or install the CLI:{" "}
+          <code className="font-mono text-foreground/70">npm i -g mermaidsh</code>
+        </p>
       </div>
 
       {/* Footer */}
@@ -477,12 +516,12 @@ export default async function HomePage() {
             >
               Feedback
             </a>
-            <a
+            <Link
               href="/docs"
               className="text-xs text-muted-foreground hover:text-foreground transition-[color] duration-150"
             >
               API
-            </a>
+            </Link>
           </div>
         </div>
       </footer>

@@ -1,0 +1,39 @@
+{
+  "name": "mermaidsh",
+  "version": "1.0.0",
+  "description": "CLI for mermaidsh.com — create, version, and share Mermaid diagrams from the terminal",
+  "type": "module",
+  "bin": {
+    "mermaidsh": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "tsc"
+  },
+  "keywords": [
+    "mermaid",
+    "diagram",
+    "cli",
+    "flowchart",
+    "sequence-diagram",
+    "mermaidsh",
+    "versioning"
+  ],
+  "author": "mermaidsh",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mermaidsh/mermaid-viewer",
+    "directory": "packages/cli"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  }
+}

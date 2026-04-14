@@ -179,17 +179,18 @@ function createMcpServer(baseUrl: string) {
       outputSchema: {
         id: z.string().describe("Diagram ID"),
         title: z.string().describe("Diagram title"),
-        version: z.number().describe("Current version number"),
-        content: z.string().describe("Mermaid diagram source code"),
+        version: z.number().describe("Requested version number"),
+        content: z.string().describe("Mermaid diagram source code for the requested version"),
         url: z.string().describe("Shareable URL to view the rendered diagram"),
         versions: z
           .array(
             z.object({
               version: z.number(),
+              content: z.string(),
               createdAt: z.string(),
             }),
           )
-          .describe("All available versions with timestamps"),
+          .describe("All versions with their content and timestamps"),
       },
       annotations: {
         readOnlyHint: true,
@@ -217,6 +218,7 @@ function createMcpServer(baseUrl: string) {
           url: `${baseUrl}/d/${data.diagram.id}`,
           versions: data.allVersions.map((v) => ({
             version: v.version,
+            content: v.content,
             createdAt: v.createdAt.toISOString(),
           })),
         };

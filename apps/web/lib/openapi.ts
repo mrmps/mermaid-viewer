@@ -55,6 +55,15 @@ const UpdateResponse: SchemaObject = {
   },
 };
 
+const DeleteResponse: SchemaObject = {
+  type: "object",
+  required: ["id", "deleted"],
+  properties: {
+    id: { type: "string" },
+    deleted: { type: "boolean", example: true },
+  },
+};
+
 const ErrorResponse: SchemaObject = {
   type: "object",
   required: ["error", "message"],
@@ -121,7 +130,7 @@ export function buildOpenAPISpec() {
     .addPath("/api/d/{id}", {
       get: {
         operationId: "getDiagram",
-        summary: "Get diagram JSON",
+        summary: "Get diagram JSON with full version history",
         parameters: [
           {
             name: "id",
@@ -133,7 +142,7 @@ export function buildOpenAPISpec() {
             name: "v",
             in: "query",
             required: false,
-            description: "Specific version number",
+            description: "Specific version number to fetch. Omit to get the latest. The versions array always includes all versions regardless.",
             schema: { type: "integer" },
           },
         ],
@@ -205,6 +214,55 @@ export function buildOpenAPISpec() {
           "400": {
             description: "Missing content",
             content: { "application/json": { schema: ErrorResponse } },
+          },
+          "401": {
+            description: "Missing or invalid secret",
+            content: { "application/json": { schema: ErrorResponse } },
+          },
+          "404": {
+            description: "Diagram not found",
+            content: { "application/json": { schema: ErrorResponse } },
+          },
+        },
+      },
+      delete: {
+        operationId: "deleteDiagram",
+        summary: "Delete a diagram",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+          },
+        ],
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: false,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  secret: {
+                    type: "string",
+                    description:
+                      "Edit secret (alternative to Authorization header)",
+                  },
+                  editId: {
+                    type: "string",
+                    description:
+                      "Edit ID (alternative to secret for authorization)",
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Diagram deleted",
+            content: { "application/json": { schema: DeleteResponse } },
           },
           "401": {
             description: "Missing or invalid secret",

@@ -1,16 +1,18 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { renderMermaid, type MermaidTheme } from "@/lib/mermaid-client";
+import { renderMermaid, type MermaidTheme, type MermaidLook } from "@/lib/mermaid-client";
 
 export function VersionThumb({
   content,
   id,
   theme,
+  look = "classic",
 }: {
   content: string;
   id: string;
   theme: MermaidTheme;
+  look?: MermaidLook;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const renderIdRef = useRef(0);
@@ -18,7 +20,7 @@ export function VersionThumb({
   useEffect(() => {
     const currentRender = ++renderIdRef.current;
 
-    renderMermaid(content, theme)
+    renderMermaid(content, theme, look)
       .then((svg) => {
         if (currentRender !== renderIdRef.current) return;
         if (containerRef.current) {
@@ -38,7 +40,7 @@ export function VersionThumb({
             '<div class="flex items-center justify-center h-full text-red-400/70 text-[10px] font-medium">Parse error</div>';
         }
       });
-  }, [content, id, theme]);
+  }, [content, id, theme, look]);
 
   return (
     <div

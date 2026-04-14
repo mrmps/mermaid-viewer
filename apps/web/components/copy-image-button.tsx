@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useMediaQuery } from "@/lib/use-media-query";
-import { renderMermaid, type MermaidTheme } from "@/lib/mermaid-client";
+import { renderMermaid, type MermaidTheme, type MermaidLook } from "@/lib/mermaid-client";
 import { ImageIcon, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -89,51 +89,52 @@ function svgToPngBlob(svg: string): Promise<Blob> {
 function ImagePreview({
   content,
   theme,
+  look = "classic",
   onReady,
 }: {
   content: string;
   theme: MermaidTheme;
+  look?: MermaidLook;
   onReady: (blob: Blob, url: string) => void;
 }) {
-  const [generating, setGenerating] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [state, setState] = useState<
+    | { status: "generating" }
+    | { status: "error"; error: string }
+    | { status: "ready"; previewUrl: string }
+  >({ status: "generating" });
 
   useEffect(() => {
     let cancelled = false;
-    setGenerating(true);
-    setError(null);
+    setState({ status: "generating" });
 
-    renderMermaid(content, theme)
+    renderMermaid(content, theme, look)
       .then((svg) => svgToPngBlob(svg))
       .then((blob) => {
         if (cancelled) return;
         const url = URL.createObjectURL(blob);
-        setPreviewUrl(url);
-        setGenerating(false);
+        setState({ status: "ready", previewUrl: url });
         onReady(blob, url);
       })
       .catch((e) => {
         if (cancelled) return;
-        setError(e instanceof Error ? e.message : "Failed to generate image");
-        setGenerating(false);
+        setState({ status: "error", error: e instanceof Error ? e.message : "Failed to generate image" });
       });
 
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [content, theme]);
+  }, [content, theme, look]);
 
-  if (error) {
+  if (state.status === "error") {
     return (
       <div className="flex items-center justify-center h-48 rounded-lg border border-destructive/30 bg-destructive/5 text-sm text-destructive">
-        {error}
+        {state.error}
       </div>
     );
   }
 
-  if (generating) {
+  if (state.status === "generating") {
     return (
       <div className="flex items-center justify-center h-48 rounded-lg border border-border bg-muted/50">
         <Loader2 className="size-5 animate-spin text-muted-foreground" />
@@ -143,13 +144,12 @@ function ImagePreview({
 
   return (
     <div className="rounded-lg border border-border overflow-hidden bg-muted/30">
-      {previewUrl && (
-        <img
-          src={previewUrl}
-          alt="Diagram preview"
-          className="w-full h-auto max-h-[50vh] object-contain"
-        />
-      )}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={state.previewUrl}
+        alt="Diagram preview"
+        className="w-full h-auto max-h-[50vh] object-contain"
+      />
     </div>
   );
 }
@@ -157,9 +157,11 @@ function ImagePreview({
 export function CopyImageButton({
   content,
   theme,
+  look = "classic",
 }: {
   content: string;
   theme: MermaidTheme;
+  look?: MermaidLook;
 }) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -197,18 +199,15 @@ export function CopyImageButton({
   }, []);
 
   const trigger = (
-    <button
-      onClick={() => handleOpenChange(true)}
-      className="px-3 min-h-[40px] text-xs rounded-md transition-[background-color,transform] duration-150 cursor-pointer flex items-center gap-1.5 bg-secondary text-secondary-foreground active:scale-[0.96]"
-    >
-      <ImageIcon className="size-3.5" aria-hidden="true" />
+    <Button variant="outline" size="sm" onClick={() => handleOpenChange(true)}>
+      <ImageIcon className="size-3.5" data-icon="inline-start" aria-hidden="true" />
       Copy Image
-    </button>
+    </Button>
   );
 
   const body = (
     <>
-      <ImagePreview content={content} theme={theme} onReady={handleReady} />
+      <ImagePreview content={content} theme={theme} look={look} onReady={handleReady} />
       <div className="flex justify-end">
         <Button
           variant="secondary"

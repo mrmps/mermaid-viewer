@@ -1,47 +1,50 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
+import { useTheme } from "next-themes";
 
 export function ModeToggle() {
-  const [dark, setDark] = useState(true);
+  const { forcedTheme, resolvedTheme, setTheme } = useTheme();
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
 
-  useEffect(() => {
-    const saved = localStorage.getItem("mermaid-viewer-mode");
-    const isDark = saved ? saved === "dark" : true;
-    setDark(isDark);
-    document.documentElement.classList.toggle("dark", isDark);
-  }, []);
-
-  function toggle() {
-    const next = !dark;
-    setDark(next);
-    document.documentElement.classList.toggle("dark", next);
-    localStorage.setItem("mermaid-viewer-mode", next ? "dark" : "light");
-  }
+  const disabled = !mounted || !!forcedTheme;
+  const isDark = resolvedTheme === "dark";
 
   return (
     <button
-      onClick={toggle}
+      onClick={() => setTheme(isDark ? "light" : "dark")}
       className="w-10 h-10 rounded-lg flex items-center justify-center transition-[background-color] duration-150 cursor-pointer hover:bg-muted text-secondary-foreground"
-      aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
+      aria-label="Toggle color mode"
+      aria-disabled={disabled}
+      disabled={disabled}
     >
-      {dark ? (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="5" />
-          <line x1="12" y1="1" x2="12" y2="3" />
-          <line x1="12" y1="21" x2="12" y2="23" />
-          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-          <line x1="1" y1="12" x2="3" y2="12" />
-          <line x1="21" y1="12" x2="23" y2="12" />
-          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-        </svg>
-      ) : (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-        </svg>
-      )}
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+        className={mounted ? "opacity-100" : "opacity-0"}
+      >
+        <path d="M12 3v3" />
+        <path d="M12 18v3" />
+        <path d="M4.93 4.93l2.12 2.12" />
+        <path d="M16.95 16.95l2.12 2.12" />
+        <path d="M3 12h3" />
+        <path d="M18 12h3" />
+        <path d="M4.93 19.07l2.12-2.12" />
+        <path d="M16.95 7.05l2.12-2.12" />
+        <path d="M12 8a4 4 0 1 0 0 8" />
+        <path d="M12 8a4 4 0 0 1 0 8" />
+      </svg>
     </button>
   );
 }

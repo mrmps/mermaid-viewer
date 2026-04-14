@@ -1,15 +1,23 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   TransformWrapper,
   TransformComponent,
   useControls,
   type ReactZoomPanPinchRef,
 } from "react-zoom-pan-pinch";
-import { renderMermaid, type MermaidTheme } from "@/lib/mermaid-client";
+import { renderMermaid, fixSvgTextContrast, type MermaidTheme, type MermaidLook } from "@/lib/mermaid-client";
 
 const btnClass = "bg-muted/85 text-secondary-foreground border border-border";
+
+function getInitialUIMode(): "dark" | "light" {
+  if (typeof document === "undefined") {
+    return "dark";
+  }
+
+  return document.documentElement.classList.contains("dark") ? "dark" : "light";
+}
 
 function ZoomControls() {
   const { zoomIn, zoomOut, resetTransform } = useControls();
@@ -25,36 +33,45 @@ function ZoomControls() {
 export function MermaidRenderer({
   content,
   theme,
+  look = "classic",
 }: {
   content: string;
   theme: MermaidTheme;
+  look?: MermaidLook;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const transformRef = useRef<ReactZoomPanPinchRef>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [uiMode, setUiMode] = useState("dark");
+  const [uiMode, setUiMode] = useState<"dark" | "light">(getInitialUIMode);
+  const renderKey = `${content}::${theme}::${look}::${uiMode}`;
+  const [hasRenderedOnce, setHasRenderedOnce] = useState(false);
+  const [renderState, setRenderState] = useState<{
+    key: string;
+    status: "loading" | "ready" | "error";
+    error?: string;
+  }>({
+    key: renderKey,
+    status: "loading",
+  });
   const renderIdRef = useRef(0);
+  const currentState =
+    renderState.key === renderKey
+      ? renderState
+      : { key: renderKey, status: "loading" as const };
 
   // Watch for light/dark mode changes so diagram re-renders with correct palette
   useEffect(() => {
     const observer = new MutationObserver(() => {
-      const mode = document.documentElement.classList.contains("dark") ? "dark" : "light";
-      setUiMode(mode);
+      setUiMode(getInitialUIMode());
     });
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-    setUiMode(document.documentElement.classList.contains("dark") ? "dark" : "light");
     return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
     const currentRender = ++renderIdRef.current;
 
-    setLoading(true);
-    setError(null);
-
-    renderMermaid(content, theme)
+    renderMermaid(content, theme, look)
       .then((svg) => {
         if (currentRender !== renderIdRef.current) return;
         if (!containerRef.current || !wrapperRef.current) return;
@@ -64,6 +81,10 @@ export function MermaidRenderer({
         if (!svgEl) return;
 
         svgEl.removeAttribute("style");
+
+        // Fix text contrast after SVG is in the live DOM
+        // (getComputedStyle works here for CSS-applied fills)
+        fixSvgTextContrast(svgEl as SVGSVGElement);
 
         // Read the natural viewBox dimensions
         const vb = svgEl.getAttribute("viewBox");
@@ -86,7 +107,8 @@ export function MermaidRenderer({
           svgEl.setAttribute("height", String(displayH));
         }
 
-        setLoading(false);
+        setHasRenderedOnce(true);
+        setRenderState({ key: renderKey, status: "ready" });
 
         // Center after a brief delay to let the DOM update
         requestAnimationFrame(() => {
@@ -95,21 +117,27 @@ export function MermaidRenderer({
       })
       .catch((e) => {
         if (currentRender !== renderIdRef.current) return;
-        setError(e instanceof Error ? e.message : "Failed to render diagram");
-        setLoading(false);
+        setRenderState({
+          key: renderKey,
+          status: "error",
+          error: e instanceof Error ? e.message : "Failed to render diagram",
+        });
       });
-  }, [content, theme, uiMode]);
+  }, [content, renderKey, theme, look, uiMode]);
 
-  if (error) {
+  if (currentState.status === "error") {
     return (
       <div className="flex items-center justify-center w-full h-full p-8">
         <div className="p-6 rounded-xl max-w-lg bg-destructive/10 border border-destructive/30 text-foreground" role="alert">
           <p className="font-semibold mb-2">Render Error</p>
-          <pre className="text-sm whitespace-pre-wrap font-mono text-secondary-foreground">{error}</pre>
+          <pre className="text-sm whitespace-pre-wrap font-mono text-secondary-foreground">{currentState.error}</pre>
         </div>
       </div>
     );
   }
+
+  const loading = currentState.status === "loading";
+  const hideWhileLoading = loading && !hasRenderedOnce;
 
   return (
     <div ref={wrapperRef} className="relative w-full h-full bg-background">
@@ -135,7 +163,7 @@ export function MermaidRenderer({
         >
           <div
             ref={containerRef}
-            className={`transition-[opacity] duration-150 ${loading ? "opacity-0" : "opacity-100"}`}
+            className={`transition-[opacity] duration-150 ${hideWhileLoading ? "opacity-0" : "opacity-100"}`}
           />
         </TransformComponent>
       </TransformWrapper>

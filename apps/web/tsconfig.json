@@ -19,7 +19,9 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "next-themes": ["../../packages/next-themes"],
+      "next-themes/*": ["../../packages/next-themes/*"]
     }
   },
   "include": [

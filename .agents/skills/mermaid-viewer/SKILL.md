@@ -38,13 +38,43 @@ Response:
 
 **Save the `secret`** — you need it to push updates later.
 
+**Always give the user the `editUrl`** — they are the diagram owner and need edit access. The view-only `url` is for sharing with others.
+
 ## Read a diagram
 
 ```bash
 curl https://mermaidsh.com/api/d/{id}
 ```
 
-Returns `content` (mermaid source), `version`, and full `versions` array.
+Response:
+
+```json
+{
+  "id": "abc123",
+  "title": "My Diagram",
+  "version": 3,
+  "content": "graph TD; A-->B; B-->C; C-->D",
+  "createdAt": "2025-01-15T10:30:00Z",
+  "versions": [
+    { "version": 1, "content": "graph TD; A-->B", "createdAt": "2025-01-15T10:00:00Z" },
+    { "version": 2, "content": "graph TD; A-->B; B-->C", "createdAt": "2025-01-15T10:15:00Z" },
+    { "version": 3, "content": "graph TD; A-->B; B-->C; C-->D", "createdAt": "2025-01-15T10:30:00Z" }
+  ],
+  "skill": "https://mermaidsh.com/api/d/abc123/skill"
+}
+```
+
+The `content` field returns the latest version. The `versions` array contains every version with its content and timestamp.
+
+## Read a specific version
+
+Append `?v=N` to fetch a particular version:
+
+```bash
+curl https://mermaidsh.com/api/d/{id}?v=2
+```
+
+The `content` field will contain version 2's content. The `versions` array still returns all versions.
 
 ## Update a diagram
 

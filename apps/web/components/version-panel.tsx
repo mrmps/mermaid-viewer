@@ -1,8 +1,7 @@
 "use client";
 
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { VersionThumb } from "./version-thumb";
-import type { MermaidTheme } from "@/lib/mermaid-client";
+import type { MermaidTheme, MermaidLook } from "@/lib/mermaid-client";
 
 type Version = {
   version: number;
@@ -10,26 +9,22 @@ type Version = {
   createdAt: string;
 };
 
-export function VersionPanel({
-  versions,
-  currentVersion,
-  diagramId,
-  theme,
-}: {
+export function VersionPanel(props: {
   versions: Version[];
   currentVersion: number;
   diagramId: string;
   theme: MermaidTheme;
+  look?: MermaidLook;
+  onSelectVersion: (version: number) => void;
 }) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
-
-  function selectVersion(v: number) {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("v", String(v));
-    router.push(`${pathname}?${params.toString()}`);
-  }
+  const {
+  versions,
+  currentVersion,
+  diagramId,
+  theme,
+  look = "classic",
+  onSelectVersion,
+  } = props;
 
   return (
     <div className="w-52 shrink-0 flex flex-col overflow-y-auto bg-background border-r border-border">
@@ -44,11 +39,11 @@ export function VersionPanel({
           return (
             <button
               key={v.version}
-              onClick={() => selectVersion(v.version)}
+              onClick={() => onSelectVersion(v.version)}
               className={`group text-left rounded-xl overflow-hidden transition-[background-color,box-shadow] duration-150 cursor-pointer ${active ? "bg-accent ring-2 ring-accent" : "bg-secondary ring-1 ring-border/50"}`}
             >
               <div className="p-1.5">
-                <VersionThumb content={v.content} id={`${diagramId}-${v.version}`} theme={theme} />
+                <VersionThumb content={v.content} id={`${diagramId}-${v.version}`} theme={theme} look={look} />
               </div>
               <div className="px-2.5 pb-2 flex items-center justify-between">
                 <span

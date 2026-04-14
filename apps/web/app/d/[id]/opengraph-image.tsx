@@ -422,9 +422,9 @@ export default async function Image({
                   flexShrink: 0,
                 }}
               >
-                {codeLines.map((_, i) => (
+                {codeLines.map((line, i) => (
                   <span
-                    key={i}
+                    key={`ln-${i + 1}`}
                     style={{
                       fontSize: 14,
                       lineHeight: "22px",

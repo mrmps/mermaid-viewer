@@ -1,4 +1,4 @@
-import { getMachineMarkdown } from "@/lib/machine-content";
+import { getMachineMarkdown, MARKDOWN_HEADERS } from "@/lib/machine-content";
 import { NextRequest } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
 
   return new Response(getMachineMarkdown(baseUrl), {
     headers: {
-      "Content-Type": "text/markdown; charset=utf-8",
+      ...MARKDOWN_HEADERS,
       "Cache-Control": "public, max-age=3600",
     },
   });

@@ -1,4 +1,5 @@
 import { createDiagram } from "@mermaid-viewer/db";
+import { validateMermaid } from "@/lib/mermaid-parse";
 import { NextRequest } from "next/server";
 
 export async function POST(request: NextRequest) {
@@ -18,6 +19,14 @@ export async function POST(request: NextRequest) {
   if (!content?.trim()) {
     return Response.json(
       { error: "content_required", message: "Missing required field: \"content\". Send JSON with {\"content\": \"graph TD; A-->B\", \"title\": \"optional\"} or plain text with Content-Type: text/plain." },
+      { status: 400 }
+    );
+  }
+
+  const parseError = await validateMermaid(content.trim());
+  if (parseError) {
+    return Response.json(
+      { error: "invalid_syntax", message: parseError },
       { status: 400 }
     );
   }

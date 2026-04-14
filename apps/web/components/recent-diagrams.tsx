@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { getHistory } from "./history-tracker";
+import { useMemo } from "react";
+import Link from "next/link";
+import { type HistoryEntry, useHistoryEntries } from "./history-tracker";
 
 type DiagramEntry = {
   id: string;
   title: string;
   timestamp: string;
+  href: string;
 };
 
 export function RecentDiagrams({
@@ -16,46 +18,11 @@ export function RecentDiagrams({
   count: number;
   serverDiagrams: { id: string; title: string; updatedAt: string }[];
 }) {
-  // Seed with server data so the first paint matches SSR exactly
-  const [diagrams, setDiagrams] = useState<DiagramEntry[]>(() =>
-    serverDiagrams.map((d) => ({
-      id: d.id,
-      title: d.title,
-      timestamp: d.updatedAt,
-    }))
+  const localHistory = useHistoryEntries();
+  const diagrams = useMemo(
+    () => mergeRecentDiagrams(serverDiagrams, localHistory).slice(0, 3),
+    [serverDiagrams, localHistory]
   );
-
-  useEffect(() => {
-    const local = getHistory();
-    if (local.length === 0) return;
-
-    // Merge: index server diagrams by id, overlay local visits
-    const map = new Map<string, DiagramEntry>();
-    for (const d of serverDiagrams) {
-      map.set(d.id, { id: d.id, title: d.title, timestamp: d.updatedAt });
-    }
-    for (const l of local) {
-      const existing = map.get(l.id);
-      if (existing) {
-        // Keep whichever timestamp is more recent
-        if (new Date(l.visitedAt) > new Date(existing.timestamp)) {
-          existing.timestamp = l.visitedAt;
-          existing.title = l.title;
-        }
-      } else {
-        map.set(l.id, { id: l.id, title: l.title, timestamp: l.visitedAt });
-      }
-    }
-
-    const merged = [...map.values()]
-      .sort(
-        (a, b) =>
-          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-      )
-      .slice(0, 3);
-
-    setDiagrams(merged);
-  }, [serverDiagrams]);
 
   const hasMore = count > 3;
 
@@ -75,9 +42,9 @@ export function RecentDiagrams({
         {diagrams.length > 0 ? (
           <div className="flex flex-col divide-y divide-border">
             {diagrams.map((entry) => (
-              <a
+              <Link
                 key={entry.id}
-                href={`/d/${entry.id}`}
+                href={entry.href}
                 className="group flex items-center gap-3 py-2.5 hover:opacity-80 transition-opacity duration-150"
               >
                 <span className="text-sm font-medium text-foreground truncate min-w-0 flex-1">
@@ -100,7 +67,7 @@ export function RecentDiagrams({
                 >
                   <path d="M9 18l6-6-6-6" />
                 </svg>
-              </a>
+              </Link>
             ))}
           </div>
         ) : (
@@ -110,7 +77,7 @@ export function RecentDiagrams({
         )}
       </div>
       {hasMore && (
-        <a
+        <Link
           href="/diagrams"
           className="inline-flex items-center gap-1 mt-3 text-sm text-muted-foreground hover:text-foreground transition-colors duration-150"
         >
@@ -126,9 +93,48 @@ export function RecentDiagrams({
           >
             <path d="M5 12h14M12 5l7 7-7 7" />
           </svg>
-        </a>
+        </Link>
       )}
     </section>
+  );
+}
+
+function mergeRecentDiagrams(
+  serverDiagrams: { id: string; title: string; updatedAt: string }[],
+  localHistory: HistoryEntry[]
+): DiagramEntry[] {
+  const map = new Map<string, DiagramEntry>();
+
+  for (const d of serverDiagrams) {
+    map.set(d.id, {
+      id: d.id,
+      title: d.title,
+      timestamp: d.updatedAt,
+      href: `/d/${d.id}`,
+    });
+  }
+
+  for (const l of localHistory) {
+    const existing = map.get(l.id);
+    if (existing) {
+      if (new Date(l.visitedAt) > new Date(existing.timestamp)) {
+        existing.timestamp = l.visitedAt;
+        existing.title = l.title;
+        existing.href = l.href || `/d/${l.id}`;
+      }
+      continue;
+    }
+
+    map.set(l.id, {
+      id: l.id,
+      title: l.title,
+      timestamp: l.visitedAt,
+      href: l.href || `/d/${l.id}`,
+    });
+  }
+
+  return [...map.values()].sort(
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
   );
 }
 
