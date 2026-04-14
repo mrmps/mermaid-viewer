@@ -21,18 +21,26 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-function SparkleIcon({ className }: { className?: string }) {
+function Logo({ className }: { className?: string }) {
   return (
     <svg
-      viewBox="0 0 24 24"
-      fill="currentColor"
+      viewBox="0 0 32 32"
+      fill="none"
       className={className}
     >
-      <path d="M12 0C12 0 14.5 8.5 12 12C9.5 8.5 12 0 12 0ZM12 24C12 24 9.5 15.5 12 12C14.5 15.5 12 24 12 24ZM0 12C0 12 8.5 9.5 12 12C8.5 14.5 0 12 0 12ZM24 12C24 12 15.5 14.5 12 12C15.5 9.5 24 12 24 12Z" />
+      <defs>
+        <linearGradient id="logo-g" x1="16" y1="4" x2="16" y2="28" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#f472b6"/>
+          <stop offset="1" stopColor="#c026d3"/>
+        </linearGradient>
+      </defs>
+      <path d="M16 3L29 16L16 29L3 16Z" fill="url(#logo-g)"/>
+      <path d="M16 3L29 16L16 29L3 16Z" stroke="rgba(255,255,255,0.2)" strokeWidth="1"/>
     </svg>
   );
 }
 import { cn } from "@/lib/utils";
+import { Kbd } from "@/components/ui/kbd";
 
 function UnicodeSpinner({
   name = "braille",
@@ -137,7 +145,7 @@ export function ChatToggle() {
           : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground border border-border/50"
       )}
     >
-      <SparkleIcon className="size-3" />
+      <Logo className="size-3" />
       <span>AI</span>
     </button>
   );
@@ -283,7 +291,7 @@ export function ChatPanel({
       {/* Header */}
       <div className="flex items-center justify-between px-3 h-11 shrink-0 border-b border-border/40">
         <div className="flex items-center gap-2">
-          <SparkleIcon className="size-3.5 text-primary" />
+          <Logo className="size-3.5 text-primary" />
           <span className="text-[11px] font-semibold text-foreground/80">
             AI Assistant
           </span>
@@ -318,7 +326,7 @@ export function ChatPanel({
             <div className="flex h-full flex-col items-center justify-center px-4 py-6 gap-6">
               <div className="flex flex-col items-center gap-2 text-center">
                 <div className="size-9 rounded-xl bg-primary/10 dark:bg-primary/5 flex items-center justify-center">
-                  <SparkleIcon className="size-4 text-primary" />
+                  <Logo className="size-4 text-primary" />
                 </div>
                 <p className="text-[11px] text-muted-foreground/70 max-w-[200px] leading-relaxed">
                   Ask me to modify your diagram — change styles, add nodes, or
@@ -462,12 +470,14 @@ export function ChatPanel({
               style={{ minHeight: "20px", maxHeight: "120px" }}
             />
             <div className="flex items-center justify-between px-0.5">
-              <span className="text-[10px] text-muted-foreground/30 select-none leading-none">
-                {typeof navigator !== "undefined" &&
-                navigator?.platform?.includes("Mac")
-                  ? "⌘"
-                  : "Ctrl"}
-                ↵
+              <span className="flex items-center gap-0.5 select-none">
+                <Kbd>
+                  {typeof navigator !== "undefined" &&
+                  navigator?.platform?.includes("Mac")
+                    ? "⌘"
+                    : "Ctrl"}
+                </Kbd>
+                <Kbd>↵</Kbd>
               </span>
               {isLoading ? (
                 <button

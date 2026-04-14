@@ -7,6 +7,7 @@ import { RecentDiagrams } from "@/components/recent-diagrams";
 import { AddToAgent } from "@/components/add-to-agent";
 import { CompatibleAgents } from "@/components/compatible-agents";
 import { PageWrapper } from "@/components/page-wrapper";
+import { FloatingChatButton } from "@/components/floating-chat-button";
 
 export const metadata: Metadata = {
   title: {
@@ -129,6 +130,7 @@ export default async function HomePage() {
 
   return (
     <PageWrapper>
+    <FloatingChatButton />
     <main className="max-w-[692px] mx-auto w-full px-6 py-24">
       <script
         type="application/ld+json"
@@ -144,14 +146,6 @@ export default async function HomePage() {
       <p className="text-base leading-[26px] text-secondary-foreground mt-5 mb-4">
         Dead-simple versioned Mermaid diagrams built for AI agents. One API call
         to create, update, and share — with full version history baked in.
-        Or{" "}
-        <Link
-          href="/chat"
-          className="text-foreground underline underline-offset-2 decoration-border hover:decoration-foreground transition-[text-decoration-color] duration-150"
-        >
-          describe one in chat
-        </Link>
-        .
       </p>
 
       {/* Recent diagrams — data fetched at page level, no Suspense = zero layout shift */}

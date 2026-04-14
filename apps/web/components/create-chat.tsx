@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowUp, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Kbd } from "@/components/ui/kbd";
 
 export const INITIAL_CHAT_KEY = "mermaid-viewer-initial-chat";
 
@@ -92,8 +93,12 @@ export function CreateChat() {
           </div>
 
           <div className="flex items-end justify-between w-full">
-            <span className="text-[11px] text-muted-foreground/40 dark:text-muted-foreground/60 select-none leading-6 px-0.5">
-              {typeof navigator !== "undefined" && navigator?.platform?.includes("Mac") ? "⌘" : "Ctrl"}+↵ to send
+            <span className="flex items-center gap-1 select-none px-0.5 leading-6">
+              <span className="flex items-center gap-0.5">
+                <Kbd>{typeof navigator !== "undefined" && navigator?.platform?.includes("Mac") ? "⌘" : "Ctrl"}</Kbd>
+                <Kbd>↵</Kbd>
+              </span>
+              <span className="text-[11px] text-muted-foreground">to send</span>
             </span>
 
             <div className="flex items-center gap-2">

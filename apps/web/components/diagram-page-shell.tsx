@@ -127,8 +127,9 @@ export function DiagramPageShell({
           {isEditing ? (
             <input
               ref={inputRef}
-              defaultValue={currentTitle}
-              className="text-sm font-semibold bg-transparent border-b border-foreground/20 outline-none min-w-0 max-w-[200px] focus:border-foreground/50"
+              defaultValue={currentTitle === "Untitled" ? "" : currentTitle}
+              placeholder="Diagram name…"
+              className="text-sm font-semibold bg-transparent border-b border-foreground/20 outline-none min-w-0 max-w-[200px] focus:border-foreground/50 placeholder:text-muted-foreground/50 placeholder:italic"
               autoFocus
               onBlur={(e) => saveTitle(e.target.value)}
               onKeyDown={(e) => {
@@ -141,11 +142,23 @@ export function DiagramPageShell({
             />
           ) : (
             <h1
-              className="text-sm font-semibold truncate"
+              className={`text-sm truncate ${
+                editId
+                  ? "font-semibold cursor-text rounded px-1.5 -mx-1.5 py-0.5 -my-0.5 hover:bg-muted transition-colors group/title"
+                  : "font-semibold"
+              } ${currentTitle === "Untitled" && editId ? "text-muted-foreground italic" : ""}`}
               onClick={editId ? () => setIsEditing(true) : undefined}
-              style={editId ? { cursor: "text" } : undefined}
             >
-              {currentTitle}
+              {currentTitle === "Untitled" && editId ? "Click to name…" : currentTitle}
+              {editId && (
+                <svg
+                  className="inline-block ml-1.5 w-3 h-3 opacity-0 group-hover/title:opacity-50 transition-opacity shrink-0"
+                  viewBox="0 0 16 16"
+                  fill="currentColor"
+                >
+                  <path d="M11.013 1.427a1.75 1.75 0 012.474 0l1.086 1.086a1.75 1.75 0 010 2.474l-8.61 8.61c-.21.21-.47.364-.756.445l-3.251.93a.75.75 0 01-.927-.928l.929-3.25a1.75 1.75 0 01.445-.758l8.61-8.61zm1.414 1.06a.25.25 0 00-.354 0L3.463 11.098a.25.25 0 00-.064.108l-.631 2.208 2.208-.63a.25.25 0 00.108-.064l8.61-8.61a.25.25 0 000-.354l-1.086-1.086z" />
+                </svg>
+              )}
             </h1>
           )}
           <span className="text-[10px] px-1.5 py-0.5 rounded font-mono shrink-0 text-secondary-foreground bg-secondary tabular-nums">
