@@ -31,7 +31,6 @@ function generateCollabPrompt({
   editUrl: string;
   apiUrl: string;
   secret: string;
-  mcpUrl: string;
 }) {
   return `"${title}" — ${viewUrl}
 
@@ -52,8 +51,6 @@ export function ShareButton({
   editId?: string;
   secret?: string;
   title: string;
-  content: string;
-  version: number;
 }) {
   const [open, setOpen] = useState(false);
   const isDesktop = useMediaQuery("(min-width: 640px)");
@@ -62,14 +59,12 @@ export function ShareButton({
   const viewUrl = `${origin}/d/${diagramId}`;
   const editUrl = editId ? `${origin}/e/${editId}` : null;
   const apiUrl = `${origin}/api/d/${diagramId}`;
-  const mcpUrl = `${origin}/mcp`;
 
   const contentEl = (
     <ShareContent
       viewUrl={viewUrl}
       editUrl={editUrl}
       apiUrl={apiUrl}
-      mcpUrl={mcpUrl}
       secret={secret}
       title={title}
     />
@@ -118,20 +113,18 @@ function ShareContent({
   viewUrl,
   editUrl,
   apiUrl,
-  mcpUrl,
   secret,
   title,
 }: {
   viewUrl: string;
   editUrl: string | null;
   apiUrl: string;
-  mcpUrl: string;
   secret?: string;
   title: string;
 }) {
   const canEdit = !!editUrl && !!secret;
   const collabPrompt = canEdit
-    ? generateCollabPrompt({ title, viewUrl, editUrl, apiUrl, secret, mcpUrl })
+    ? generateCollabPrompt({ title, viewUrl, editUrl, apiUrl, secret })
     : null;
 
   return (

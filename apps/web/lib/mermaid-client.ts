@@ -301,8 +301,23 @@ function getUIMode(): "dark" | "light" {
 }
 
 function sanitizeSvg(svg: string): string {
+  // Mermaid emits <br> as unclosed HTML in SVG output (known bug:
+  // https://github.com/mermaid-js/mermaid/issues/1766). Browsers always
+  // serialize <br> without a closing slash via innerHTML, making the SVG
+  // invalid XML. Convert all HTML void tags to self-closing form.
+  const fixedSvg = svg.replace(/<(br|hr|img|input|col|embed|source|track|wbr)(\s[^>]*)?\s*>/gi, "<$1$2/>");
+
   const parser = new DOMParser();
-  const doc = parser.parseFromString(svg, "image/svg+xml");
+  const doc = parser.parseFromString(fixedSvg, "image/svg+xml");
+
+  // DOMParser returns a <parsererror> document instead of throwing when XML
+  // is malformed. Detect it and surface the error.
+  const parseError = doc.querySelector("parsererror");
+  if (parseError) {
+    throw new Error(
+      `Diagram produced invalid SVG: ${parseError.textContent?.slice(0, 200)}`,
+    );
+  }
 
   doc.querySelectorAll("script").forEach((node) => node.remove());
 

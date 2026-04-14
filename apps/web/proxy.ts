@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { checkRateLimit, type Tier } from "./lib/rate-limit";
-
-const LLMS_HEADERS = {
-  Link: '</llms.txt>; rel="llms-txt", </llms-full.txt>; rel="llms-full-txt"',
-  "X-Llms-Txt": "/llms.txt",
-};
+import { LLMS_HEADERS } from "./lib/machine-content";
 
 function getTier(pathname: string, method: string): Tier | null {
   // Only rate-limit API routes

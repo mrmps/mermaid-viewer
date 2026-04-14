@@ -237,7 +237,7 @@ export function ChatPanel({
   );
 
   const handleSubmit = useCallback(() => {
-    if (!input.trim()) return;
+    if (!input.trim() || isLoading) return;
     sendMessage(
       { text: input.trim() },
       {
@@ -245,7 +245,7 @@ export function ChatPanel({
       }
     );
     setInput("");
-  }, [getRequestBody, input, sendMessage]);
+  }, [getRequestBody, input, sendMessage, isLoading]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -259,6 +259,7 @@ export function ChatPanel({
 
   const handleSuggestion = useCallback(
     (text: string) => {
+      if (isLoading) return;
       sendMessage(
         { text },
         {
@@ -266,7 +267,7 @@ export function ChatPanel({
         }
       );
     },
-    [getRequestBody, sendMessage]
+    [getRequestBody, sendMessage, isLoading]
   );
 
   const clearChat = useCallback(() => {
@@ -338,6 +339,7 @@ export function ChatPanel({
                   <button
                     key={i}
                     type="button"
+                    disabled={isLoading}
                     onClick={() => handleSuggestion(s.text)}
                     className={cn(
                       "flex w-full items-center gap-2.5 text-left group/suggestion",
@@ -346,7 +348,8 @@ export function ChatPanel({
                       "text-[12px] text-muted-foreground",
                       "hover:bg-muted/70 dark:hover:bg-muted/40 hover:text-foreground",
                       "active:scale-[0.98]",
-                      "transition-all duration-150 cursor-pointer"
+                      "transition-all duration-150 cursor-pointer",
+                      isLoading && "opacity-50 pointer-events-none"
                     )}
                   >
                     <div className="size-6 rounded-lg bg-background dark:bg-muted/40 border border-border/40 flex items-center justify-center shrink-0 group-hover/suggestion:border-border/60 transition-colors">
@@ -363,7 +366,7 @@ export function ChatPanel({
                 const isLast = index === messages.length - 1;
 
                 return (
-                  <div key={message.id}>
+                  <div key={`${message.id}-${index}`}>
                     {message.role === "user" ? (
                       <div className="flex justify-end">
                         <div className="max-w-[85%]">
@@ -459,13 +462,15 @@ export function ChatPanel({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Describe changes..."
+              placeholder={isLoading ? "Waiting for response..." : "Describe changes..."}
+              disabled={isLoading}
               rows={1}
               className={cn(
                 "w-full resize-none border-none bg-transparent px-1 py-0.5",
                 "text-[13px] leading-5",
                 "text-foreground placeholder:text-muted-foreground/40",
-                "focus:outline-none"
+                "focus:outline-none",
+                isLoading && "opacity-50 cursor-not-allowed"
               )}
               style={{ minHeight: "20px", maxHeight: "120px" }}
             />

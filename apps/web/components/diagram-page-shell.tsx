@@ -200,8 +200,6 @@ export function DiagramPageShell({
             editId={editId}
             secret={secret}
             title={currentTitle}
-            content={selectedVersion.content}
-            version={selectedVersion.version}
           />
           {editId ? (
             <DeleteDiagramButton

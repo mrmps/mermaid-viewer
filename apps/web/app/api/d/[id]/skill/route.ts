@@ -1,5 +1,6 @@
 import { getDiagram } from "@mermaid-viewer/db";
 import { generateSkillContent } from "@/lib/skill";
+import { getBaseUrl } from "@/lib/utils";
 import { NextRequest } from "next/server";
 
 export async function GET(
@@ -28,9 +29,7 @@ export async function GET(
     );
   }
 
-  const proto = request.headers.get("x-forwarded-proto") ?? "http";
-  const host = request.headers.get("host") ?? new URL(request.url).host;
-  const baseUrl = `${proto}://${host}`;
+  const baseUrl = getBaseUrl(request);
 
   const title =
     diagram.title !== "Untitled" ? diagram.title : `Diagram ${id}`;

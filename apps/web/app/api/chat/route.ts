@@ -110,6 +110,7 @@ export async function POST(req: Request) {
 
   const result = streamText({
     model: openrouter.chat("openrouter/auto"),
+    abortSignal: req.signal,
     system: `You are a Mermaid diagram assistant. You help users create, modify, and improve Mermaid diagrams through conversation.
 
 ## Current Diagram

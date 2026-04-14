@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { type HistoryEntry, useHistoryEntries } from "./history-tracker";
+import { formatRelative } from "@/lib/utils";
 
 type DiagramEntry = {
   id: string;
@@ -138,20 +139,3 @@ function mergeRecentDiagrams(
   );
 }
 
-function formatRelative(dateStr: string): string {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-
-  if (diffMin < 1) return "just now";
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h ago`;
-  const diffDay = Math.floor(diffHr / 24);
-  if (diffDay < 7) return `${diffDay}d ago`;
-  return date.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-  });
-}

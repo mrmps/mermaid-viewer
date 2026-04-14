@@ -1,14 +1,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { createDiagram, getDiagram, addVersion } from "@mermaid-viewer/db";
+import { getBaseUrl } from "@/lib/utils";
 import { z } from "zod";
-
-function getBaseUrl(request: Request): string {
-  const proto = request.headers.get("x-forwarded-proto") ?? "http";
-  const host = request.headers.get("host") ?? "mermaidsh.com";
-  if (host === "mermaidsh.com") return "https://mermaidsh.com";
-  return `${proto}://${host}`;
-}
 
 const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",

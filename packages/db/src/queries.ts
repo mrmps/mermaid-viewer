@@ -3,6 +3,18 @@ import { nanoid } from "nanoid";
 import { db } from "./client";
 import { diagrams, versions } from "./schema";
 
+type DiagramRow = typeof diagrams.$inferSelect;
+
+function isAuthorized(
+  diagram: DiagramRow,
+  opts: { secret?: string; editId?: string }
+): boolean {
+  return (
+    (!!opts.secret && diagram.secret === opts.secret) ||
+    (!!opts.editId && diagram.editId === opts.editId)
+  );
+}
+
 export async function createDiagram(opts: {
   content: string;
   title?: string;
@@ -40,12 +52,7 @@ export async function addVersion(opts: {
   });
 
   if (!diagram) return { error: "not_found" as const };
-
-  const authorized =
-    (opts.secret && diagram.secret === opts.secret) ||
-    (opts.editId && diagram.editId === opts.editId);
-
-  if (!authorized) return { error: "unauthorized" as const };
+  if (!isAuthorized(diagram, opts)) return { error: "unauthorized" as const };
 
   const newVersion = diagram.currentVersion + 1;
 
@@ -79,12 +86,7 @@ export async function deleteDiagram(opts: {
   });
 
   if (!diagram) return { error: "not_found" as const };
-
-  const authorized =
-    (opts.secret && diagram.secret === opts.secret) ||
-    (opts.editId && diagram.editId === opts.editId);
-
-  if (!authorized) return { error: "unauthorized" as const };
+  if (!isAuthorized(diagram, opts)) return { error: "unauthorized" as const };
 
   await db.delete(versions).where(eq(versions.diagramId, opts.diagramId));
   await db.delete(diagrams).where(eq(diagrams.id, opts.diagramId));
@@ -151,12 +153,7 @@ export async function updateTitle(opts: {
   });
 
   if (!diagram) return { error: "not_found" as const };
-
-  const authorized =
-    (opts.secret && diagram.secret === opts.secret) ||
-    (opts.editId && diagram.editId === opts.editId);
-
-  if (!authorized) return { error: "unauthorized" as const };
+  if (!isAuthorized(diagram, opts)) return { error: "unauthorized" as const };
 
   await db
     .update(diagrams)
