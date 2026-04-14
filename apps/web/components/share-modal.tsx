@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useMediaQuery } from "@/lib/use-media-query";
-import { Share2 } from "lucide-react";
+import { Share2, Check, ClipboardCopy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -257,16 +257,12 @@ function CopyInstructionsButton({ value }: { value: string }) {
     >
       {copied ? (
         <>
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="size-4">
-            <path fillRule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clipRule="evenodd" />
-          </svg>
+          <Check className="size-4" />
           Copied!
         </>
       ) : (
         <>
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="size-4">
-            <path d="M5.5 3.5A1.5 1.5 0 0 1 7 2h2.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 1 .439 1.061V9.5A1.5 1.5 0 0 1 12 11V3.5A1.5 1.5 0 0 0 10.5 2H7a1.5 1.5 0 0 0-1.5 1.5ZM3.5 6A1.5 1.5 0 0 0 2 7.5v6A1.5 1.5 0 0 0 3.5 15h5a1.5 1.5 0 0 0 1.5-1.5v-6A1.5 1.5 0 0 0 8.5 6h-5Z" />
-          </svg>
+          <ClipboardCopy className="size-4" />
           Copy edit instructions
         </>
       )}

@@ -43,10 +43,9 @@ export function VersionThumb({
   return (
     <div
       ref={containerRef}
-      className="w-full aspect-[16/10] rounded-lg overflow-hidden flex items-center justify-center"
-      style={{ background: "var(--bg-inset)" }}
+      className="w-full aspect-[16/10] rounded-lg overflow-hidden flex items-center justify-center bg-background"
     >
-      <div className="w-3 h-3 rounded-full animate-spin" role="status" aria-label="Loading preview" style={{ border: "2px solid var(--border)", borderTopColor: "var(--text-muted)" }} />
+      <div className="w-3 h-3 rounded-full animate-spin border-2 border-border border-t-muted-foreground" role="status" aria-label="Loading preview" />
     </div>
   );
 }

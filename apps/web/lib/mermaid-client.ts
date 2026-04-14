@@ -24,10 +24,36 @@ function getConfig(theme: MermaidTheme, uiMode: "dark" | "light"): ThemeConfig {
       return { mermaidTheme: uiMode === "dark" ? "dark" : "default" };
 
     case "forest":
-      return { mermaidTheme: "forest" };
+      return uiMode === "dark"
+        ? {
+            mermaidTheme: "base",
+            vars: {
+              darkMode: "true",
+              primaryColor: "#14532d",
+              primaryTextColor: "#dcfce7",
+              primaryBorderColor: "#22c55e",
+              lineColor: "#4ade80",
+              textColor: "#bbf7d0",
+              background: "#071a13",
+            },
+          }
+        : { mermaidTheme: "forest" };
 
     case "neutral":
-      return { mermaidTheme: "neutral" };
+      return uiMode === "dark"
+        ? {
+            mermaidTheme: "base",
+            vars: {
+              darkMode: "true",
+              primaryColor: "#27272a",
+              primaryTextColor: "#e4e4e7",
+              primaryBorderColor: "#52525b",
+              lineColor: "#71717a",
+              textColor: "#d4d4d8",
+              background: "#111113",
+            },
+          }
+        : { mermaidTheme: "neutral" };
 
     case "ocean":
       // base + just the key colors — let mermaid derive the rest

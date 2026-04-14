@@ -22,7 +22,7 @@ export function ModeToggle() {
   return (
     <button
       onClick={toggle}
-      className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer hover:bg-[var(--bg-surface-hover)] text-[var(--text-secondary)]"
+      className="w-10 h-10 rounded-lg flex items-center justify-center transition-[background-color] duration-150 cursor-pointer hover:bg-muted text-secondary-foreground"
       aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
     >
       {dark ? (

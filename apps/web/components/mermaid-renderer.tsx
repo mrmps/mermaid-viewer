@@ -9,19 +9,15 @@ import {
 } from "react-zoom-pan-pinch";
 import { renderMermaid, type MermaidTheme } from "@/lib/mermaid-client";
 
-const btnStyle: React.CSSProperties = {
-  background: "color-mix(in oklch, var(--bg-surface) 85%, transparent)",
-  color: "var(--text-secondary)",
-  border: "1px solid var(--border)",
-};
+const btnClass = "bg-muted/85 text-secondary-foreground border border-border";
 
 function ZoomControls() {
   const { zoomIn, zoomOut, resetTransform } = useControls();
   return (
     <div className="absolute bottom-4 right-4 flex items-center gap-1 z-10">
-      <button onClick={() => zoomIn()} aria-label="Zoom in" className="w-8 h-8 rounded-lg text-base font-mono flex items-center justify-center backdrop-blur-md cursor-pointer transition-colors" style={btnStyle}>+</button>
-      <button onClick={() => zoomOut()} aria-label="Zoom out" className="w-8 h-8 rounded-lg text-base font-mono flex items-center justify-center backdrop-blur-md cursor-pointer transition-colors" style={btnStyle}>−</button>
-      <button onClick={() => resetTransform()} aria-label="Fit to screen" className="h-8 px-3 rounded-lg text-xs flex items-center justify-center backdrop-blur-md cursor-pointer transition-colors" style={btnStyle}>Fit</button>
+      <button onClick={() => zoomIn()} aria-label="Zoom in" className={`w-10 h-10 rounded-lg text-base font-mono flex items-center justify-center backdrop-blur-md cursor-pointer transition-[background-color,border-color] duration-150 active:scale-[0.96] ${btnClass}`}>+</button>
+      <button onClick={() => zoomOut()} aria-label="Zoom out" className={`w-10 h-10 rounded-lg text-base font-mono flex items-center justify-center backdrop-blur-md cursor-pointer transition-[background-color,border-color] duration-150 active:scale-[0.96] ${btnClass}`}>−</button>
+      <button onClick={() => resetTransform()} aria-label="Fit to screen" className={`h-10 px-3 rounded-lg text-xs flex items-center justify-center backdrop-blur-md cursor-pointer transition-[background-color,border-color] duration-150 active:scale-[0.96] ${btnClass}`}>Fit</button>
     </div>
   );
 }
@@ -107,23 +103,19 @@ export function MermaidRenderer({
   if (error) {
     return (
       <div className="flex items-center justify-center w-full h-full p-8">
-        <div className="p-6 rounded-xl max-w-lg" role="alert" style={{ background: "color-mix(in oklch, var(--bg-surface) 90%, red)", border: "1px solid color-mix(in oklch, var(--border) 70%, red)", color: "var(--text-primary)" }}>
+        <div className="p-6 rounded-xl max-w-lg bg-destructive/10 border border-destructive/30 text-foreground" role="alert">
           <p className="font-semibold mb-2">Render Error</p>
-          <pre className="text-sm whitespace-pre-wrap font-mono" style={{ color: "var(--text-secondary)" }}>{error}</pre>
+          <pre className="text-sm whitespace-pre-wrap font-mono text-secondary-foreground">{error}</pre>
         </div>
       </div>
     );
   }
 
   return (
-    <div ref={wrapperRef} className="relative w-full h-full" style={{ background: "var(--bg-canvas)" }}>
+    <div ref={wrapperRef} className="relative w-full h-full bg-background">
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center z-10" role="status" aria-label="Loading diagram">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full animate-bounce [animation-delay:-0.3s]" style={{ background: "var(--text-muted)" }} />
-            <div className="w-2 h-2 rounded-full animate-bounce [animation-delay:-0.15s]" style={{ background: "var(--text-muted)" }} />
-            <div className="w-2 h-2 rounded-full animate-bounce" style={{ background: "var(--text-muted)" }} />
-          </div>
+          <div className="w-4 h-4 rounded-full animate-spin border-2 border-muted-foreground/20 border-t-muted-foreground" />
           <span className="sr-only">Loading diagram...</span>
         </div>
       )}
@@ -143,7 +135,7 @@ export function MermaidRenderer({
         >
           <div
             ref={containerRef}
-            className={`transition-opacity duration-300 ${loading ? "opacity-0" : "opacity-100"}`}
+            className={`transition-[opacity] duration-150 ${loading ? "opacity-0" : "opacity-100"}`}
           />
         </TransformComponent>
       </TransformWrapper>
