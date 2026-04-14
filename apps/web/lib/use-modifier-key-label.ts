@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { getModifierKeyLabel } from "@/lib/modifier-key";
 
+const subscribe = () => () => {};
+
 export function useModifierKeyLabel() {
-  const [label, setLabel] = useState("Ctrl");
-
-  useEffect(() => {
-    setLabel(getModifierKeyLabel(navigator.platform));
-  }, []);
-
-  return label;
+  return useSyncExternalStore(
+    subscribe,
+    () => getModifierKeyLabel(navigator.platform),
+    () => "Ctrl",
+  );
 }
