@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
+import { connection } from "next/server";
+import { getDiagramCount, getRecentDiagrams } from "@mermaid-viewer/db";
 import { RecentDiagrams } from "@/components/recent-diagrams";
-import { DiagramCount } from "@/components/diagram-count";
 import { AddToAgent } from "@/components/add-to-agent";
 import { CompatibleAgents } from "@/components/compatible-agents";
 import { PageWrapper } from "@/components/page-wrapper";
@@ -71,7 +71,45 @@ function APIItem({
   );
 }
 
-export default function HomePage() {
+function SchemaTable({
+  rows,
+}: {
+  rows: { field: string; type: string; required?: boolean; desc: string }[];
+}) {
+  return (
+    <div className="border border-border rounded-lg overflow-hidden mt-2">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-border bg-muted/30">
+            <th className="text-left px-3 py-2 font-medium text-muted-foreground">Field</th>
+            <th className="text-left px-3 py-2 font-medium text-muted-foreground">Type</th>
+            <th className="text-left px-3 py-2 font-medium text-muted-foreground">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.field} className="border-b border-border last:border-0">
+              <td className="px-3 py-2">
+                <code className="text-xs font-mono text-foreground">{r.field}</code>
+                {r.required && <span className="text-red-400 ml-0.5">*</span>}
+              </td>
+              <td className="px-3 py-2 text-muted-foreground text-xs font-mono">{r.type}</td>
+              <td className="px-3 py-2 text-secondary-foreground">{r.desc}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export default async function HomePage() {
+  await connection();
+  const [count, serverRecent] = await Promise.all([
+    getDiagramCount(),
+    getRecentDiagrams(3),
+  ]);
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
@@ -106,18 +144,17 @@ export default function HomePage() {
         to create, update, and share — with full version history baked in.
       </p>
 
-      <Suspense fallback={null}>
-        <div className="mt-3">
-          <DiagramCount />
-        </div>
-      </Suspense>
-
-      {/* Recent diagrams */}
-      <Suspense fallback={null}>
-        <div className="mt-10">
-          <RecentDiagrams />
-        </div>
-      </Suspense>
+      {/* Recent diagrams — data fetched at page level, no Suspense = zero layout shift */}
+      <div className="mt-8">
+        <RecentDiagrams
+          count={count}
+          serverDiagrams={serverRecent.map((d) => ({
+            id: d.id,
+            title: d.title,
+            updatedAt: d.updatedAt.toISOString(),
+          }))}
+        />
+      </div>
 
       <div className="mt-16">
         <CompatibleAgents />
@@ -160,6 +197,145 @@ export default function HomePage() {
         </div>
       </div>
 
+      {/* Install */}
+      <div className="mt-32">
+        <div className="font-medium text-base leading-[26px] mb-2">
+          Install
+        </div>
+        <p className="text-base leading-[26px] text-secondary-foreground mb-5">
+          Set up mermaid-viewer in your agent. Pick one method — MCP server gives you native tools, skill file works everywhere.
+        </p>
+
+        {/* Agent install */}
+        <div className="rounded-lg border border-border bg-card/50 px-4 py-3 mb-4">
+          <p className="text-sm text-secondary-foreground mb-3">
+            <span className="text-foreground font-medium">Pipe to your agent:</span>
+          </p>
+          <pre className="rounded-md bg-muted/50 px-3 py-2 overflow-x-auto">
+            <code className="text-sm font-mono text-secondary-foreground">
+              {"curl -fsSL https://mermaidsh.com/install.md | claude"}
+            </code>
+          </pre>
+          <p className="text-xs text-muted-foreground mt-2">
+            Works with any LLM CLI. The agent reads the instructions and installs autonomously.
+          </p>
+        </div>
+
+        {/* MCP option */}
+        <details className="group border border-border rounded-lg mb-3">
+          <summary className="flex items-center justify-between px-4 py-3 cursor-pointer select-none text-sm font-medium text-foreground hover:text-foreground/80 transition-[color] duration-150">
+            <span>Option A: MCP Server (recommended)</span>
+            <svg
+              className="w-4 h-4 text-muted-foreground transition-transform duration-200 group-open:rotate-180 shrink-0 ml-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </summary>
+          <div className="px-4 pb-4">
+            <p className="text-sm text-secondary-foreground mb-3">
+              Add to your MCP settings for native tool integration:
+            </p>
+            <pre className="rounded-md bg-muted/50 px-3 py-2 overflow-x-auto">
+              <code className="text-xs font-mono text-secondary-foreground">
+{`{
+  "mcpServers": {
+    "mermaid-viewer": {
+      "url": "https://mermaidsh.com/mcp"
+    }
+  }
+}`}
+              </code>
+            </pre>
+            <p className="text-xs text-muted-foreground mt-2">
+              Gives you <code className="font-mono">create_diagram</code>, <code className="font-mono">update_diagram</code>, and <code className="font-mono">get_diagram</code> tools.
+            </p>
+          </div>
+        </details>
+
+        {/* Skill file option */}
+        <details className="group border border-border rounded-lg mb-3">
+          <summary className="flex items-center justify-between px-4 py-3 cursor-pointer select-none text-sm font-medium text-foreground hover:text-foreground/80 transition-[color] duration-150">
+            <span>Option B: Skill File</span>
+            <svg
+              className="w-4 h-4 text-muted-foreground transition-transform duration-200 group-open:rotate-180 shrink-0 ml-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </summary>
+          <div className="px-4 pb-4 flex flex-col gap-3">
+            {[
+              { agent: "Claude Code", cmd: "mkdir -p ~/.claude/skills/mermaid-viewer && curl -s https://mermaidsh.com/skill.md > ~/.claude/skills/mermaid-viewer/SKILL.md" },
+              { agent: "Codex", cmd: "mkdir -p ~/.agents/skills/mermaid-viewer && curl -s https://mermaidsh.com/skill.md > ~/.agents/skills/mermaid-viewer/SKILL.md" },
+              { agent: "OpenClaw", cmd: "mkdir -p ~/.openclaw/skills/mermaid-viewer && curl -s https://mermaidsh.com/skill.md > ~/.openclaw/skills/mermaid-viewer/SKILL.md" },
+            ].map((item) => (
+              <div key={item.agent}>
+                <p className="text-xs font-medium text-muted-foreground mb-1">{item.agent}</p>
+                <pre className="rounded-md bg-muted/50 px-3 py-2 overflow-x-auto">
+                  <code className="text-xs font-mono text-secondary-foreground">{item.cmd}</code>
+                </pre>
+              </div>
+            ))}
+            <p className="text-xs text-muted-foreground">
+              Or: <code className="font-mono">npx skills add https://mermaidsh.com</code>
+            </p>
+          </div>
+        </details>
+
+        <p className="text-sm text-muted-foreground">
+          Full installation guide at{" "}
+          <a href="/install.md" className="text-foreground hover:underline underline-offset-2">
+            /install.md
+          </a>
+        </p>
+      </div>
+
+      {/* Hero image */}
+      <div className="mt-32 -mx-6 sm:-mx-10 md:-mx-16">
+        <a
+          href="/d/kv8RfUmtlb"
+          className="block rounded-2xl p-1 shadow-[0_0_0_1px_rgba(255,255,255,0.13)] hover:shadow-[0_0_0_1px_rgba(255,255,255,0.2)] transition-shadow duration-200"
+        >
+          <div className="rounded-xl border border-border overflow-hidden">
+            <img
+              src="/hero.png"
+              alt="Mermaid diagram viewer showing a versioned flowchart with version history sidebar"
+              className="w-full block"
+            />
+          </div>
+        </a>
+        <div className="flex justify-center mt-3">
+          <a
+            href="/d/kv8RfUmtlb"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors duration-150"
+          >
+            Try an example
+            <svg
+              className="w-3.5 h-3.5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M7 17L17 7M7 7h10v10" />
+            </svg>
+          </a>
+        </div>
+      </div>
+
       {/* API */}
       <div className="mt-32">
         <div className="font-medium text-base leading-[26px] mb-2">
@@ -170,6 +346,71 @@ export default function HomePage() {
           <APIItem method="PUT" path="/api/d/:id" description="Update with a new version" />
           <APIItem method="GET" path="/d/:id" description="View rendered diagram" />
           <APIItem method="GET" path="/api/d/:id" description="Fetch diagram JSON" />
+        </div>
+
+        {/* POST schema */}
+        <div className="mt-8">
+          <h3 className="text-sm font-medium text-foreground mb-1">
+            POST /api/d — Create
+          </h3>
+          <p className="text-xs text-muted-foreground mb-2">Request body (JSON)</p>
+          <SchemaTable rows={[
+            { field: "content", type: "string", required: true, desc: "Valid Mermaid diagram syntax" },
+            { field: "title", type: "string", desc: "Diagram title (defaults to \"Untitled\")" },
+          ]} />
+          <p className="text-xs text-muted-foreground mt-3 mb-2">Response (201)</p>
+          <SchemaTable rows={[
+            { field: "id", type: "string", desc: "Diagram ID" },
+            { field: "editId", type: "string", desc: "Edit ID for browser editing" },
+            { field: "url", type: "string", desc: "Public view URL" },
+            { field: "editUrl", type: "string", desc: "Browser edit URL" },
+            { field: "secret", type: "string", desc: "API auth token — save this, returned only once" },
+            { field: "version", type: "number", desc: "Always 1 for new diagrams" },
+            { field: "skill", type: "string", desc: "Per-diagram skill URL for sharing" },
+          ]} />
+        </div>
+
+        {/* PUT schema */}
+        <div className="mt-8">
+          <h3 className="text-sm font-medium text-foreground mb-1">
+            PUT /api/d/:id — Update
+          </h3>
+          <p className="text-xs text-muted-foreground mb-1">
+            Auth: <code className="font-mono">Authorization: Bearer &lt;secret&gt;</code> header, or <code className="font-mono">secret</code>/<code className="font-mono">editId</code> in body
+          </p>
+          <p className="text-xs text-muted-foreground mb-2">Request body (JSON)</p>
+          <SchemaTable rows={[
+            { field: "content", type: "string", required: true, desc: "Updated Mermaid syntax" },
+            { field: "title", type: "string", desc: "Updated title" },
+            { field: "secret", type: "string", desc: "Auth (if not using header)" },
+            { field: "editId", type: "string", desc: "Auth (alternative to secret)" },
+          ]} />
+          <p className="text-xs text-muted-foreground mt-3 mb-2">Response (200)</p>
+          <SchemaTable rows={[
+            { field: "id", type: "string", desc: "Diagram ID" },
+            { field: "url", type: "string", desc: "Public view URL" },
+            { field: "version", type: "number", desc: "New version number" },
+            { field: "skill", type: "string", desc: "Per-diagram skill URL" },
+          ]} />
+        </div>
+
+        {/* GET schema */}
+        <div className="mt-8">
+          <h3 className="text-sm font-medium text-foreground mb-1">
+            GET /api/d/:id — Fetch
+          </h3>
+          <p className="text-xs text-muted-foreground mb-2">
+            Append <code className="font-mono">?v=N</code> for a specific version. Response (200):
+          </p>
+          <SchemaTable rows={[
+            { field: "id", type: "string", desc: "Diagram ID" },
+            { field: "title", type: "string", desc: "Diagram title" },
+            { field: "version", type: "number", desc: "Current/requested version" },
+            { field: "content", type: "string", desc: "Mermaid syntax for this version" },
+            { field: "createdAt", type: "string", desc: "ISO timestamp of this version" },
+            { field: "versions", type: "array", desc: "[{ version, content, createdAt }]" },
+            { field: "skill", type: "string", desc: "Per-diagram skill URL" },
+          ]} />
         </div>
       </div>
 

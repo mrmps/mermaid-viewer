@@ -55,8 +55,20 @@ export function MachineView() {
         update, and share — with full version history.
       </p>
 
-      <Section title="MCP Server (recommended)">
+      <Section title="Install">
         <p className="text-base leading-[26px] text-secondary-foreground mb-3">
+          Pipe the install guide directly to your agent:
+        </p>
+        <CodeBlock>{`curl -fsSL ${BASE_URL}/install.md | claude`}</CodeBlock>
+        <p className="text-sm text-muted-foreground mt-2 mb-6">
+          Or read it at{" "}
+          <a href="/install.md" className="text-foreground hover:underline underline-offset-2">/install.md</a>
+        </p>
+
+        <h3 className="text-sm font-medium text-foreground mb-2">
+          MCP Server (recommended)
+        </h3>
+        <p className="text-sm text-secondary-foreground mb-2">
           Add to your MCP settings for native tool integration:
         </p>
         <CodeBlock lang="json">
@@ -72,15 +84,16 @@ export function MachineView() {
             2,
           )}
         </CodeBlock>
-        <p className="text-sm text-muted-foreground mt-2">
+        <p className="text-sm text-muted-foreground mt-2 mb-6">
           Tools:{" "}
           <code className="text-xs font-mono">create_diagram</code>,{" "}
           <code className="text-xs font-mono">update_diagram</code>,{" "}
           <code className="text-xs font-mono">get_diagram</code>
         </p>
-      </Section>
 
-      <Section title="Skill File">
+        <h3 className="text-sm font-medium text-foreground mb-2">
+          Skill File (alternative)
+        </h3>
         <CodeBlock>{`npx skills add ${BASE_URL}`}</CodeBlock>
       </Section>
 
@@ -91,25 +104,21 @@ export function MachineView() {
               method: "POST",
               path: "/api/d",
               desc: "Create a diagram",
-              auth: "None",
             },
             {
               method: "PUT",
               path: "/api/d/:id",
               desc: "Update with new version",
-              auth: "Bearer <secret>",
             },
             {
               method: "GET",
               path: "/api/d/:id",
               desc: "Fetch diagram JSON",
-              auth: "None",
             },
             {
               method: "GET",
               path: "/d/:id",
               desc: "View rendered diagram",
-              auth: "None",
             },
           ].map((item) => (
             <div
@@ -132,48 +141,148 @@ export function MachineView() {
         {/* Create */}
         <div className="mt-8">
           <h3 className="text-sm font-medium text-foreground mb-2">
-            Create a diagram
+            POST /api/d — Create
           </h3>
           <CodeBlock>
             {`curl -X POST ${BASE_URL}/api/d \\
   -H "Content-Type: application/json" \\
   -d '{"content": "graph TD; A-->B", "title": "My Diagram"}'`}
           </CodeBlock>
-          <p className="text-sm text-muted-foreground mt-2">
-            Response:{" "}
-            <code className="text-xs font-mono">
-              {"{ id, url, editUrl, secret, version, skill }"}
-            </code>
-          </p>
+          <div className="mt-3">
+            <p className="text-xs font-medium text-muted-foreground mb-1">Request body (JSON)</p>
+            <div className="rounded-md border border-border overflow-x-auto">
+              <table className="w-full text-xs font-mono">
+                <tbody>
+                  <tr className="border-b border-border">
+                    <td className="px-3 py-1.5 text-foreground">content<span className="text-red-400">*</span></td>
+                    <td className="px-3 py-1.5 text-muted-foreground">string</td>
+                    <td className="px-3 py-1.5 text-secondary-foreground font-sans">Valid Mermaid syntax</td>
+                  </tr>
+                  <tr>
+                    <td className="px-3 py-1.5 text-foreground">title</td>
+                    <td className="px-3 py-1.5 text-muted-foreground">string</td>
+                    <td className="px-3 py-1.5 text-secondary-foreground font-sans">Optional (defaults to &quot;Untitled&quot;)</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div className="mt-3">
+            <p className="text-xs font-medium text-muted-foreground mb-1">Response (201)</p>
+            <div className="rounded-md border border-border overflow-x-auto">
+              <table className="w-full text-xs font-mono">
+                <tbody>
+                  {[
+                    ["id", "string", "Diagram ID"],
+                    ["editId", "string", "Edit ID for browser editing"],
+                    ["url", "string", "Public view URL (/d/:id)"],
+                    ["editUrl", "string", "Browser edit URL (/e/:editId)"],
+                    ["secret", "string", "API auth token — save this, only returned once"],
+                    ["version", "number", "Always 1"],
+                    ["skill", "string", "Per-diagram skill URL"],
+                  ].map(([field, type, desc]) => (
+                    <tr key={field} className="border-b border-border last:border-0">
+                      <td className="px-3 py-1.5 text-foreground">{field}</td>
+                      <td className="px-3 py-1.5 text-muted-foreground">{type}</td>
+                      <td className="px-3 py-1.5 text-secondary-foreground font-sans">{desc}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
         {/* Update */}
         <div className="mt-8">
           <h3 className="text-sm font-medium text-foreground mb-2">
-            Update a diagram
+            PUT /api/d/:id — Update
           </h3>
+          <p className="text-xs text-muted-foreground mb-2">
+            Auth: <code className="font-mono">Authorization: Bearer &lt;secret&gt;</code> header, or <code className="font-mono">secret</code>/<code className="font-mono">editId</code> in JSON body
+          </p>
           <CodeBlock>
             {`curl -X PUT ${BASE_URL}/api/d/:id \\
-  -H "Authorization: Bearer <secret>" \\
-  -H "Content-Type: text/plain" \\
-  -d 'graph TD; A-->B; B-->C'`}
+  -H "Content-Type: application/json" \\
+  -d '{"content": "graph TD; A-->B; B-->C", "secret": "<secret>"}'`}
           </CodeBlock>
+          <div className="mt-3">
+            <p className="text-xs font-medium text-muted-foreground mb-1">Request body (JSON)</p>
+            <div className="rounded-md border border-border overflow-x-auto">
+              <table className="w-full text-xs font-mono">
+                <tbody>
+                  {[
+                    ["content*", "string", "Updated Mermaid syntax"],
+                    ["title", "string", "Updated title"],
+                    ["secret", "string", "Auth (if not using header)"],
+                    ["editId", "string", "Auth (alternative to secret)"],
+                  ].map(([field, type, desc]) => (
+                    <tr key={field} className="border-b border-border last:border-0">
+                      <td className="px-3 py-1.5 text-foreground">{field}</td>
+                      <td className="px-3 py-1.5 text-muted-foreground">{type}</td>
+                      <td className="px-3 py-1.5 text-secondary-foreground font-sans">{desc}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div className="mt-3">
+            <p className="text-xs font-medium text-muted-foreground mb-1">Response (200)</p>
+            <div className="rounded-md border border-border overflow-x-auto">
+              <table className="w-full text-xs font-mono">
+                <tbody>
+                  {[
+                    ["id", "string", "Diagram ID"],
+                    ["url", "string", "Public view URL"],
+                    ["version", "number", "New version number"],
+                    ["skill", "string", "Per-diagram skill URL"],
+                  ].map(([field, type, desc]) => (
+                    <tr key={field} className="border-b border-border last:border-0">
+                      <td className="px-3 py-1.5 text-foreground">{field}</td>
+                      <td className="px-3 py-1.5 text-muted-foreground">{type}</td>
+                      <td className="px-3 py-1.5 text-secondary-foreground font-sans">{desc}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
         {/* Get */}
         <div className="mt-8">
           <h3 className="text-sm font-medium text-foreground mb-2">
-            Get diagram data
+            GET /api/d/:id — Fetch
           </h3>
           <CodeBlock>{`curl ${BASE_URL}/api/d/:id`}</CodeBlock>
-          <p className="text-sm text-muted-foreground mt-2">
-            Response:{" "}
-            <code className="text-xs font-mono">
-              {"{ id, title, version, content, versions, skill }"}
-            </code>
-            . Append <code className="text-xs font-mono">?v=N</code> for a
-            specific version.
+          <p className="text-xs text-muted-foreground mt-2 mb-1">
+            Append <code className="text-xs font-mono">?v=N</code> for a specific version.
           </p>
+          <div className="mt-3">
+            <p className="text-xs font-medium text-muted-foreground mb-1">Response (200)</p>
+            <div className="rounded-md border border-border overflow-x-auto">
+              <table className="w-full text-xs font-mono">
+                <tbody>
+                  {[
+                    ["id", "string", "Diagram ID"],
+                    ["title", "string", "Diagram title"],
+                    ["version", "number", "Current/requested version"],
+                    ["content", "string", "Mermaid syntax for this version"],
+                    ["createdAt", "string", "ISO timestamp"],
+                    ["versions", "array", "[{ version, content, createdAt }]"],
+                    ["skill", "string", "Per-diagram skill URL"],
+                  ].map(([field, type, desc]) => (
+                    <tr key={field} className="border-b border-border last:border-0">
+                      <td className="px-3 py-1.5 text-foreground">{field}</td>
+                      <td className="px-3 py-1.5 text-muted-foreground">{type}</td>
+                      <td className="px-3 py-1.5 text-secondary-foreground font-sans">{desc}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </Section>
 

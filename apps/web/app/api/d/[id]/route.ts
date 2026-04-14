@@ -68,7 +68,7 @@ export async function PUT(
 
   if (!content?.trim()) {
     return Response.json(
-      { error: "content_required", message: "Request body must contain mermaid diagram content" },
+      { error: "content_required", message: "Missing required field: \"content\". Send JSON with {\"content\": \"<mermaid>\", \"secret\": \"<secret>\"} or plain text with Authorization: Bearer <secret> header." },
       { status: 400 }
     );
   }

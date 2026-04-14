@@ -1,4 +1,4 @@
-import { eq, asc, count } from "drizzle-orm";
+import { eq, asc, desc, count } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { db } from "./client";
 import { diagrams, versions } from "./schema";
@@ -120,4 +120,12 @@ export async function getDiagramByEditId(opts: { editId: string; version?: numbe
 export async function getDiagramCount() {
   const [result] = await db.select({ count: count() }).from(diagrams);
   return result.count;
+}
+
+export async function getRecentDiagrams(limit = 3) {
+  return db.query.diagrams.findMany({
+    limit,
+    orderBy: [desc(diagrams.updatedAt)],
+    columns: { id: true, title: true, updatedAt: true },
+  });
 }
