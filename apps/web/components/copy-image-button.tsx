@@ -97,44 +97,56 @@ function ImagePreview({
   look?: MermaidLook;
   onReady: (blob: Blob, url: string) => void;
 }) {
+  const requestKey = `${content}\u0000${theme}\u0000${look}`;
   const [state, setState] = useState<
-    | { status: "generating" }
-    | { status: "error"; error: string }
-    | { status: "ready"; previewUrl: string }
-  >({ status: "generating" });
+    | { requestKey: string; status: "generating" }
+    | { requestKey: string; status: "error"; error: string }
+    | { requestKey: string; status: "ready"; previewUrl: string }
+  >({ requestKey, status: "generating" });
 
   useEffect(() => {
     let cancelled = false;
-    setState({ status: "generating" });
+    let previewUrl: string | null = null;
 
     renderMermaid(content, theme, look)
       .then((svg) => svgToPngBlob(svg))
       .then((blob) => {
         if (cancelled) return;
-        const url = URL.createObjectURL(blob);
-        setState({ status: "ready", previewUrl: url });
-        onReady(blob, url);
+        previewUrl = URL.createObjectURL(blob);
+        setState({ requestKey, status: "ready", previewUrl });
+        onReady(blob, previewUrl);
       })
       .catch((e) => {
         if (cancelled) return;
-        setState({ status: "error", error: e instanceof Error ? e.message : "Failed to generate image" });
+        setState({
+          requestKey,
+          status: "error",
+          error: e instanceof Error ? e.message : "Failed to generate image",
+        });
       });
 
     return () => {
       cancelled = true;
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [content, theme, look]);
+  }, [content, look, onReady, requestKey, theme]);
 
-  if (state.status === "error") {
+  const visibleState =
+    state.requestKey === requestKey
+      ? state
+      : ({ requestKey, status: "generating" } as const);
+
+  if (visibleState.status === "error") {
     return (
       <div className="flex items-center justify-center h-48 rounded-lg border border-destructive/30 bg-destructive/5 text-sm text-destructive">
-        {state.error}
+        {visibleState.error}
       </div>
     );
   }
 
-  if (state.status === "generating") {
+  if (visibleState.status === "generating") {
     return (
       <div className="flex items-center justify-center h-48 rounded-lg border border-border bg-muted/50">
         <Loader2 className="size-5 animate-spin text-muted-foreground" />
@@ -146,7 +158,7 @@ function ImagePreview({
     <div className="rounded-lg border border-border overflow-hidden bg-muted/30">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={state.previewUrl}
+        src={visibleState.previewUrl}
         alt="Diagram preview"
         className="w-full h-auto max-h-[50vh] object-contain"
       />

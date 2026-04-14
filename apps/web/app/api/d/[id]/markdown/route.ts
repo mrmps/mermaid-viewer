@@ -1,7 +1,7 @@
 import { getDiagram } from "@mermaid-viewer/db";
 import { NextRequest } from "next/server";
 import { getDiagramMarkdown, MARKDOWN_HEADERS } from "@/lib/machine-content";
-import { getBaseUrl } from "@/lib/utils";
+import { baseUrl } from "@/lib/env";
 
 export async function GET(
   request: NextRequest,
@@ -19,8 +19,6 @@ export async function GET(
       headers: MARKDOWN_HEADERS,
     });
   }
-
-  const baseUrl = getBaseUrl(request);
 
   const markdown = getDiagramMarkdown(
     baseUrl,

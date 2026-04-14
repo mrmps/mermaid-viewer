@@ -23,8 +23,3 @@ export function formatRelative(dateStr: string): string {
   });
 }
 
-export function getBaseUrl(request: Request): string {
-  const proto = request.headers.get("x-forwarded-proto") ?? "http";
-  const host = request.headers.get("host") ?? new URL(request.url).host;
-  return `${proto}://${host}`;
-}

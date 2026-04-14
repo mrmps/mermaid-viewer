@@ -2,8 +2,7 @@ import {
   OpenApiBuilder,
   type SchemaObject,
 } from "openapi3-ts/oas31";
-
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://merm.sh";
+import { baseUrl } from "@/lib/env";
 
 const DiagramResponse: SchemaObject = {
   type: "object",
@@ -36,8 +35,8 @@ const CreateResponse: SchemaObject = {
   properties: {
     id: { type: "string", example: "abc123" },
     editId: { type: "string", example: "edit_xyz" },
-    url: { type: "string", format: "uri", example: `${BASE_URL}/d/abc123` },
-    editUrl: { type: "string", format: "uri", example: `${BASE_URL}/e/edit_xyz` },
+    url: { type: "string", format: "uri", example: `${baseUrl}/d/abc123` },
+    editUrl: { type: "string", format: "uri", example: `${baseUrl}/e/edit_xyz` },
     secret: { type: "string", example: "sk_..." },
     version: { type: "integer", example: 1 },
     skill: { type: "string", format: "uri" },
@@ -81,7 +80,7 @@ export function buildOpenAPISpec() {
       description:
         "Dead-simple versioned Mermaid diagrams for AI agents. Create, update, and share diagrams via a single API call with full version history.",
     })
-    .addServer({ url: BASE_URL })
+    .addServer({ url: baseUrl })
     .addPath("/api/d", {
       post: {
         operationId: "createDiagram",

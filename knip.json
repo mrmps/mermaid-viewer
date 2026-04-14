@@ -1,0 +1,22 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "ignoreWorkspaces": ["packages/next-themes"],
+  "workspaces": {
+    ".": {},
+    "apps/web": {
+      "entry": [
+        "app/**/*.{ts,tsx}",
+        "components/**/*.{ts,tsx}",
+        "lib/**/*.{ts,tsx}"
+      ],
+      "project": ["**/*.{ts,tsx}"],
+      "ignoreDependencies": [
+        "shadcn",
+        "tw-animate-css",
+        "tailwindcss"
+      ]
+    },
+    "packages/db": {},
+    "packages/cli": {}
+  }
+}

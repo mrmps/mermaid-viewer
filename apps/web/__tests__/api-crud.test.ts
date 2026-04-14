@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { MermaidValidationResult } from "@/lib/mermaid-parse";
 
 // Mock the DB layer
 const mockCreateDiagram = vi.fn();
@@ -20,16 +21,14 @@ vi.mock("@/lib/mermaid-parse", () => ({
   validateMermaid: (...args: unknown[]) => mockValidateMermaid(...args),
 }));
 
-vi.mock("@/lib/utils", () => ({
-  getBaseUrl: () => "https://merm.sh",
-  cn: (...args: unknown[]) => args.join(" "),
-  formatRelative: () => "just now",
+vi.mock("@/lib/env", () => ({
+  baseUrl: "https://merm.sh",
 }));
 
 import { NextRequest } from "next/server";
 
 function makeRequest(url: string, init?: RequestInit): NextRequest {
-  return new NextRequest(new URL(url, "https://merm.sh"), init);
+  return new NextRequest(new URL(url, "https://merm.sh"), init as ConstructorParameters<typeof NextRequest>[1]);
 }
 
 describe("POST /api/d — Create diagram", () => {
@@ -37,7 +36,7 @@ describe("POST /api/d — Create diagram", () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    mockValidateMermaid.mockResolvedValue(null);
+    mockValidateMermaid.mockResolvedValue({ ok: true } satisfies MermaidValidationResult);
     mockCreateDiagram.mockResolvedValue({
       id: "abc123",
       editId: "edit456",
@@ -95,7 +94,11 @@ describe("POST /api/d — Create diagram", () => {
   });
 
   it("rejects invalid mermaid syntax", async () => {
-    mockValidateMermaid.mockResolvedValue("Parse error at line 1");
+    mockValidateMermaid.mockResolvedValue({
+      ok: false,
+      kind: "syntax",
+      message: "Parse error at line 1",
+    } satisfies MermaidValidationResult);
 
     const req = makeRequest("/api/d", {
       method: "POST",
@@ -107,6 +110,25 @@ describe("POST /api/d — Create diagram", () => {
     expect(res.status).toBe(400);
     const json = await res.json();
     expect(json.error).toBe("invalid_syntax");
+  });
+
+  it("rejects when Mermaid validation is unavailable", async () => {
+    mockValidateMermaid.mockResolvedValue({
+      ok: false,
+      kind: "unavailable",
+      message: "Mermaid validation is unavailable: DOMPurify is not a function",
+    } satisfies MermaidValidationResult);
+
+    const req = makeRequest("/api/d", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: "graph TD; A-->B" }),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(503);
+    const json = await res.json();
+    expect(json.error).toBe("validation_unavailable");
   });
 });
 
@@ -165,7 +187,7 @@ describe("PUT /api/d/[id] — Update diagram", () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    mockValidateMermaid.mockResolvedValue(null);
+    mockValidateMermaid.mockResolvedValue({ ok: true } satisfies MermaidValidationResult);
     mockAddVersion.mockResolvedValue({ version: 2 });
     const mod = await import("../app/api/d/[id]/route");
     PUT = mod.PUT;
@@ -258,6 +280,28 @@ describe("PUT /api/d/[id] — Update diagram", () => {
 
     const res = await PUT(req, { params: Promise.resolve({ id: "abc" }) });
     expect(res.status).toBe(401);
+  });
+
+  it("rejects updates when Mermaid validation is unavailable", async () => {
+    mockValidateMermaid.mockResolvedValue({
+      ok: false,
+      kind: "unavailable",
+      message: "Mermaid validation is unavailable: DOMPurify is not a function",
+    } satisfies MermaidValidationResult);
+
+    const req = makeRequest("/api/d/abc", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer mysecret",
+      },
+      body: JSON.stringify({ content: "graph TD; A-->B" }),
+    });
+
+    const res = await PUT(req, { params: Promise.resolve({ id: "abc" }) });
+    expect(res.status).toBe(503);
+    const json = await res.json();
+    expect(json.error).toBe("validation_unavailable");
   });
 });
 

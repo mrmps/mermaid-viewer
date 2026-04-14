@@ -1,10 +1,7 @@
 import { getLlmsFullTxt, MARKDOWN_HEADERS } from "@/lib/machine-content";
-import { getBaseUrl } from "@/lib/utils";
-import { NextRequest } from "next/server";
+import { baseUrl } from "@/lib/env";
 
-export async function GET(request: NextRequest) {
-  const baseUrl = getBaseUrl(request);
-
+export async function GET() {
   return new Response(getLlmsFullTxt(baseUrl), {
     headers: {
       ...MARKDOWN_HEADERS,

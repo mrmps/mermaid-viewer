@@ -5,11 +5,27 @@
     "dev": "turbo dev",
     "build": "turbo build",
     "lint": "turbo lint",
+    "typecheck": "turbo typecheck",
+    "format": "ultracite fix",
+    "format:check": "ultracite check",
+    "knip": "knip",
     "db:generate": "turbo db:generate",
-    "db:push": "turbo db:push"
+    "db:push": "turbo db:push",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "apps/web/**/*.{ts,tsx,js,jsx,mjs}": [
+      "pnpm --filter @mermaid-viewer/web exec eslint --fix"
+    ]
   },
   "devDependencies": {
-    "turbo": "^2"
+    "@typescript-eslint/parser": "^8.46.1",
+    "eslint": "^9.39.4",
+    "husky": "^9.1.7",
+    "knip": "^6.4.1",
+    "lint-staged": "^16.4.0",
+    "turbo": "^2",
+    "ultracite": "7.5.8"
   },
   "packageManager": "pnpm@9.15.1"
 }

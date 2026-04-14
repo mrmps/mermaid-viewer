@@ -1,5 +1,7 @@
 "use client";
 
+import { prepareMermaidSource } from "@/lib/mermaid-source";
+
 export type MermaidTheme = "auto" | "forest" | "neutral" | "ocean" | "rose";
 export type MermaidLook = "classic" | "handDrawn" | "neo";
 
@@ -365,11 +367,7 @@ export async function renderMermaid(
 ): Promise<string> {
   const mermaid = await initMermaid(theme, look);
   const id = `mermaid-${++counter}-${Date.now()}`;
-
-  // Inject look via frontmatter so each render uses the correct look,
-  // even if mermaid.initialize() didn't fully reset internal state.
-  const directive = `---\nconfig:\n  look: ${look}\n---\n`;
-  const diagram = content.trimStart().startsWith("---") ? content : directive + content;
+  const diagram = prepareMermaidSource(content, { look });
 
   try {
     const { svg } = await mermaid.render(id, diagram);

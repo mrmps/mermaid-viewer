@@ -1,14 +1,16 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/components/theme-provider";
+
+const subscribe = () => () => {};
 
 export function ModeToggle() {
   const { forcedTheme, resolvedTheme, setTheme } = useTheme();
   const mounted = useSyncExternalStore(
-    () => () => {},
+    subscribe,
     () => true,
-    () => false
+    () => false,
   );
 
   const disabled = !mounted || !!forcedTheme;

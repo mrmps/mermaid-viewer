@@ -2,12 +2,10 @@
 
 import { useState, useCallback } from "react";
 import { Check, ChevronDown, Copy } from "lucide-react";
-
-const BASE_URL =
-  process.env.NEXT_PUBLIC_BASE_URL ?? "https://merm.sh";
+import { baseUrl } from "@/lib/env";
 
 function getPrompt() {
-  return `Follow the installation instructions in the README at https://github.com/mrmps/mermaid-viewer to set up merm.sh — a tool for creating, versioning, and sharing Mermaid diagrams at ${BASE_URL}.
+  return `Follow the installation instructions in the README at https://github.com/mrmps/mermaid-viewer to set up merm.sh — a tool for creating, versioning, and sharing Mermaid diagrams at ${baseUrl}.
 
 ## Quick start
 
@@ -26,24 +24,24 @@ This gives you \`mermaidsh create\`, \`mermaidsh push\`, \`mermaidsh get\`, \`me
 **Claude Code:**
 \`\`\`bash
 mkdir -p ~/.claude/skills/mermaid-viewer
-curl -s ${BASE_URL}/skill.md > ~/.claude/skills/mermaid-viewer/SKILL.md
+curl -s ${baseUrl}/skill.md > ~/.claude/skills/mermaid-viewer/SKILL.md
 \`\`\`
 
 **Codex:**
 \`\`\`bash
 mkdir -p ~/.agents/skills/mermaid-viewer
-curl -s ${BASE_URL}/skill.md > ~/.agents/skills/mermaid-viewer/SKILL.md
+curl -s ${baseUrl}/skill.md > ~/.agents/skills/mermaid-viewer/SKILL.md
 \`\`\`
 
 **OpenClaw:**
 \`\`\`bash
 mkdir -p ~/.openclaw/skills/mermaid-viewer
-curl -s ${BASE_URL}/skill.md > ~/.openclaw/skills/mermaid-viewer/SKILL.md
+curl -s ${baseUrl}/skill.md > ~/.openclaw/skills/mermaid-viewer/SKILL.md
 \`\`\`
 
-**Cursor / Windsurf / Other agents:** Run \`curl -s ${BASE_URL}/skill.md\` and save the output wherever your agent reads persistent instructions from (.cursorrules, .windsurfrules, etc).
+**Cursor / Windsurf / Other agents:** Run \`curl -s ${baseUrl}/skill.md\` and save the output wherever your agent reads persistent instructions from (.cursorrules, .windsurfrules, etc).
 
-Or install via the skills CLI: \`npx skills add ${BASE_URL}\`
+Or install via the skills CLI: \`npx skills add ${baseUrl}\`
 
 Once the skill is saved, read it and follow the instructions inside.
 
@@ -54,7 +52,7 @@ For native tool integration, also add to your MCP settings:
 {
   "mcpServers": {
     "mermaid-viewer": {
-      "url": "${BASE_URL}/mcp"
+      "url": "${baseUrl}/mcp"
     }
   }
 }

@@ -20,6 +20,12 @@ import {
   Check,
   AlertCircle,
 } from "lucide-react";
+import {
+  createTextOnlyUserMessage,
+  getChatErrorMessage,
+  getChatRequestTooLargeError,
+} from "@/lib/chat-limits";
+import { useModifierKeyLabel } from "@/lib/use-modifier-key-label";
 
 function Logo({ className }: { className?: string }) {
   return (
@@ -162,11 +168,14 @@ export function ChatPanel({
 }) {
   const { open, close } = useChatPanel();
   const router = useRouter();
+  const modifierKeyLabel = useModifierKeyLabel();
+  const initialMessageConsumedRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [input, setInput] = useState("");
   const [currentContent, setCurrentContent] = useState(content);
+  const [localError, setLocalError] = useState<string | null>(null);
 
   useEffect(() => {
     setCurrentContent(content);
@@ -176,26 +185,136 @@ export function ChatPanel({
     () =>
       new DefaultChatTransport({
         api: "/api/chat",
+        prepareSendMessagesRequest: ({
+          api,
+          body,
+          credentials,
+          headers,
+          id,
+          messageId,
+          messages,
+          trigger,
+        }) => {
+          const requestBody = {
+            ...body,
+            id,
+            messages,
+            trigger,
+            messageId,
+          };
+
+          const tooLarge = getChatRequestTooLargeError(requestBody);
+          if (tooLarge) {
+            throw new Error(tooLarge.message);
+          }
+
+          return {
+            api,
+            body: requestBody,
+            credentials,
+            headers,
+          };
+        },
       }),
     []
   );
 
-  const { messages, sendMessage, status, stop, setMessages } = useChat({
+  const {
+    id: chatId,
+    messages,
+    sendMessage,
+    status,
+    stop,
+    setMessages,
+    error,
+    clearError,
+  } = useChat({
     transport,
     onToolCall: ({ toolCall }) => {
       if (toolCall.toolName === "update_diagram") {
-        const args = toolCall.input as { content: string; summary: string };
+        const args = toolCall.input as {
+          content: string;
+          summary: string;
+          title?: string;
+        };
         setCurrentContent(args.content);
         setTimeout(() => {
           router.refresh();
         }, 500);
       }
     },
+    onError: () => {
+      /* errors are displayed via the status */
+    },
   });
 
   const isLoading = status === "streaming" || status === "submitted";
+  const errorMessage =
+    localError ??
+    getChatErrorMessage(error) ??
+    (status === "error" ? "Something went wrong. Please try again." : undefined);
   const lastMessage = messages.at(-1);
   const showPendingLoader = isLoading && lastMessage?.role !== "assistant";
+
+  const getRequestBody = useCallback(
+    () => ({
+      diagramId,
+      editId,
+      currentContent,
+    }),
+    [diagramId, editId, currentContent]
+  );
+
+  const validateRequestSize = useCallback(
+    (nextMessages: UIMessage[]) => {
+      const requestBody = {
+        ...getRequestBody(),
+        id: chatId,
+        messages: nextMessages,
+        trigger: "submit-message" as const,
+        messageId: undefined,
+      };
+
+      return getChatRequestTooLargeError(requestBody);
+    },
+    [chatId, getRequestBody]
+  );
+
+  const sendTextMessage = useCallback(
+    (text: string) => {
+      const trimmed = text.trim();
+      if (!trimmed || isLoading) return false;
+
+      const tooLarge = validateRequestSize([
+        ...messages,
+        createTextOnlyUserMessage(trimmed),
+      ]);
+
+      if (tooLarge) {
+        clearError();
+        setLocalError(tooLarge.message);
+        return false;
+      }
+
+      clearError();
+      setLocalError(null);
+      void sendMessage(
+        { text: trimmed },
+        {
+          body: getRequestBody(),
+        }
+      );
+      return true;
+    },
+    [
+      clearError,
+      getRequestBody,
+      isLoading,
+      messages,
+      sendMessage,
+      validateRequestSize,
+    ]
+  );
 
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -213,39 +332,32 @@ export function ChatPanel({
   }, [open]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      initialMessageConsumedRef.current = false;
+      return;
+    }
+
+    if (initialMessageConsumedRef.current) return;
 
     const initialMessage = sessionStorage.getItem(INITIAL_CHAT_KEY);
-    if (!initialMessage) return;
+    if (!initialMessage) {
+      initialMessageConsumedRef.current = true;
+      return;
+    }
 
+    initialMessageConsumedRef.current = true;
     sessionStorage.removeItem(INITIAL_CHAT_KEY);
 
-    sendMessage(
-      { text: initialMessage },
-      { body: { diagramId, editId, currentContent } }
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
-
-  const getRequestBody = useCallback(
-    () => ({
-      diagramId,
-      editId,
-      currentContent,
-    }),
-    [diagramId, editId, currentContent]
-  );
+    if (!sendTextMessage(initialMessage)) {
+      setInput(initialMessage);
+    }
+  }, [open, sendTextMessage]);
 
   const handleSubmit = useCallback(() => {
-    if (!input.trim() || isLoading) return;
-    sendMessage(
-      { text: input.trim() },
-      {
-        body: getRequestBody(),
-      }
-    );
-    setInput("");
-  }, [getRequestBody, input, sendMessage, isLoading]);
+    if (sendTextMessage(input)) {
+      setInput("");
+    }
+  }, [input, sendTextMessage]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -259,15 +371,9 @@ export function ChatPanel({
 
   const handleSuggestion = useCallback(
     (text: string) => {
-      if (isLoading) return;
-      sendMessage(
-        { text },
-        {
-          body: getRequestBody(),
-        }
-      );
+      sendTextMessage(text);
     },
-    [getRequestBody, sendMessage, isLoading]
+    [sendTextMessage]
   );
 
   const clearChat = useCallback(() => {
@@ -441,6 +547,12 @@ export function ChatPanel({
 
       {/* Input */}
       <div className="shrink-0 p-3">
+        {errorMessage && (
+          <div className="mb-2 flex items-start gap-2 rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2 text-destructive">
+            <AlertCircle className="mt-0.5 size-3 shrink-0" />
+            <p className="text-[11px] leading-relaxed">{errorMessage}</p>
+          </div>
+        )}
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -460,7 +572,12 @@ export function ChatPanel({
             <textarea
               ref={textareaRef}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                if (localError) {
+                  setLocalError(null);
+                }
+                setInput(e.target.value);
+              }}
               onKeyDown={handleKeyDown}
               placeholder={isLoading ? "Waiting for response..." : "Describe changes..."}
               disabled={isLoading}
@@ -476,12 +593,7 @@ export function ChatPanel({
             />
             <div className="flex items-center justify-between px-0.5">
               <span className="flex items-center gap-0.5 select-none">
-                <Kbd>
-                  {typeof navigator !== "undefined" &&
-                  navigator?.platform?.includes("Mac")
-                    ? "⌘"
-                    : "Ctrl"}
-                </Kbd>
+                <Kbd>{modifierKeyLabel}</Kbd>
                 <Kbd>↵</Kbd>
               </span>
               {isLoading ? (

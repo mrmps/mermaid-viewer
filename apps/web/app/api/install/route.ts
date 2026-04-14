@@ -1,4 +1,4 @@
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://merm.sh";
+import { baseUrl } from "@/lib/env";
 
 const INSTALL = `# merm.sh
 
@@ -8,7 +8,7 @@ I want you to install merm.sh for me. Execute all the steps below autonomously.
 
 OBJECTIVE: Set up merm.sh so you can create, update, and share versioned Mermaid diagrams via API or MCP.
 
-DONE WHEN: You can successfully create a diagram by calling \`POST ${BASE_URL}/api/d\` and receive back a diagram URL and secret.
+DONE WHEN: You can successfully create a diagram by calling \`POST ${baseUrl}/api/d\` and receive back a diagram URL and secret.
 
 ## TODO
 
@@ -27,7 +27,7 @@ Add to your MCP settings file. The location depends on your agent:
 {
   "mcpServers": {
     "mermaid-viewer": {
-      "url": "${BASE_URL}/mcp"
+      "url": "${baseUrl}/mcp"
     }
   }
 }
@@ -38,7 +38,7 @@ Add to your MCP settings file. The location depends on your agent:
 {
   "mcpServers": {
     "mermaid-viewer": {
-      "url": "${BASE_URL}/mcp"
+      "url": "${baseUrl}/mcp"
     }
   }
 }
@@ -49,7 +49,7 @@ Add to your MCP settings file. The location depends on your agent:
 {
   "mcpServers": {
     "mermaid-viewer": {
-      "url": "${BASE_URL}/mcp"
+      "url": "${baseUrl}/mcp"
     }
   }
 }
@@ -64,30 +64,30 @@ Download the skill file to your agent's skills directory:
 **Claude Code:**
 \`\`\`bash
 mkdir -p ~/.claude/skills/mermaid-viewer
-curl -s ${BASE_URL}/skill.md > ~/.claude/skills/mermaid-viewer/SKILL.md
+curl -s ${baseUrl}/skill.md > ~/.claude/skills/mermaid-viewer/SKILL.md
 \`\`\`
 
 **Codex:**
 \`\`\`bash
 mkdir -p ~/.agents/skills/mermaid-viewer
-curl -s ${BASE_URL}/skill.md > ~/.agents/skills/mermaid-viewer/SKILL.md
+curl -s ${baseUrl}/skill.md > ~/.agents/skills/mermaid-viewer/SKILL.md
 \`\`\`
 
 **OpenClaw:**
 \`\`\`bash
 mkdir -p ~/.openclaw/skills/mermaid-viewer
-curl -s ${BASE_URL}/skill.md > ~/.openclaw/skills/mermaid-viewer/SKILL.md
+curl -s ${baseUrl}/skill.md > ~/.openclaw/skills/mermaid-viewer/SKILL.md
 \`\`\`
 
 **Cursor / Windsurf / Other agents:**
 \`\`\`bash
-curl -s ${BASE_URL}/skill.md
+curl -s ${baseUrl}/skill.md
 \`\`\`
 Save the output wherever your agent reads persistent instructions (\`.cursorrules\`, \`.windsurfrules\`, etc).
 
 Or use the skills CLI:
 \`\`\`bash
-npx skills add ${BASE_URL}
+npx skills add ${baseUrl}
 \`\`\`
 
 ## Verify Installation
@@ -95,7 +95,7 @@ npx skills add ${BASE_URL}
 Create a test diagram to confirm everything works:
 
 \`\`\`bash
-curl -X POST ${BASE_URL}/api/d \\
+curl -X POST ${baseUrl}/api/d \\
   -H "Content-Type: application/json" \\
   -d '{"content": "graph TD; A[Hello]-->B[World]", "title": "Test Diagram"}'
 \`\`\`
@@ -106,11 +106,11 @@ You should receive a JSON response like:
 {
   "id": "abc123",
   "editId": "xyz789",
-  "url": "${BASE_URL}/d/abc123",
-  "editUrl": "${BASE_URL}/e/xyz789",
+  "url": "${baseUrl}/d/abc123",
+  "editUrl": "${baseUrl}/e/xyz789",
   "secret": "...",
   "version": 1,
-  "skill": "${BASE_URL}/api/d/abc123/skill?secret=..."
+  "skill": "${baseUrl}/api/d/abc123/skill?secret=..."
 }
 \`\`\`
 
@@ -190,7 +190,7 @@ flowchart, sequence, class, state, entity-relationship, gantt, pie, quadrant, re
 1. Save the \`secret\` from create — it's returned only once and is required for updates.
 2. Content must be valid Mermaid syntax.
 3. Each update creates a new version — previous content is never lost.
-4. Always share the diagram URL (\`${BASE_URL}/d/:id\`) with the user.
+4. Always share the diagram URL (\`${baseUrl}/d/:id\`) with the user.
 5. The \`skill\` URL in responses points to a per-diagram SKILL.md you can share with other agents.
 6. Diagrams are free and public — anyone with the URL can view them.
 
