@@ -2,6 +2,7 @@ import { pgTable, text, integer, timestamp, serial, index } from "drizzle-orm/pg
 
 export const diagrams = pgTable("diagrams", {
   id: text("id").primaryKey(),
+  editId: text("edit_id").notNull().unique(),
   title: text("title").notNull().default("Untitled"),
   secret: text("secret").notNull(),
   currentVersion: integer("current_version").notNull().default(1),

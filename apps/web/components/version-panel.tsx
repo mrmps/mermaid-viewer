@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { VersionThumb } from "./version-thumb";
 import type { MermaidTheme } from "@/lib/mermaid-client";
 
@@ -23,17 +23,18 @@ export function VersionPanel({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
 
   function selectVersion(v: number) {
     const params = new URLSearchParams(searchParams.toString());
     params.set("v", String(v));
-    router.push(`/d/${diagramId}?${params.toString()}`);
+    router.push(`${pathname}?${params.toString()}`);
   }
 
   return (
-    <div className="w-52 shrink-0 flex flex-col overflow-y-auto" style={{ background: "var(--bg-app)", borderRight: "1px solid var(--border)" }}>
-      <div className="sticky top-0 z-10 px-3 py-2.5" style={{ background: "var(--bg-app)", borderBottom: "1px solid var(--border-subtle)" }}>
-        <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>
+    <div className="w-52 shrink-0 flex flex-col overflow-y-auto bg-background border-r border-border">
+      <div className="sticky top-0 z-10 px-3 py-2.5 bg-background border-b border-border/50">
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
           Versions
         </span>
       </div>
@@ -44,23 +45,18 @@ export function VersionPanel({
             <button
               key={v.version}
               onClick={() => selectVersion(v.version)}
-              className="group text-left rounded-xl overflow-hidden transition-all cursor-pointer"
-              style={{
-                background: active ? "var(--accent-soft)" : "var(--bg-surface)",
-                boxShadow: active ? "0 0 0 2px var(--accent)" : `0 0 0 1px var(--border-subtle)`,
-              }}
+              className={`group text-left rounded-xl overflow-hidden transition-[background-color,box-shadow] duration-150 cursor-pointer ${active ? "bg-accent ring-2 ring-accent" : "bg-secondary ring-1 ring-border/50"}`}
             >
               <div className="p-1.5">
                 <VersionThumb content={v.content} id={`${diagramId}-${v.version}`} theme={theme} />
               </div>
               <div className="px-2.5 pb-2 flex items-center justify-between">
                 <span
-                  className="text-xs font-medium"
-                  style={{ color: active ? "var(--accent)" : "var(--text-secondary)" }}
+                  className={`text-xs font-medium ${active ? "text-primary" : "text-secondary-foreground"}`}
                 >
                   v{v.version}
                 </span>
-                <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                <span className="text-[10px] text-muted-foreground tabular-nums">
                   {formatRelative(v.createdAt)}
                 </span>
               </div>

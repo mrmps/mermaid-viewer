@@ -31,10 +31,12 @@ export async function POST(request: NextRequest) {
   return Response.json(
     {
       id: result.id,
+      editId: result.editId,
       url: `${baseUrl}/d/${result.id}`,
-      editUrl: `${baseUrl}/d/${result.id}?secret=${result.secret}`,
+      editUrl: `${baseUrl}/e/${result.editId}`,
       secret: result.secret,
       version: result.version,
+      skill: `${baseUrl}/api/d/${result.id}/skill?secret=${result.secret}`,
     },
     { status: 201 }
   );

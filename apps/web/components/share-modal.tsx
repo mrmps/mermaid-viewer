@@ -1,312 +1,299 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useCallback } from "react";
+import { useMediaQuery } from "@/lib/use-media-query";
+import { Share2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+} from "@/components/ui/drawer";
 
-type Tab = "person" | "agent";
+function generateCollabPrompt({
+  title,
+  viewUrl,
+  editUrl,
+  apiUrl,
+  secret,
+}: {
+  title: string;
+  viewUrl: string;
+  editUrl: string;
+  apiUrl: string;
+  secret: string;
+  mcpUrl: string;
+}) {
+  return `"${title}" — ${viewUrl}
+
+Read: GET ${apiUrl}
+Update: PUT ${apiUrl} -H "Authorization: Bearer ${secret}" -H "Content-Type: text/plain" -d '<mermaid source>'
+Edit in browser: ${editUrl}
+
+Updates create new versions — nothing is overwritten.`;
+}
 
 export function ShareButton({
   diagramId,
+  editId,
   secret,
+  title,
 }: {
   diagramId: string;
+  editId?: string;
   secret?: string;
+  title: string;
+  content: string;
+  version: number;
 }) {
   const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState<Tab>("person");
-  const modalRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    function onClick(e: MouseEvent) {
-      if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener("keydown", onKey);
-    document.addEventListener("mousedown", onClick);
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.removeEventListener("mousedown", onClick);
-    };
-  }, [open]);
+  const isDesktop = useMediaQuery("(min-width: 640px)");
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const viewUrl = `${origin}/d/${diagramId}`;
+  const editUrl = editId ? `${origin}/e/${editId}` : null;
   const apiUrl = `${origin}/api/d/${diagramId}`;
+  const mcpUrl = `${origin}/mcp`;
+
+  const contentEl = (
+    <ShareContent
+      viewUrl={viewUrl}
+      editUrl={editUrl}
+      apiUrl={apiUrl}
+      mcpUrl={mcpUrl}
+      secret={secret}
+      title={title}
+    />
+  );
+
+  if (isDesktop) {
+    return (
+      <Dialog open={open} onOpenChange={setOpen}>
+        <Button size="sm" className="gap-1.5" onClick={() => setOpen(true)}>
+          <Share2 className="size-3.5" />
+          Share
+        </Button>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Share</DialogTitle>
+            <DialogDescription>
+              Share this diagram or invite a collaborator.
+            </DialogDescription>
+          </DialogHeader>
+          {contentEl}
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
-    <>
-      <button
-        onClick={() => setOpen(true)}
-        className="px-3 py-1.5 text-xs rounded-md transition-colors cursor-pointer"
-        style={{ background: "var(--accent)", color: "white" }}
-      >
+    <Drawer open={open} onOpenChange={setOpen}>
+      <Button size="sm" className="gap-1.5" onClick={() => setOpen(true)}>
+        <Share2 className="size-3.5" />
         Share
-      </button>
-
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div
-            ref={modalRef}
-            className="w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden"
-            style={{ background: "var(--bg-app)", border: "1px solid var(--border)" }}
-          >
-            {/* Tabs */}
-            <div className="flex border-b" style={{ borderColor: "var(--border)" }}>
-              <TabButton active={tab === "person"} onClick={() => setTab("person")}>
-                Share with a person
-              </TabButton>
-              <TabButton active={tab === "agent"} onClick={() => setTab("agent")}>
-                Share with an agent
-              </TabButton>
-            </div>
-
-            <div className="p-5">
-              {tab === "person" ? (
-                <PersonTab viewUrl={viewUrl} apiUrl={apiUrl} secret={secret} />
-              ) : (
-                <AgentTab diagramId={diagramId} apiUrl={apiUrl} secret={secret} />
-              )}
-            </div>
-
-            <div className="px-5 pb-4 flex justify-end">
-              <button
-                onClick={() => setOpen(false)}
-                className="px-3 py-1.5 text-xs rounded-md cursor-pointer transition-colors"
-                style={{ background: "var(--bg-surface)", color: "var(--text-secondary)" }}
-              >
-                Done
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
+      </Button>
+      <DrawerContent>
+        <DrawerHeader>
+          <DrawerTitle>Share</DrawerTitle>
+          <DrawerDescription>
+            Share this diagram or invite a collaborator.
+          </DrawerDescription>
+        </DrawerHeader>
+        <div className="px-4 pb-6">{contentEl}</div>
+      </DrawerContent>
+    </Drawer>
   );
 }
 
-function TabButton({
-  active,
-  onClick,
+function ShareContent({
+  viewUrl,
+  editUrl,
+  apiUrl,
+  mcpUrl,
+  secret,
+  title,
+}: {
+  viewUrl: string;
+  editUrl: string | null;
+  apiUrl: string;
+  mcpUrl: string;
+  secret?: string;
+  title: string;
+}) {
+  const canEdit = !!editUrl && !!secret;
+  const collabPrompt = canEdit
+    ? generateCollabPrompt({ title, viewUrl, editUrl, apiUrl, secret, mcpUrl })
+    : null;
+
+  return (
+    <div className="space-y-5">
+      {/* View link — always visible */}
+      <Block label="View link" desc="Anyone with this link can view the diagram.">
+        <CopyRow value={viewUrl} />
+      </Block>
+
+      {/* Edit link — only when user has edit access */}
+      {editUrl && (
+        <Block
+          label="Edit link"
+          desc="Anyone with this link can edit. Share carefully."
+        >
+          <CopyRow value={editUrl} />
+        </Block>
+      )}
+
+      {/* Copy edit instructions — only with edit access */}
+      {collabPrompt && (
+        <CopyInstructionsButton value={collabPrompt} />
+      )}
+
+      {/* View-only badge */}
+      {!editUrl && (
+        <div className="flex items-center gap-2 rounded-lg p-3 text-xs leading-relaxed text-muted-foreground bg-muted border border-border">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 16 16"
+            fill="currentColor"
+            className="size-3.5 shrink-0"
+          >
+            <path
+              fillRule="evenodd"
+              d="M8 1a3.5 3.5 0 0 0-3.5 3.5V7A1.5 1.5 0 0 0 3 8.5v5A1.5 1.5 0 0 0 4.5 15h7a1.5 1.5 0 0 0 1.5-1.5v-5A1.5 1.5 0 0 0 11.5 7V4.5A3.5 3.5 0 0 0 8 1Zm2 6V4.5a2 2 0 1 0-4 0V7h4Z"
+              clipRule="evenodd"
+            />
+          </svg>
+          <span>
+            View only. Ask the diagram owner for an edit link to contribute.
+          </span>
+        </div>
+      )}
+
+      {/* Advanced — raw API */}
+      <details className="group">
+        <summary className="text-xs font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground transition-[color] duration-150">
+          Raw API access
+        </summary>
+        <div className="space-y-3 mt-3">
+          <Block label="Read" desc="Returns all versions with content as JSON.">
+            <CopyRow value={`curl ${apiUrl}`} />
+          </Block>
+          {secret && (
+            <Block label="Update" desc="Creates a new version.">
+              <CopyBlock
+                value={`curl -X PUT ${apiUrl} \\\n  -H "Authorization: Bearer ${secret}" \\\n  -H "Content-Type: text/plain" \\\n  -d 'YOUR_MERMAID_CONTENT'`}
+              />
+            </Block>
+          )}
+        </div>
+      </details>
+    </div>
+  );
+}
+
+function Block({
+  label,
+  desc,
   children,
 }: {
-  active: boolean;
-  onClick: () => void;
+  label: string;
+  desc: string;
   children: React.ReactNode;
 }) {
   return (
-    <button
-      onClick={onClick}
-      className="flex-1 px-4 py-3 text-sm font-medium transition-colors cursor-pointer"
-      style={{
-        color: active ? "var(--text-primary)" : "var(--text-muted)",
-        borderBottom: active ? "2px solid var(--accent)" : "2px solid transparent",
-        background: active ? "var(--bg-surface)" : "transparent",
-      }}
-    >
+    <div>
+      <p className="text-sm font-medium text-foreground">{label}</p>
+      <p className="text-xs text-muted-foreground mb-2">{desc}</p>
       {children}
+    </div>
+  );
+}
+
+function CopyRow({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const copy = useCallback(async () => {
+    await navigator.clipboard.writeText(value);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [value]);
+
+  return (
+    <div
+      onClick={copy}
+      className="flex items-center gap-2 rounded-lg p-3 bg-muted border border-border cursor-pointer group hover:border-ring/40 transition-[border-color] duration-150"
+    >
+      <pre className="flex-1 min-w-0 text-xs font-mono text-muted-foreground truncate">
+        {value}
+      </pre>
+      <span className="shrink-0 text-[10px] font-medium text-muted-foreground group-hover:text-foreground transition-[color] duration-150">
+        {copied ? "Copied!" : "Copy"}
+      </span>
+    </div>
+  );
+}
+
+function CopyInstructionsButton({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const copy = useCallback(async () => {
+    await navigator.clipboard.writeText(value);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [value]);
+
+  return (
+    <button
+      onClick={copy}
+      className="w-full flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium cursor-pointer border border-border bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-[background-color] duration-150"
+    >
+      {copied ? (
+        <>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="size-4">
+            <path fillRule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clipRule="evenodd" />
+          </svg>
+          Copied!
+        </>
+      ) : (
+        <>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="size-4">
+            <path d="M5.5 3.5A1.5 1.5 0 0 1 7 2h2.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 1 .439 1.061V9.5A1.5 1.5 0 0 1 12 11V3.5A1.5 1.5 0 0 0 10.5 2H7a1.5 1.5 0 0 0-1.5 1.5ZM3.5 6A1.5 1.5 0 0 0 2 7.5v6A1.5 1.5 0 0 0 3.5 15h5a1.5 1.5 0 0 0 1.5-1.5v-6A1.5 1.5 0 0 0 8.5 6h-5Z" />
+          </svg>
+          Copy edit instructions
+        </>
+      )}
     </button>
   );
 }
 
-function PersonTab({
-  viewUrl,
-  apiUrl,
-  secret,
-}: {
-  viewUrl: string;
-  apiUrl: string;
-  secret?: string;
-}) {
-  return (
-    <div className="space-y-5">
-      {/* View link */}
-      <div>
-        <Label>View-only link</Label>
-        <Desc>Anyone with this link can view the diagram and all versions.</Desc>
-        <CopyBlock value={viewUrl} />
-      </div>
-
-      {secret && (
-        <>
-          {/* Collaborate link */}
-          <div>
-            <Label>Collaborate link</Label>
-            <Desc>
-              Share this with teammates who need to push updates. It includes the
-              edit secret in the URL.
-            </Desc>
-            <CopyBlock value={`${viewUrl}?secret=${secret}`} />
-          </div>
-
-          {/* CLI command */}
-          <div>
-            <Label>Update from CLI</Label>
-            <Desc>
-              Give your collaborator this command. They just replace the diagram
-              content.
-            </Desc>
-            <CopyBlock
-              value={`curl -X PUT ${apiUrl} \\
-  -H "Authorization: Bearer ${secret}" \\
-  -H "Content-Type: text/plain" \\
-  -d 'graph TD
-    A[Your Diagram] --> B[Here]'`}
-              multiline
-            />
-          </div>
-        </>
-      )}
-
-      {!secret && (
-        <div
-          className="rounded-lg p-3 text-xs"
-          style={{ background: "var(--bg-surface)", color: "var(--text-muted)" }}
-        >
-          You&apos;re viewing this diagram without edit access. To share edit
-          access, use the edit URL you received when creating the diagram.
-        </div>
-      )}
-    </div>
-  );
-}
-
-function AgentTab({
-  diagramId,
-  apiUrl,
-  secret,
-}: {
-  diagramId: string;
-  apiUrl: string;
-  secret?: string;
-}) {
-  const envBlock = secret
-    ? `MERMAID_DIAGRAM_ID=${diagramId}
-MERMAID_API_URL=${apiUrl}
-MERMAID_SECRET=${secret}`
-    : `MERMAID_DIAGRAM_ID=${diagramId}
-MERMAID_API_URL=${apiUrl}`;
-
-  const agentInstructions = secret
-    ? `# Read current diagram
-curl ${apiUrl}
-
-# Update diagram (creates new version)
-curl -X PUT ${apiUrl} \\
-  -H "Authorization: Bearer ${secret}" \\
-  -H "Content-Type: text/plain" \\
-  -d 'YOUR_MERMAID_CONTENT'
-
-# Response: { "id": "${diagramId}", "version": N }`
-    : `# Read current diagram
-curl ${apiUrl}
-
-# Response includes all versions with content`;
-
-  return (
-    <div className="space-y-5">
-      {/* Agent-readable config */}
-      <div>
-        <Label>Environment variables</Label>
-        <Desc>
-          Add these to your agent&apos;s environment or paste into the system
-          prompt.
-        </Desc>
-        <CopyBlock value={envBlock} multiline />
-      </div>
-
-      {/* Commands */}
-      <div>
-        <Label>Agent commands</Label>
-        <Desc>
-          Give your agent these curl commands to read and update the diagram.
-        </Desc>
-        <CopyBlock value={agentInstructions} multiline />
-      </div>
-
-      {/* Structured JSON */}
-      <div>
-        <Label>Structured config (JSON)</Label>
-        <Desc>For agents that prefer structured input.</Desc>
-        <CopyBlock
-          value={JSON.stringify(
-            {
-              diagram_id: diagramId,
-              api_url: apiUrl,
-              ...(secret ? { secret } : {}),
-              endpoints: {
-                read: `GET ${apiUrl}`,
-                ...(secret
-                  ? { update: `PUT ${apiUrl} (Authorization: Bearer <secret>)` }
-                  : {}),
-              },
-            },
-            null,
-            2
-          )}
-          multiline
-        />
-      </div>
-    </div>
-  );
-}
-
-function Label({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="text-xs font-semibold mb-0.5" style={{ color: "var(--text-primary)" }}>
-      {children}
-    </div>
-  );
-}
-
-function Desc({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="text-xs mb-2" style={{ color: "var(--text-muted)" }}>
-      {children}
-    </div>
-  );
-}
-
-function CopyBlock({
-  value,
-  multiline,
-}: {
-  value: string;
-  multiline?: boolean;
-}) {
+function CopyBlock({ value }: { value: string }) {
   const [copied, setCopied] = useState(false);
 
-  async function copy() {
+  const copy = useCallback(async () => {
     await navigator.clipboard.writeText(value);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  }
+  }, [value]);
 
   return (
-    <div className="relative group">
-      <pre
-        className={`text-xs font-mono rounded-lg p-3 overflow-x-auto ${
-          multiline ? "whitespace-pre" : "whitespace-nowrap"
-        }`}
-        style={{
-          background: "var(--bg-inset)",
-          color: "var(--text-secondary)",
-          border: "1px solid var(--border-subtle)",
-          maxHeight: multiline ? "200px" : undefined,
-        }}
-      >
+    <div
+      onClick={copy}
+      className="relative rounded-lg border border-border bg-muted cursor-pointer group hover:border-ring/40 transition-[border-color] duration-150"
+    >
+      <pre className="p-3 text-xs font-mono text-muted-foreground whitespace-pre-wrap break-words max-h-48 overflow-y-auto">
         {value}
       </pre>
-      <button
-        onClick={copy}
-        className="absolute top-2 right-2 px-2 py-1 text-[10px] rounded-md opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-        style={{ background: "var(--bg-surface)", color: "var(--text-secondary)", border: "1px solid var(--border)" }}
-      >
+      <span className="absolute top-2 right-2 text-[10px] font-medium text-muted-foreground opacity-0 group-hover:opacity-100 transition-[opacity,color] duration-150 bg-background border border-border rounded-md px-2 py-1 shadow-sm">
         {copied ? "Copied!" : "Copy"}
-      </button>
+      </span>
     </div>
   );
 }

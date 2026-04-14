@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_BASE_URL ?? "https://mermaid-viewer.com"
+    process.env.NEXT_PUBLIC_BASE_URL ?? "https://mermaidsh.com"
   ),
   title: {
     default: "mermaid-viewer — Versioned Mermaid Diagrams for AI Agents",
@@ -78,8 +78,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body
-        className="min-h-full flex flex-col"
-        style={{ background: "var(--bg-app)", color: "var(--text-primary)" }}
+        className="min-h-full flex flex-col bg-background text-foreground"
       >
         <ThemeInit />
         {children}

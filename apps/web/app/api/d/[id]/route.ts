@@ -18,6 +18,10 @@ export async function GET(
     );
   }
 
+  const proto = request.headers.get("x-forwarded-proto") ?? "http";
+  const host = request.headers.get("host") ?? new URL(request.url).host;
+  const baseUrl = `${proto}://${host}`;
+
   return Response.json({
     id: data.diagram.id,
     title: data.diagram.title,
@@ -29,6 +33,7 @@ export async function GET(
       content: v.content,
       createdAt: v.createdAt,
     })),
+    skill: `${baseUrl}/api/d/${data.diagram.id}/skill`,
   });
 }
 
@@ -40,6 +45,7 @@ export async function PUT(
 
   let content: string;
   let secret: string | undefined;
+  let editId: string | undefined;
   let title: string | undefined;
 
   const contentType = request.headers.get("content-type") ?? "";
@@ -48,6 +54,7 @@ export async function PUT(
     const body = await request.json();
     content = body.content;
     secret = body.secret;
+    editId = body.editId;
     title = body.title;
   } else {
     content = await request.text();
@@ -66,7 +73,7 @@ export async function PUT(
     );
   }
 
-  if (!secret) {
+  if (!secret && !editId) {
     return Response.json(
       { error: "unauthorized", message: "Secret is required. Provide via Authorization: Bearer <secret> header or in JSON body." },
       { status: 401 }
@@ -76,6 +83,7 @@ export async function PUT(
   const result = await addVersion({
     diagramId: id,
     secret,
+    editId,
     content: content.trim(),
     title,
   });
@@ -96,5 +104,6 @@ export async function PUT(
     id,
     url: `${baseUrl}/d/${id}`,
     version: result.version,
+    skill: `${baseUrl}/api/d/${id}/skill`,
   });
 }

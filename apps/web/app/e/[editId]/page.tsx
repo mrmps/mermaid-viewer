@@ -1,4 +1,4 @@
-import { getDiagram } from "@mermaid-viewer/db";
+import { getDiagramByEditId } from "@mermaid-viewer/db";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { MermaidRenderer } from "@/components/mermaid-renderer";
@@ -17,10 +17,10 @@ import type { Metadata } from "next";
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ editId: string }>;
 }): Promise<Metadata> {
-  const { id } = await params;
-  const data = await getDiagram({ id });
+  const { editId } = await params;
+  const data = await getDiagramByEditId({ editId });
 
   if (!data) {
     return {
@@ -32,21 +32,22 @@ export async function generateMetadata({
 
   const { diagram, currentVersion } = data;
   const title =
-    diagram.title !== "Untitled" ? diagram.title : `Diagram ${id}`;
+    diagram.title !== "Untitled" ? diagram.title : `Diagram ${diagram.id}`;
   const snippet = currentVersion.content.slice(0, 120).replace(/\n/g, " ");
   const description = `${title} — a versioned Mermaid diagram (v${currentVersion.version}). ${snippet}`;
 
   return {
     title,
     description,
+    robots: { index: false, follow: false },
     alternates: {
-      canonical: `/d/${id}`,
+      canonical: `/d/${diagram.id}`,
     },
     openGraph: {
       title: `${title} | mermaid-viewer`,
       description,
       type: "article",
-      url: `/d/${id}`,
+      url: `/d/${diagram.id}`,
     },
     twitter: {
       card: "summary_large_image",
@@ -56,19 +57,19 @@ export async function generateMetadata({
   };
 }
 
-export default async function DiagramPage({
+export default async function EditDiagramPage({
   params,
   searchParams,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ editId: string }>;
   searchParams: Promise<{ v?: string; theme?: string }>;
 }) {
-  const { id } = await params;
+  const { editId } = await params;
   const { v, theme: themeParam } = await searchParams;
   const version = v ? parseInt(v, 10) : undefined;
   const theme: MermaidTheme = (themeParam as MermaidTheme) || "auto";
 
-  const data = await getDiagram({ id, version });
+  const data = await getDiagramByEditId({ editId, version });
   if (!data) notFound();
 
   const { diagram, currentVersion, allVersions } = data;
@@ -97,7 +98,7 @@ export default async function DiagramPage({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <HistoryTracker id={id} title={diagram.title} />
+        <HistoryTracker id={diagram.id} title={diagram.title} />
 
         {/* Header */}
         <header
@@ -120,7 +121,7 @@ export default async function DiagramPage({
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <ThemePicker current={theme} diagramId={id} />
+            <ThemePicker current={theme} diagramId={diagram.id} />
             <div className="w-px h-5 bg-border" />
             <ModeToggle />
             <div className="w-px h-5 bg-border" />
@@ -128,7 +129,9 @@ export default async function DiagramPage({
             <CopyImageButton content={currentVersion.content} theme={theme} />
             <ExcalidrawButton content={currentVersion.content} />
             <ShareButton
-              diagramId={id}
+              diagramId={diagram.id}
+              editId={editId}
+              secret={diagram.secret}
               title={diagram.title}
               content={currentVersion.content}
               version={currentVersion.version}
@@ -142,7 +145,7 @@ export default async function DiagramPage({
             <VersionPanel
               versions={versionsForPanel}
               currentVersion={currentVersion.version}
-              diagramId={id}
+              diagramId={diagram.id}
               theme={theme}
             />
           </Suspense>
@@ -153,7 +156,8 @@ export default async function DiagramPage({
 
           <SourcePanel
             content={currentVersion.content}
-            diagramId={id}
+            diagramId={diagram.id}
+            editId={editId}
           />
         </div>
       </div>
