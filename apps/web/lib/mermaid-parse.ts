@@ -8,7 +8,7 @@ async function getMermaid() {
   if (!mermaidInstance) {
     try {
       mermaidInstance = (await import("mermaid")).default;
-      mermaidInstance.initialize({ startOnLoad: false, securityLevel: "loose" });
+      mermaidInstance.initialize({ startOnLoad: false, securityLevel: "antiscript" });
     } catch {
       initFailed = true;
       return null;

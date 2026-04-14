@@ -300,47 +300,33 @@ function getUIMode(): "dark" | "light" {
   return document.documentElement.classList.contains("dark") ? "dark" : "light";
 }
 
-function sanitizeSvg(svg: string): string {
-  // Mermaid emits <br> as unclosed HTML in SVG output (known bug:
-  // https://github.com/mermaid-js/mermaid/issues/1766). Browsers always
-  // serialize <br> without a closing slash via innerHTML, making the SVG
-  // invalid XML. Convert all HTML void tags to self-closing form.
-  const fixedSvg = svg.replace(/<(br|hr|img|input|col|embed|source|track|wbr)(\s[^>]*)?\s*>/gi, "<$1$2/>");
+export function sanitizeSvg(svg: string): string {
+  // Parse as HTML — the browser's HTML parser handles bare <br>, unclosed
+  // elements, and all HTML-isms inside foreignObject correctly.
+  // This avoids the XML parsing that caused parseerror rendering bugs.
+  const doc = new DOMParser().parseFromString(svg, "text/html");
+  const svgEl = doc.querySelector("svg");
+  if (!svgEl) return "";
 
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(fixedSvg, "image/svg+xml");
+  svgEl.querySelectorAll("script").forEach((n) => n.remove());
 
-  // DOMParser returns a <parsererror> document instead of throwing when XML
-  // is malformed. Detect it and surface the error.
-  const parseError = doc.querySelector("parsererror");
-  if (parseError) {
-    throw new Error(
-      `Diagram produced invalid SVG: ${parseError.textContent?.slice(0, 200)}`,
-    );
-  }
-
-  doc.querySelectorAll("script").forEach((node) => node.remove());
-
-  for (const element of doc.querySelectorAll("*")) {
-    for (const attr of [...element.attributes]) {
+  for (const el of svgEl.querySelectorAll("*")) {
+    for (const attr of [...el.attributes]) {
       const name = attr.name.toLowerCase();
-      const value = attr.value.trim().toLowerCase();
-
       if (name.startsWith("on")) {
-        element.removeAttribute(attr.name);
+        el.removeAttribute(attr.name);
         continue;
       }
-
       if (
         (name === "href" || name === "xlink:href") &&
-        value.startsWith("javascript:")
+        attr.value.trim().toLowerCase().startsWith("javascript:")
       ) {
-        element.removeAttribute(attr.name);
+        el.removeAttribute(attr.name);
       }
     }
   }
 
-  return new XMLSerializer().serializeToString(doc);
+  return svgEl.outerHTML;
 }
 
 async function initMermaid(theme: MermaidTheme, look: MermaidLook = "classic") {
