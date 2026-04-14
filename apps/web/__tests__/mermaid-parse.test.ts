@@ -109,6 +109,49 @@ describe("validateMermaid", () => {
     expect(parse).toHaveBeenCalledTimes(1);
   });
 
+  it("serializes concurrent validations while the temporary DOM is installed", async () => {
+    let parseCalls = 0;
+    let resolveFirstParse!: () => void;
+    let signalFirstParseStarted!: () => void;
+    const firstParseStarted = new Promise<void>((resolve) => {
+      signalFirstParseStarted = resolve;
+    });
+    const firstParseReleased = new Promise<void>((resolve) => {
+      resolveFirstParse = resolve;
+    });
+
+    vi.doMock("mermaid", () => ({
+      default: {
+        initialize: vi.fn(),
+        parse: vi.fn(async () => {
+          parseCalls += 1;
+
+          if (parseCalls === 1) {
+            signalFirstParseStarted();
+            await firstParseReleased;
+          }
+        }),
+      },
+    }));
+
+    const { validateMermaid } = await import("../lib/mermaid-parse");
+
+    const firstValidation = validateMermaid("graph TD; A-->B");
+    await firstParseStarted;
+
+    const secondValidation = validateMermaid("graph TD; B-->C");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(parseCalls).toBe(1);
+
+    resolveFirstParse();
+
+    await expect(
+      Promise.all([firstValidation, secondValidation]),
+    ).resolves.toEqual([{ ok: true }, { ok: true }]);
+    expect(parseCalls).toBe(2);
+  });
+
   it("fails closed when Mermaid cannot initialize", async () => {
     vi.doMock("mermaid", () => ({
       default: {

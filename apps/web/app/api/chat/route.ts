@@ -12,20 +12,29 @@ import { z } from "zod";
 import { addVersion, getDiagram } from "@mermaid-viewer/db";
 import {
   getChatRequestTooLargeMessage,
+  getCurrentContentTooLargeMessage,
   getUtf8ByteLength,
   MAX_CHAT_MESSAGES,
   MAX_CHAT_REQUEST_BYTES,
+  MAX_CURRENT_CONTENT_BYTES,
 } from "@/lib/chat-limits";
 import { environment } from "@/lib/env";
 
 const updateDiagramSchema = z.object({
   content: z.string().describe("The complete updated Mermaid diagram code"),
   summary: z.string().describe("A brief one-line summary of what was changed"),
+  title: z
+    .string()
+    .optional()
+    .describe(
+      "New diagram title (3-6 words). Set this when the current title is 'Untitled' or when the user asks to rename. Omit to keep the existing title."
+    ),
 });
 const updateDiagramOutputSchema = z.union([
   z.object({
     success: z.literal(true),
     version: z.number(),
+    title: z.string().optional(),
   }),
   z.object({
     success: z.literal(false),
@@ -125,8 +134,22 @@ export async function POST(req: Request) {
     );
   }
 
+  const currentContentBytes =
+    typeof currentContent === "string" ? getUtf8ByteLength(currentContent) : 0;
+  if (currentContentBytes > MAX_CURRENT_CONTENT_BYTES) {
+    return Response.json(
+      {
+        error: "payload_too_large",
+        message: getCurrentContentTooLargeMessage(currentContentBytes),
+      },
+      { status: 413 }
+    );
+  }
+
   // Fetch version history from DB — cap to last 10 versions to keep prompt size reasonable
   const diagramData = await getDiagram({ id: diagramId });
+  const currentTitle = diagramData?.diagram.title ?? "Untitled";
+  const isUntitled = currentTitle === "Untitled";
   const allVersions = diagramData
     ? diagramData.allVersions.map((v) => ({
         version: v.version,
@@ -154,6 +177,8 @@ export async function POST(req: Request) {
     system: `You are a Mermaid diagram assistant. You help users create, modify, and improve Mermaid diagrams through conversation.
 
 ## Current Diagram
+Title: ${currentTitle}${isUntitled ? " (not yet named — pick a descriptive title on your next update)" : ""}
+
 \`\`\`mermaid
 ${currentContent}
 \`\`\`
@@ -167,25 +192,38 @@ ${versionHistoryBlock}
 - When the user asks to restore a previous version (e.g. "restore v3"), find that version in the version history and call update_diagram with its content.
 - Support all Mermaid diagram types: flowchart, sequence, class, state, ER, gantt, pie, mindmap, timeline, etc.
 - Write clean, well-formatted Mermaid syntax.
-- Be concise in your responses.`,
+- Be concise in your responses.
+
+## Naming
+${
+  isUntitled
+    ? "- The diagram is currently 'Untitled'. Whenever you call update_diagram, include a concise, descriptive title (3-6 words, Title Case, no trailing punctuation) that reflects what the diagram depicts. Infer it from the diagram content and the user's intent — do not ask the user to name it."
+    : "- The diagram already has a title. Only set the title field if the user explicitly asks to rename it, or if the diagram's subject has changed meaningfully."
+}`,
     messages,
     tools: {
       update_diagram: tool({
         description: updateDiagramDescription,
         inputSchema: zodSchema(updateDiagramSchema),
         outputSchema: zodSchema(updateDiagramOutputSchema),
-        execute: async ({ content }: UpdateDiagramInput) => {
+        execute: async ({ content, title }: UpdateDiagramInput) => {
+          const trimmedTitle = title?.trim();
           const result = await addVersion({
             diagramId,
             editId,
             content,
+            title: trimmedTitle || undefined,
           });
 
           if ("error" in result) {
             return { success: false as const, error: result.error };
           }
 
-          return { success: true as const, version: result.version };
+          return {
+            success: true as const,
+            version: result.version,
+            ...(trimmedTitle ? { title: trimmedTitle } : {}),
+          };
         },
       }),
     },

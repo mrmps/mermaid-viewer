@@ -1,15 +1,15 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import { useTheme } from "@/components/theme-provider";
 
 export function ModeToggle() {
   const { forcedTheme, resolvedTheme, setTheme } = useTheme();
-  const mounted = useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false
-  );
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const disabled = !mounted || !!forcedTheme;
   const isDark = resolvedTheme === "dark";

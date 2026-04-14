@@ -1,6 +1,6 @@
 import { getDiagram } from "@mermaid-viewer/db";
 import { generateSkillContent } from "@/lib/skill";
-import { getBaseUrl } from "@/lib/utils";
+import { baseUrl } from "@/lib/env";
 import { NextRequest } from "next/server";
 
 export async function GET(
@@ -28,8 +28,6 @@ export async function GET(
       { status: 401 }
     );
   }
-
-  const baseUrl = getBaseUrl(request);
 
   const title =
     diagram.title !== "Untitled" ? diagram.title : `Diagram ${id}`;

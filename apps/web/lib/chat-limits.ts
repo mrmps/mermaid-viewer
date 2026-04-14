@@ -2,6 +2,7 @@ import type { UIMessage } from "ai";
 
 export const MAX_CHAT_MESSAGES = 50;
 export const MAX_CHAT_REQUEST_BYTES = 1_000_000;
+export const MAX_CURRENT_CONTENT_BYTES = 50_000;
 
 const utf8Encoder = new TextEncoder();
 
@@ -34,6 +35,10 @@ export function formatByteCount(bytes: number): string {
 
 export function getChatRequestTooLargeMessage(actualBytes: number): string {
   return `Chat request is too large (${formatByteCount(actualBytes)}). The limit is ${formatByteCount(MAX_CHAT_REQUEST_BYTES)}. Clear chat history or split the article into smaller parts and try again.`;
+}
+
+export function getCurrentContentTooLargeMessage(actualBytes: number): string {
+  return `Diagram content is too large (${formatByteCount(actualBytes)}). The limit is ${formatByteCount(MAX_CURRENT_CONTENT_BYTES)}. Shrink the diagram and try again.`;
 }
 
 export function getChatRequestTooLargeError(

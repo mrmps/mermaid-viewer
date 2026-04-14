@@ -1,8 +1,15 @@
 import { createDiagram } from "@mermaid-viewer/db";
 import { validateMermaid } from "@/lib/mermaid-parse";
 import { getMermaidValidationErrorResponse } from "@/lib/mermaid-validation-response";
-import { getBaseUrl } from "@/lib/utils";
+import { prepareMermaidSource } from "@/lib/mermaid-source";
+import { baseUrl } from "@/lib/env";
 import { NextRequest } from "next/server";
+import { z } from "zod";
+
+const createDiagramSchema = z.object({
+  content: z.string(),
+  title: z.string().optional(),
+});
 
 export async function POST(request: NextRequest) {
   let content: string;
@@ -11,9 +18,30 @@ export async function POST(request: NextRequest) {
   const contentType = request.headers.get("content-type") ?? "";
 
   if (contentType.includes("application/json")) {
-    const body = await request.json();
-    content = body.content;
-    title = body.title;
+    let rawBody: unknown;
+    try {
+      rawBody = await request.json();
+    } catch {
+      return Response.json(
+        { error: "bad_request", message: "Invalid JSON body" },
+        { status: 400 }
+      );
+    }
+
+    const parsed = createDiagramSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return Response.json(
+        {
+          error: "bad_request",
+          message: "Invalid request body",
+          issues: parsed.error.issues,
+        },
+        { status: 400 }
+      );
+    }
+
+    content = parsed.data.content;
+    title = parsed.data.title;
   } else {
     content = await request.text();
   }
@@ -25,14 +53,14 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const validation = await validateMermaid(content.trim());
+  const prepared = prepareMermaidSource(content.trim());
+
+  const validation = await validateMermaid(prepared);
   if (!validation.ok) {
     return getMermaidValidationErrorResponse(validation);
   }
 
-  const result = await createDiagram({ content: content.trim(), title });
-
-  const baseUrl = getBaseUrl(request);
+  const result = await createDiagram({ content: prepared, title });
 
   return Response.json(
     {

@@ -1,13 +1,11 @@
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
 
-const optionalUrl = z.string().url().optional();
-
 export const environment = createEnv({
   server: {
-    DATABASE_URL: optionalUrl,
+    DATABASE_URL: z.url().optional(),
     OPENROUTER_API_KEY: z.string().min(1).optional(),
-    UPSTASH_REDIS_REST_URL: optionalUrl,
+    UPSTASH_REDIS_REST_URL: z.url().optional(),
     UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
     NODE_ENV: z
       .enum(["development", "production", "test"])
@@ -27,4 +25,4 @@ export const environment = createEnv({
 });
 
 export const baseUrl = environment.NEXT_PUBLIC_BASE_URL;
-export const isDevelopment = process.env.NODE_ENV === "development";
+export const isDevelopment = environment.NODE_ENV === "development";

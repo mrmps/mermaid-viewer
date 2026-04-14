@@ -1,8 +1,28 @@
 import { getDiagram, addVersion, updateTitle, deleteDiagram } from "@mermaid-viewer/db";
 import { validateMermaid } from "@/lib/mermaid-parse";
 import { getMermaidValidationErrorResponse } from "@/lib/mermaid-validation-response";
-import { getBaseUrl } from "@/lib/utils";
+import { prepareMermaidSource } from "@/lib/mermaid-source";
+import { baseUrl } from "@/lib/env";
 import { NextRequest } from "next/server";
+import { z } from "zod";
+
+const updateVersionSchema = z.object({
+  content: z.string(),
+  secret: z.string().optional(),
+  editId: z.string().optional(),
+  title: z.string().optional(),
+});
+
+const patchTitleSchema = z.object({
+  title: z.string().optional(),
+  secret: z.string().optional(),
+  editId: z.string().optional(),
+});
+
+const deleteSchema = z.object({
+  secret: z.string().optional(),
+  editId: z.string().optional(),
+});
 
 export async function GET(
   request: NextRequest,
@@ -20,8 +40,6 @@ export async function GET(
       { status: 404 }
     );
   }
-
-  const baseUrl = getBaseUrl(request);
 
   return Response.json({
     id: data.diagram.id,
@@ -52,11 +70,32 @@ export async function PUT(
   const contentType = request.headers.get("content-type") ?? "";
 
   if (contentType.includes("application/json")) {
-    const body = await request.json();
-    content = body.content;
-    secret = body.secret;
-    editId = body.editId;
-    title = body.title;
+    let rawBody: unknown;
+    try {
+      rawBody = await request.json();
+    } catch {
+      return Response.json(
+        { error: "bad_request", message: "Invalid JSON body" },
+        { status: 400 }
+      );
+    }
+
+    const parsed = updateVersionSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return Response.json(
+        {
+          error: "bad_request",
+          message: "Invalid request body",
+          issues: parsed.error.issues,
+        },
+        { status: 400 }
+      );
+    }
+
+    content = parsed.data.content;
+    secret = parsed.data.secret;
+    editId = parsed.data.editId;
+    title = parsed.data.title;
   } else {
     content = await request.text();
   }
@@ -81,7 +120,9 @@ export async function PUT(
     );
   }
 
-  const validation = await validateMermaid(content.trim());
+  const prepared = prepareMermaidSource(content.trim());
+
+  const validation = await validateMermaid(prepared);
   if (!validation.ok) {
     return getMermaidValidationErrorResponse(validation);
   }
@@ -90,7 +131,7 @@ export async function PUT(
     diagramId: id,
     secret,
     editId,
-    content: content.trim(),
+    content: prepared,
     title,
   });
 
@@ -101,8 +142,6 @@ export async function PUT(
       { status }
     );
   }
-
-  const baseUrl = getBaseUrl(request);
 
   return Response.json({
     id,
@@ -118,15 +157,29 @@ export async function PATCH(
 ) {
   const { id } = await params;
 
-  let body: { title?: string; secret?: string; editId?: string };
+  let rawBody: unknown;
   try {
-    body = await request.json();
+    rawBody = await request.json();
   } catch {
     return Response.json(
       { error: "bad_request", message: "Invalid JSON body" },
       { status: 400 }
     );
   }
+
+  const parsed = patchTitleSchema.safeParse(rawBody);
+  if (!parsed.success) {
+    return Response.json(
+      {
+        error: "bad_request",
+        message: "Invalid request body",
+        issues: parsed.error.issues,
+      },
+      { status: 400 }
+    );
+  }
+
+  const body = parsed.data;
 
   const authHeader = request.headers.get("authorization");
   const secret = authHeader?.startsWith("Bearer ")
@@ -184,10 +237,9 @@ export async function DELETE(
   const contentType = request.headers.get("content-type") ?? "";
 
   if (contentType.includes("application/json")) {
+    let rawBody: unknown;
     try {
-      const body = await request.json();
-      secret = body.secret;
-      editId = body.editId;
+      rawBody = await request.json();
     } catch {
       return Response.json(
         {
@@ -197,6 +249,21 @@ export async function DELETE(
         { status: 400 }
       );
     }
+
+    const parsed = deleteSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return Response.json(
+        {
+          error: "bad_request",
+          message: "Invalid request body",
+          issues: parsed.error.issues,
+        },
+        { status: 400 }
+      );
+    }
+
+    secret = parsed.data.secret;
+    editId = parsed.data.editId;
   }
 
   const authHeader = request.headers.get("authorization");

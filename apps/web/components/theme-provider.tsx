@@ -91,18 +91,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       setSystemTheme(event.matches ? "dark" : "light");
     };
 
-    if (typeof mediaQueryList.addEventListener === "function") {
-      mediaQueryList.addEventListener("change", handleMediaChange);
-
-      return () => {
-        mediaQueryList.removeEventListener("change", handleMediaChange);
-      };
-    }
-
-    mediaQueryList.addListener(handleMediaChange);
+    mediaQueryList.addEventListener("change", handleMediaChange);
 
     return () => {
-      mediaQueryList.removeListener(handleMediaChange);
+      mediaQueryList.removeEventListener("change", handleMediaChange);
     };
   }, []);
 

@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { createDiagram, getDiagram, addVersion } from "@mermaid-viewer/db";
-import { getBaseUrl } from "@/lib/utils";
+import { baseUrl } from "@/lib/env";
 import { z } from "zod";
 
 const CORS_HEADERS: Record<string, string> = {
@@ -251,7 +251,7 @@ export async function POST(request: Request) {
     sessionIdGenerator: undefined,
     enableJsonResponse: true,
   });
-  const server = createMcpServer(getBaseUrl(request));
+  const server = createMcpServer(baseUrl);
   await server.connect(transport);
 
   const response = await transport.handleRequest(request);
@@ -266,7 +266,6 @@ export async function GET(request: Request) {
     return new Response("Method Not Allowed", { status: 405, headers: CORS_HEADERS });
   }
 
-  const baseUrl = getBaseUrl(request);
   return Response.json(
     {
       name: "mermaid-viewer",

@@ -21,10 +21,8 @@ vi.mock("@/lib/mermaid-parse", () => ({
   validateMermaid: (...args: unknown[]) => mockValidateMermaid(...args),
 }));
 
-vi.mock("@/lib/utils", () => ({
-  getBaseUrl: () => "https://merm.sh",
-  cn: (...args: unknown[]) => args.join(" "),
-  formatRelative: () => "just now",
+vi.mock("@/lib/env", () => ({
+  baseUrl: "https://merm.sh",
 }));
 
 import { NextRequest } from "next/server";

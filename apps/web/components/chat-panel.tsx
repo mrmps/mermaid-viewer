@@ -232,7 +232,11 @@ export function ChatPanel({
     transport,
     onToolCall: ({ toolCall }) => {
       if (toolCall.toolName === "update_diagram") {
-        const args = toolCall.input as { content: string; summary: string };
+        const args = toolCall.input as {
+          content: string;
+          summary: string;
+          title?: string;
+        };
         setCurrentContent(args.content);
         setTimeout(() => {
           router.refresh();

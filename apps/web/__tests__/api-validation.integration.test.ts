@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
+import { prepareMermaidSource } from "@/lib/mermaid-source";
 
 const mockCreateDiagram = vi.fn();
 
@@ -7,10 +8,8 @@ vi.mock("@mermaid-viewer/db", () => ({
   createDiagram: (...args: unknown[]) => mockCreateDiagram(...args),
 }));
 
-vi.mock("@/lib/utils", () => ({
-  getBaseUrl: () => "https://merm.sh",
-  cn: (...args: unknown[]) => args.join(" "),
-  formatRelative: () => "just now",
+vi.mock("@/lib/env", () => ({
+  baseUrl: "https://merm.sh",
 }));
 
 const INVALID_ARCHITECTURE_DIAGRAM = `architecture-beta
@@ -108,7 +107,7 @@ describe("POST /api/d validation integration", () => {
 
     expect(res.status).toBe(201);
     expect(mockCreateDiagram).toHaveBeenCalledWith({
-      content: TITLED_ARCHITECTURE_DIAGRAM,
+      content: prepareMermaidSource(TITLED_ARCHITECTURE_DIAGRAM),
       title: undefined,
     });
   });

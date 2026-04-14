@@ -61,7 +61,6 @@ export default [
   },
   {
     ignores: [
-      "**/__tests__/**",
       "**/node_modules/**",
       "**/.next/**",
       "**/dist/**",

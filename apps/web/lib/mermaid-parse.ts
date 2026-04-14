@@ -56,46 +56,66 @@ function restoreGlobals(
   }
 }
 
-async function withServerDomEnvironment<T>(operation: () => Promise<T>) {
-  if (typeof window !== "undefined" && typeof document !== "undefined") {
-    return operation();
-  }
+let serverDomLock: Promise<void> = Promise.resolve();
 
-  const snapshot = snapshotGlobals();
+async function withServerDomLock<T>(operation: () => Promise<T>) {
+  const previous = serverDomLock;
+  let releaseLock!: () => void;
+  serverDomLock = new Promise<void>((resolve) => {
+    releaseLock = resolve;
+  });
+
+  await previous;
+
   try {
-    const { JSDOM } = await import("jsdom");
-    const dom = new JSDOM("<!doctype html><html><body></body></html>", {
-      pretendToBeVisual: true,
-      url: "https://merm.sh",
-    });
-
-    installGlobal("window", dom.window);
-    installGlobal("document", dom.window.document);
-    installGlobal("navigator", dom.window.navigator);
-    installGlobal("Document", dom.window.Document);
-    installGlobal("Element", dom.window.Element);
-    installGlobal("HTMLElement", dom.window.HTMLElement);
-    installGlobal("Node", dom.window.Node);
-    installGlobal("SVGElement", dom.window.SVGElement);
-    installGlobal("DOMParser", dom.window.DOMParser);
-    installGlobal("MutationObserver", dom.window.MutationObserver);
-    installGlobal(
-      "getComputedStyle",
-      dom.window.getComputedStyle.bind(dom.window),
-    );
-    installGlobal(
-      "requestAnimationFrame",
-      dom.window.requestAnimationFrame.bind(dom.window),
-    );
-    installGlobal(
-      "cancelAnimationFrame",
-      dom.window.cancelAnimationFrame.bind(dom.window),
-    );
-
     return await operation();
   } finally {
-    restoreGlobals(snapshot);
+    releaseLock();
   }
+}
+
+async function withServerDomEnvironment<T>(operation: () => Promise<T>) {
+  return withServerDomLock(async () => {
+    if (typeof window !== "undefined" && typeof document !== "undefined") {
+      return operation();
+    }
+
+    const snapshot = snapshotGlobals();
+    try {
+      const { JSDOM } = await import("jsdom");
+      const dom = new JSDOM("<!doctype html><html><body></body></html>", {
+        pretendToBeVisual: true,
+        url: "https://merm.sh",
+      });
+
+      installGlobal("window", dom.window);
+      installGlobal("document", dom.window.document);
+      installGlobal("navigator", dom.window.navigator);
+      installGlobal("Document", dom.window.Document);
+      installGlobal("Element", dom.window.Element);
+      installGlobal("HTMLElement", dom.window.HTMLElement);
+      installGlobal("Node", dom.window.Node);
+      installGlobal("SVGElement", dom.window.SVGElement);
+      installGlobal("DOMParser", dom.window.DOMParser);
+      installGlobal("MutationObserver", dom.window.MutationObserver);
+      installGlobal(
+        "getComputedStyle",
+        dom.window.getComputedStyle.bind(dom.window),
+      );
+      installGlobal(
+        "requestAnimationFrame",
+        dom.window.requestAnimationFrame.bind(dom.window),
+      );
+      installGlobal(
+        "cancelAnimationFrame",
+        dom.window.cancelAnimationFrame.bind(dom.window),
+      );
+
+      return await operation();
+    } finally {
+      restoreGlobals(snapshot);
+    }
+  });
 }
 
 /**
