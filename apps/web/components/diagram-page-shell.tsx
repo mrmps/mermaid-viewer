@@ -35,7 +35,6 @@ type DiagramPageShellProps = {
   initialTheme: MermaidTheme;
   initialLook: MermaidLook;
   editId?: string;
-  secret?: string;
 };
 
 const THEME_IDS = new Set(THEMES.map((theme) => theme.id));
@@ -48,7 +47,6 @@ export function DiagramPageShell({
   initialTheme,
   initialLook,
   editId,
-  secret,
 }: DiagramPageShellProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -121,7 +119,7 @@ export function DiagramPageShell({
             href="/"
             className="text-xs font-bold transition-colors shrink-0 text-muted-foreground"
           >
-            mermaid-viewer
+            merm.sh
           </Link>
           <span className="text-muted-foreground/50">/</span>
           {isEditing ? (
@@ -198,7 +196,6 @@ export function DiagramPageShell({
           <ShareButton
             diagramId={diagramId}
             editId={editId}
-            secret={secret}
             title={currentTitle}
           />
           {editId ? (

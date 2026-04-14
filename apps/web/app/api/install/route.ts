@@ -1,12 +1,12 @@
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://merm.sh";
 
-const INSTALL = `# mermaid-viewer
+const INSTALL = `# merm.sh
 
-> Documentation and setup instructions for mermaid-viewer — versioned Mermaid diagram hosting for AI agents.
+> Documentation and setup instructions for merm.sh — versioned Mermaid diagram hosting for AI agents.
 
-I want you to install mermaid-viewer for me. Execute all the steps below autonomously.
+I want you to install merm.sh for me. Execute all the steps below autonomously.
 
-OBJECTIVE: Set up mermaid-viewer so you can create, update, and share versioned Mermaid diagrams via API or MCP.
+OBJECTIVE: Set up merm.sh so you can create, update, and share versioned Mermaid diagrams via API or MCP.
 
 DONE WHEN: You can successfully create a diagram by calling \`POST ${BASE_URL}/api/d\` and receive back a diagram URL and secret.
 
@@ -194,7 +194,7 @@ flowchart, sequence, class, state, entity-relationship, gantt, pie, quadrant, re
 5. The \`skill\` URL in responses points to a per-diagram SKILL.md you can share with other agents.
 6. Diagrams are free and public — anyone with the URL can view them.
 
-EXECUTE NOW: Complete the above TODO list to achieve: mermaid-viewer is installed and ready to create diagrams.
+EXECUTE NOW: Complete the above TODO list to achieve: merm.sh is installed and ready to create diagrams.
 `;
 
 export async function GET() {

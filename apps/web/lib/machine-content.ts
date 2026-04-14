@@ -10,9 +10,9 @@ export function getDocIndexBlock(baseUrl: string = BASE_URL): string {
 }
 
 export function getMachineMarkdown(baseUrl: string = BASE_URL): string {
-  return `${getDocIndexBlock(baseUrl)}# mermaid-viewer
+  return `${getDocIndexBlock(baseUrl)}# merm.sh
 
-> **How to use**: mermaid-viewer is a versioned Mermaid diagram hosting service for AI agents. Create diagrams via the API or MCP server below. Save the \`secret\` from create responses — it's the only way to update a diagram. Always share the diagram URL with your user so they can view it.
+> **How to use**: merm.sh is a versioned Mermaid diagram hosting service for AI agents. Create diagrams via the API or MCP server below. Save the \`secret\` from create responses — it's the only way to update a diagram. Always share the diagram URL with your user so they can view it.
 
 ## MCP Server (recommended)
 
@@ -147,7 +147,7 @@ ${versionRows}
 }
 
 export function getLlmsTxt(baseUrl: string = BASE_URL): string {
-  return `# mermaid-viewer
+  return `# merm.sh
 
 > Versioned Mermaid diagram hosting for AI agents
 

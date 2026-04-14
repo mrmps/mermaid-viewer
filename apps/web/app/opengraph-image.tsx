@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "mermaid-viewer — Versioned Mermaid Diagrams for AI Agents";
+export const alt = "merm.sh — Versioned Mermaid Diagrams for AI Agents";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -49,7 +49,7 @@ export default function Image() {
               letterSpacing: "-0.02em",
             }}
           >
-            mermaid-viewer
+            merm.sh
           </span>
         </div>
         <p

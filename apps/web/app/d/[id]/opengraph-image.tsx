@@ -249,7 +249,7 @@ export default async function Image({
                     letterSpacing: "-0.01em",
                   }}
                 >
-                  mermaid-viewer
+                  merm.sh
                 </span>
               </div>
 

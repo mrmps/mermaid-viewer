@@ -5,8 +5,8 @@ import { getDiagramCount, getRecentDiagramsWithContent } from "@mermaid-viewer/d
 import { DiagramsList } from "./diagrams-list";
 
 export const metadata: Metadata = {
-  title: "All Diagrams — mermaid-viewer",
-  description: "Browse all versioned Mermaid diagrams created on mermaid-viewer.",
+  title: "All Diagrams — merm.sh",
+  description: "Browse all versioned Mermaid diagrams created on merm.sh.",
 };
 
 export default async function DiagramsPage() {

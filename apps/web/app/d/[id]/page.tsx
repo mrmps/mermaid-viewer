@@ -34,14 +34,14 @@ export async function generateMetadata({
       canonical: `/d/${id}`,
     },
     openGraph: {
-      title: `${title} | mermaid-viewer`,
+      title: `${title} | merm.sh`,
       description,
       type: "article",
       url: `/d/${id}`,
     },
     twitter: {
       card: "summary_large_image",
-      title: `${title} | mermaid-viewer`,
+      title: `${title} | merm.sh`,
       description,
     },
   };

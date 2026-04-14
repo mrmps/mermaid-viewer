@@ -35,14 +35,14 @@ export async function generateMetadata({
       canonical: `/d/${diagram.id}`,
     },
     openGraph: {
-      title: `${title} | mermaid-viewer`,
+      title: `${title} | merm.sh`,
       description,
       type: "article",
       url: `/d/${diagram.id}`,
     },
     twitter: {
       card: "summary_large_image",
-      title: `${title} | mermaid-viewer`,
+      title: `${title} | merm.sh`,
       description,
     },
   };
@@ -97,7 +97,6 @@ export default async function EditDiagramPage({
           initialTheme={theme}
           initialLook={look}
           editId={editId}
-          secret={diagram.secret}
         />
       </ChatProvider>
     </SourceProvider>

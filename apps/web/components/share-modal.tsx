@@ -24,18 +24,18 @@ function generateCollabPrompt({
   viewUrl,
   editUrl,
   apiUrl,
-  secret,
+  editId,
 }: {
   title: string;
   viewUrl: string;
   editUrl: string;
   apiUrl: string;
-  secret: string;
+  editId: string;
 }) {
   return `"${title}" — ${viewUrl}
 
 Read: GET ${apiUrl}
-Update: PUT ${apiUrl} -H "Authorization: Bearer ${secret}" -H "Content-Type: text/plain" -d '<mermaid source>'
+Update: PUT ${apiUrl} -H "Content-Type: application/json" -d '{"content": "<mermaid source>", "editId": "${editId}"}'
 Edit in browser: ${editUrl}
 
 Updates create new versions — nothing is overwritten.`;
@@ -44,12 +44,10 @@ Updates create new versions — nothing is overwritten.`;
 export function ShareButton({
   diagramId,
   editId,
-  secret,
   title,
 }: {
   diagramId: string;
   editId?: string;
-  secret?: string;
   title: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -65,7 +63,7 @@ export function ShareButton({
       viewUrl={viewUrl}
       editUrl={editUrl}
       apiUrl={apiUrl}
-      secret={secret}
+      editId={editId}
       title={title}
     />
   );
@@ -113,18 +111,18 @@ function ShareContent({
   viewUrl,
   editUrl,
   apiUrl,
-  secret,
+  editId,
   title,
 }: {
   viewUrl: string;
   editUrl: string | null;
   apiUrl: string;
-  secret?: string;
+  editId?: string;
   title: string;
 }) {
-  const canEdit = !!editUrl && !!secret;
+  const canEdit = !!editUrl && !!editId;
   const collabPrompt = canEdit
-    ? generateCollabPrompt({ title, viewUrl, editUrl, apiUrl, secret })
+    ? generateCollabPrompt({ title, viewUrl, editUrl, apiUrl, editId })
     : null;
 
   return (
@@ -179,16 +177,16 @@ function ShareContent({
           <Block label="Read" desc="Returns all versions with content as JSON.">
             <CopyRow value={`curl ${apiUrl}`} />
           </Block>
-          {secret && (
+          {editId && (
             <>
               <Block label="Update" desc="Creates a new version.">
                 <CopyBlock
-                  value={`curl -X PUT ${apiUrl} \\\n  -H "Authorization: Bearer ${secret}" \\\n  -H "Content-Type: text/plain" \\\n  -d 'YOUR_MERMAID_CONTENT'`}
+                  value={`curl -X PUT ${apiUrl} \\\n  -H "Content-Type: application/json" \\\n  -d '{"content": "YOUR_MERMAID_CONTENT", "editId": "${editId}"}'`}
                 />
               </Block>
               <Block label="Delete" desc="Permanently removes the diagram and all versions.">
                 <CopyBlock
-                  value={`curl -X DELETE ${apiUrl} \\\n  -H "Authorization: Bearer ${secret}"`}
+                  value={`curl -X DELETE ${apiUrl} \\\n  -H "Content-Type: application/json" \\\n  -d '{"editId": "${editId}"}'`}
                 />
               </Block>
             </>

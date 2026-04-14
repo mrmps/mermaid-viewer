@@ -76,7 +76,7 @@ const ErrorResponse: SchemaObject = {
 export function buildOpenAPISpec() {
   return new OpenApiBuilder()
     .addInfo({
-      title: "mermaid-viewer",
+      title: "merm.sh",
       version: "1.0.0",
       description:
         "Dead-simple versioned Mermaid diagrams for AI agents. Create, update, and share diagrams via a single API call with full version history.",
@@ -317,7 +317,7 @@ export function buildOpenAPISpec() {
         operationId: "getGlobalSkill",
         summary: "Get global SKILL.md",
         description:
-          "Returns the global skill file with setup instructions for adding mermaid-viewer to any agent.",
+          "Returns the global skill file with setup instructions for adding merm.sh to any agent.",
         responses: {
           "200": {
             description: "Skill markdown",

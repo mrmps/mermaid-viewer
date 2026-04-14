@@ -66,7 +66,18 @@ export async function POST(req: Request) {
     );
   }
 
-  const body = await req.json();
+  const MAX_MESSAGES = 50;
+  const MAX_BODY_SIZE = 128_000; // ~128KB
+
+  const rawBody = await req.text();
+  if (rawBody.length > MAX_BODY_SIZE) {
+    return Response.json(
+      { error: "payload_too_large", message: "Request body exceeds 128KB limit." },
+      { status: 413 }
+    );
+  }
+
+  const body = JSON.parse(rawBody);
   const {
     messages: rawMessages,
     diagramId,
@@ -86,19 +97,27 @@ export async function POST(req: Request) {
     );
   }
 
-  // Fetch version history from DB
+  if (!Array.isArray(rawMessages) || rawMessages.length > MAX_MESSAGES) {
+    return Response.json(
+      { error: "bad_request", message: `Messages must be an array with at most ${MAX_MESSAGES} entries.` },
+      { status: 400 }
+    );
+  }
+
+  // Fetch version history from DB — cap to last 10 versions to keep prompt size reasonable
   const diagramData = await getDiagram({ id: diagramId });
-  const versionHistory = diagramData
+  const allVersions = diagramData
     ? diagramData.allVersions.map((v) => ({
         version: v.version,
         content: v.content,
         createdAt: v.createdAt.toISOString(),
       }))
     : [];
+  const versionHistory = allVersions.slice(-10);
 
   const versionHistoryBlock =
     versionHistory.length > 0
-      ? `\n\n## Version History\n\nThis diagram has ${versionHistory.length} version(s). To restore a previous version, call update_diagram with that version's content.\n\n${versionHistory.map((v) => `### v${v.version} (${v.createdAt})\n\`\`\`mermaid\n${v.content}\n\`\`\``).join("\n\n")}`
+      ? `\n\n## Version History${allVersions.length > versionHistory.length ? ` (showing last ${versionHistory.length} of ${allVersions.length})` : ""}\n\nThis diagram has ${allVersions.length} version(s). To restore a previous version, call update_diagram with that version's content.\n\n${versionHistory.map((v) => `### v${v.version} (${v.createdAt})\n\`\`\`mermaid\n${v.content}\n\`\`\``).join("\n\n")}`
       : "";
 
   const validatedMessages = await validateUIMessages<ChatUIMessage>({

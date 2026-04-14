@@ -8,14 +8,14 @@ export async function GET() {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>API Reference — mermaid-viewer</title>
-  <meta name="description" content="OpenAPI reference for the mermaid-viewer REST API." />
+  <title>API Reference — merm.sh</title>
+  <meta name="description" content="OpenAPI reference for the merm.sh REST API." />
 </head>
 <body>
   <script id="api-reference" type="application/json"
     data-configuration='${JSON.stringify({ theme: "kepler", hideDownloadButton: true })}'
   >${spec}</script>
-  <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.52.1/dist/browser/standalone.js" integrity="sha384-mf6gxVzEDU/HNmr0o4taUchYTK9MzpkZLQsEmEGNJFyp2Cb+k6ilAOVAFCRj1Z4R" crossorigin="anonymous"></script>
 </body>
 </html>`;
 

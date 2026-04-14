@@ -7,7 +7,7 @@ const BASE_URL =
   process.env.NEXT_PUBLIC_BASE_URL ?? "https://merm.sh";
 
 function getPrompt() {
-  return `Follow the installation instructions in the README at https://github.com/mrmps/mermaid-viewer to set up mermaid-viewer — a tool for creating, versioning, and sharing Mermaid diagrams at ${BASE_URL}.
+  return `Follow the installation instructions in the README at https://github.com/mrmps/mermaid-viewer to set up merm.sh — a tool for creating, versioning, and sharing Mermaid diagrams at ${BASE_URL}.
 
 ## Quick start
 
@@ -73,7 +73,7 @@ export function AddToAgent() {
     setTimeout(() => setCopied(false), 2000);
   }, [prompt]);
 
-  const previewText = `Follow the installation instructions in the README at github.com/mermaid-viewer/mermaid-viewer`;
+  const previewText = `Follow the installation instructions at merm.sh to set up merm.sh`;
 
   return (
     <div>

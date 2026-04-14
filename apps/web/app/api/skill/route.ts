@@ -5,7 +5,7 @@ name: mermaid-viewer
 description: "Create, version, and share Mermaid diagrams. Use when asked to create flowcharts, sequence diagrams, ER diagrams, or any visual diagram."
 ---
 
-# mermaid-viewer
+# merm.sh
 
 Create, version, and share Mermaid diagrams at ${BASE_URL}. Every update creates a new version — nothing is overwritten.
 

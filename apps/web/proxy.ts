@@ -45,8 +45,14 @@ export async function proxy(request: NextRequest) {
 
   // --- Content negotiation ---
   const accept = request.headers.get("accept") ?? "";
+  const ua = (request.headers.get("user-agent") ?? "").toLowerCase();
+  const isSocialCrawler =
+    /twitterbot|facebookexternalhit|linkedinbot|slackbot|discordbot|telegrambot|whatsapp|pinterestbot|redditbot/.test(
+      ua,
+    );
   const wantsMarkdown =
-    accept.includes("text/markdown") || !accept.includes("text/html");
+    !isSocialCrawler &&
+    (accept.includes("text/markdown") || !accept.includes("text/html"));
 
   if (wantsMarkdown) {
     if (pathname === "/") {

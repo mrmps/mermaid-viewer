@@ -11,7 +11,7 @@ import { FloatingChatButton } from "@/components/floating-chat-button";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "mermaid-viewer — Versioned Mermaid Diagrams for AI Agents",
+    absolute: "merm.sh — Versioned Mermaid Diagrams for AI Agents",
   },
   description:
     "Dead-simple versioned Mermaid diagrams for AI agents. Create, update, and share diagrams via a single API call with full version history.",
@@ -116,7 +116,7 @@ export default async function HomePage() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    name: "mermaid-viewer",
+    name: "merm.sh",
     description:
       "Dead-simple versioned Mermaid diagrams for AI agents. Create, update, and share diagrams via a single API call with full version history.",
     applicationCategory: "DeveloperApplication",
@@ -211,7 +211,7 @@ export default async function HomePage() {
           Install
         </div>
         <p className="text-base leading-[26px] text-secondary-foreground mb-5">
-          Set up mermaid-viewer in your agent or terminal.
+          Set up merm.sh in your agent or terminal.
         </p>
 
         {/* CLI option */}
@@ -239,7 +239,7 @@ export default async function HomePage() {
           </p>
           <pre className="rounded-md bg-muted/50 px-3 py-2 overflow-x-auto">
             <code className="text-sm font-mono text-secondary-foreground">
-              {"curl -fsSL https://mermaidsh.com/install.md | claude"}
+              {"curl -fsSL https://merm.sh/install.md | claude"}
             </code>
           </pre>
           <p className="text-xs text-muted-foreground mt-2">
@@ -272,7 +272,7 @@ export default async function HomePage() {
 {`{
   "mcpServers": {
     "mermaid-viewer": {
-      "url": "https://mermaidsh.com/mcp"
+      "url": "https://merm.sh/mcp"
     }
   }
 }`}
@@ -302,9 +302,9 @@ export default async function HomePage() {
           </summary>
           <div className="px-4 pb-4 flex flex-col gap-3">
             {[
-              { agent: "Claude Code", cmd: "mkdir -p ~/.claude/skills/mermaid-viewer && curl -s https://mermaidsh.com/skill.md > ~/.claude/skills/mermaid-viewer/SKILL.md" },
-              { agent: "Codex", cmd: "mkdir -p ~/.agents/skills/mermaid-viewer && curl -s https://mermaidsh.com/skill.md > ~/.agents/skills/mermaid-viewer/SKILL.md" },
-              { agent: "OpenClaw", cmd: "mkdir -p ~/.openclaw/skills/mermaid-viewer && curl -s https://mermaidsh.com/skill.md > ~/.openclaw/skills/mermaid-viewer/SKILL.md" },
+              { agent: "Claude Code", cmd: "mkdir -p ~/.claude/skills/mermaid-viewer && curl -s https://merm.sh/skill.md > ~/.claude/skills/mermaid-viewer/SKILL.md" },
+              { agent: "Codex", cmd: "mkdir -p ~/.agents/skills/mermaid-viewer && curl -s https://merm.sh/skill.md > ~/.agents/skills/mermaid-viewer/SKILL.md" },
+              { agent: "OpenClaw", cmd: "mkdir -p ~/.openclaw/skills/mermaid-viewer && curl -s https://merm.sh/skill.md > ~/.openclaw/skills/mermaid-viewer/SKILL.md" },
             ].map((item) => (
               <div key={item.agent}>
                 <p className="text-xs font-medium text-muted-foreground mb-1">{item.agent}</p>
@@ -314,7 +314,7 @@ export default async function HomePage() {
               </div>
             ))}
             <p className="text-xs text-muted-foreground">
-              Or: <code className="font-mono">npx skills add https://mermaidsh.com</code>
+              Or: <code className="font-mono">npx skills add https://merm.sh</code>
             </p>
           </div>
         </details>
@@ -450,12 +450,12 @@ export default async function HomePage() {
         </div>
         <div className="border-t border-border">
           <FAQItem
-            question="What is mermaid-viewer?"
+            question="What is merm.sh?"
             answer="A free hosted service for creating, versioning, and sharing Mermaid diagrams. It's built for AI agents but works just as well for humans."
           />
           <FAQItem
             question="How do I use it with my agent?"
-            answer="Copy the setup instructions and paste them into your agent's chat. It adds mermaid-viewer as an MCP server so your agent can create and update diagrams directly."
+            answer="Copy the setup instructions and paste them into your agent's chat. It adds merm.sh as an MCP server so your agent can create and update diagrams directly."
           />
           <FAQItem
             question="What agents are supported?"
@@ -475,7 +475,7 @@ export default async function HomePage() {
       {/* Bottom CTA */}
       <div className="mt-32">
         <p className="text-base font-medium text-foreground mb-1">
-          Add mermaid-viewer to your agent
+          Add merm.sh to your agent
         </p>
         <p className="text-base leading-[26px] text-secondary-foreground mb-5">
           One paste. Your agent handles the rest.
@@ -491,7 +491,7 @@ export default async function HomePage() {
       <footer className="mt-40 mb-16">
         <div className="border-t border-border/50 pt-8 flex items-center justify-between">
           <span className="text-sm font-medium text-secondary-foreground">
-            mermaid<span className="text-muted-foreground">-viewer</span>
+            merm<span className="text-muted-foreground">.sh</span>
           </span>
           <div className="flex items-center gap-5">
             <a
