@@ -1,5 +1,6 @@
 import { createDiagram } from "@mermaid-viewer/db";
 import { validateMermaid } from "@/lib/mermaid-parse";
+import { getMermaidValidationErrorResponse } from "@/lib/mermaid-validation-response";
 import { getBaseUrl } from "@/lib/utils";
 import { NextRequest } from "next/server";
 
@@ -24,12 +25,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const parseError = await validateMermaid(content.trim());
-  if (parseError) {
-    return Response.json(
-      { error: "invalid_syntax", message: parseError },
-      { status: 400 }
-    );
+  const validation = await validateMermaid(content.trim());
+  if (!validation.ok) {
+    return getMermaidValidationErrorResponse(validation);
   }
 
   const result = await createDiagram({ content: content.trim(), title });

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
 import { join } from "path";
 
@@ -48,9 +48,9 @@ describe("Branding consistency", () => {
     expect(shell).toContain("merm.sh");
   });
 
-  it("default base URL is merm.sh", () => {
-    const layout = readSource("app/layout.tsx");
-    expect(layout).toContain('https://merm.sh');
+  it("default base URL in env.ts is merm.sh", () => {
+    const envFile = readSource("lib/env.ts");
+    expect(envFile).toContain('https://merm.sh');
   });
 });
 

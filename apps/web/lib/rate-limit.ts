@@ -1,5 +1,6 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
+import { environment } from "@/lib/env";
 
 export type Tier = "read" | "write" | "chat";
 
@@ -10,10 +11,10 @@ export type Tier = "read" | "write" | "chat";
  */
 
 const redis =
-  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+  environment.UPSTASH_REDIS_REST_URL && environment.UPSTASH_REDIS_REST_TOKEN
     ? new Redis({
-        url: process.env.UPSTASH_REDIS_REST_URL,
-        token: process.env.UPSTASH_REDIS_REST_TOKEN,
+        url: environment.UPSTASH_REDIS_REST_URL,
+        token: environment.UPSTASH_REDIS_REST_TOKEN,
       })
     : null;
 

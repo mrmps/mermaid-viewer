@@ -10,11 +10,13 @@ import {
 } from "ai";
 import { z } from "zod";
 import { addVersion, getDiagram } from "@mermaid-viewer/db";
-
-const openrouter = createOpenAI({
-  baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.OPENROUTER_API_KEY,
-});
+import {
+  getChatRequestTooLargeMessage,
+  getUtf8ByteLength,
+  MAX_CHAT_MESSAGES,
+  MAX_CHAT_REQUEST_BYTES,
+} from "@/lib/chat-limits";
+import { environment } from "@/lib/env";
 
 const updateDiagramSchema = z.object({
   content: z.string().describe("The complete updated Mermaid diagram code"),
@@ -56,7 +58,7 @@ const validationTools = {
 };
 
 export async function POST(req: Request) {
-  if (!process.env.OPENROUTER_API_KEY) {
+  if (!environment.OPENROUTER_API_KEY) {
     return Response.json(
       {
         error: "misconfigured",
@@ -66,28 +68,44 @@ export async function POST(req: Request) {
     );
   }
 
-  const MAX_MESSAGES = 50;
-  const MAX_BODY_SIZE = 128_000; // ~128KB
+  const openrouter = createOpenAI({
+    baseURL: "https://openrouter.ai/api/v1",
+    apiKey: environment.OPENROUTER_API_KEY,
+  });
 
   const rawBody = await req.text();
-  if (rawBody.length > MAX_BODY_SIZE) {
+  const rawBodyBytes = getUtf8ByteLength(rawBody);
+  if (rawBodyBytes > MAX_CHAT_REQUEST_BYTES) {
     return Response.json(
-      { error: "payload_too_large", message: "Request body exceeds 128KB limit." },
+      {
+        error: "payload_too_large",
+        message: getChatRequestTooLargeMessage(rawBodyBytes),
+      },
       { status: 413 }
     );
   }
 
-  const body = JSON.parse(rawBody);
+  let body: {
+    messages: ChatUIMessage[];
+    diagramId: string;
+    editId: string;
+    currentContent: string;
+  };
+
+  try {
+    body = JSON.parse(rawBody);
+  } catch {
+    return Response.json(
+      { error: "bad_request", message: "Invalid JSON body" },
+      { status: 400 }
+    );
+  }
+
   const {
     messages: rawMessages,
     diagramId,
     editId,
     currentContent,
-  }: {
-    messages: ChatUIMessage[];
-    diagramId: string;
-    editId: string;
-    currentContent: string;
   } = body;
 
   if (!diagramId || !editId) {
@@ -97,9 +115,12 @@ export async function POST(req: Request) {
     );
   }
 
-  if (!Array.isArray(rawMessages) || rawMessages.length > MAX_MESSAGES) {
+  if (!Array.isArray(rawMessages) || rawMessages.length > MAX_CHAT_MESSAGES) {
     return Response.json(
-      { error: "bad_request", message: `Messages must be an array with at most ${MAX_MESSAGES} entries.` },
+      {
+        error: "bad_request",
+        message: `Messages must be an array with at most ${MAX_CHAT_MESSAGES} entries.`,
+      },
       { status: 400 }
     );
   }

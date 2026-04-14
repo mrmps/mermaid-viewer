@@ -1,5 +1,7 @@
+import path from "node:path";
 import { defineConfig } from "vitest/config";
-import path from "path";
+
+const directory = import.meta.dirname;
 
 export default defineConfig({
   test: {
@@ -8,8 +10,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": path.resolve(__dirname),
-      "@mermaid-viewer/db": path.resolve(__dirname, "../../packages/db/src"),
+      "@": directory,
+      "@mermaid-viewer/db": path.resolve(directory, "../../packages/db/src"),
     },
   },
 });

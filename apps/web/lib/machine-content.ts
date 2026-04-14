@@ -1,16 +1,15 @@
-const BASE_URL =
-  process.env.NEXT_PUBLIC_BASE_URL ?? "https://merm.sh";
+import { baseUrl } from "@/lib/env";
 
-export function getDocIndexBlock(baseUrl: string = BASE_URL): string {
+export function getDocIndexBlock(baseUrlOverride: string = baseUrl): string {
   return `> ## Documentation Index
-> Fetch the complete documentation index at: ${baseUrl}/llms.txt
+> Fetch the complete documentation index at: ${baseUrlOverride}/llms.txt
 > Use this file to discover all available pages before exploring further.
 
 `;
 }
 
-export function getMachineMarkdown(baseUrl: string = BASE_URL): string {
-  return `${getDocIndexBlock(baseUrl)}# merm.sh
+export function getMachineMarkdown(baseUrlOverride: string = baseUrl): string {
+  return `${getDocIndexBlock(baseUrlOverride)}# merm.sh
 
 > **How to use**: merm.sh is a versioned Mermaid diagram hosting service for AI agents. Create diagrams via the API or MCP server below. Save the \`secret\` from create responses — it's the only way to update a diagram. Always share the diagram URL with your user so they can view it.
 
@@ -22,7 +21,7 @@ Add to your MCP settings for native tool integration:
 {
   "mcpServers": {
     "mermaid-viewer": {
-      "url": "${baseUrl}/mcp"
+      "url": "${baseUrlOverride}/mcp"
     }
   }
 }
@@ -33,23 +32,23 @@ Tools: \`create_diagram\`, \`update_diagram\`, \`get_diagram\`
 ## Skill File
 
 \`\`\`bash
-npx skills add ${baseUrl}
+npx skills add ${baseUrlOverride}
 \`\`\`
 
 ## REST API
 
 | Action | Method | Endpoint | Auth |
 |---|---|---|---|
-| Create | POST | \`${baseUrl}/api/d\` | None |
-| Update | PUT | \`${baseUrl}/api/d/:id\` | \`Bearer <secret>\` |
-| Get JSON | GET | \`${baseUrl}/api/d/:id\` | None |
-| Get version | GET | \`${baseUrl}/api/d/:id?v=N\` | None |
-| View | GET | \`${baseUrl}/d/:id\` | None |
+| Create | POST | \`${baseUrlOverride}/api/d\` | None |
+| Update | PUT | \`${baseUrlOverride}/api/d/:id\` | \`Bearer <secret>\` |
+| Get JSON | GET | \`${baseUrlOverride}/api/d/:id\` | None |
+| Get version | GET | \`${baseUrlOverride}/api/d/:id?v=N\` | None |
+| View | GET | \`${baseUrlOverride}/d/:id\` | None |
 
 ### Create a diagram
 
 \`\`\`bash
-curl -X POST ${baseUrl}/api/d \\
+curl -X POST ${baseUrlOverride}/api/d \\
   -H "Content-Type: application/json" \\
   -d '{"content": "graph TD; A-->B", "title": "My Diagram"}'
 \`\`\`
@@ -59,7 +58,7 @@ Response: \`{ id, editId, url, editUrl, secret, version, skill }\`
 ### Update a diagram
 
 \`\`\`bash
-curl -X PUT ${baseUrl}/api/d/:id \\
+curl -X PUT ${baseUrlOverride}/api/d/:id \\
   -H "Authorization: Bearer <secret>" \\
   -H "Content-Type: text/plain" \\
   -d 'graph TD; A-->B; B-->C'
@@ -68,7 +67,7 @@ curl -X PUT ${baseUrl}/api/d/:id \\
 ### Get diagram data (all versions)
 
 \`\`\`bash
-curl ${baseUrl}/api/d/:id
+curl ${baseUrlOverride}/api/d/:id
 \`\`\`
 
 Response: \`{ id, title, version, content, createdAt, versions, skill }\`
@@ -78,7 +77,7 @@ The \`versions\` array contains every version with \`{ version, content, created
 ### Get a specific version
 
 \`\`\`bash
-curl ${baseUrl}/api/d/:id?v=2
+curl ${baseUrlOverride}/api/d/:id?v=2
 \`\`\`
 
 Returns the same shape, but \`content\` and \`version\` reflect the requested version. The \`versions\` array still includes all versions.
@@ -88,8 +87,8 @@ Returns the same shape, but \`content\` and \`version\` reflect the requested ve
 All page URLs support content negotiation. Send \`Accept: text/markdown\` to receive clean Markdown instead of HTML:
 
 \`\`\`bash
-curl -H "Accept: text/markdown" ${baseUrl}/
-curl -H "Accept: text/markdown" ${baseUrl}/d/:id
+curl -H "Accept: text/markdown" ${baseUrlOverride}/
+curl -H "Accept: text/markdown" ${baseUrlOverride}/d/:id
 \`\`\`
 
 Diagram pages return the diagram source, metadata, and version history in Markdown.
@@ -103,7 +102,7 @@ flowchart, sequence, class, state, entity-relationship, gantt, pie, quadrant, re
 1. Save the \`secret\` from create — it's returned only once and is required for updates
 2. Content must be valid Mermaid syntax
 3. Each update creates a new version — previous content is never lost
-4. Always send the diagram URL (\`${baseUrl}/d/:id\`) to the user
+4. Always send the diagram URL (\`${baseUrlOverride}/d/:id\`) to the user
 5. The \`skill\` URL in create/update responses points to a per-diagram SKILL.md you can share with other agents
 6. Diagrams are free and public — anyone with the URL can view them
 `;
@@ -146,17 +145,17 @@ ${versionRows}
 `;
 }
 
-export function getLlmsTxt(baseUrl: string = BASE_URL): string {
+export function getLlmsTxt(baseUrlOverride: string = baseUrl): string {
   return `# merm.sh
 
 > Versioned Mermaid diagram hosting for AI agents
 
 ## Documentation
 
-- [Homepage](${baseUrl}/) — Product overview and installation
-- [Machine Docs](${baseUrl}/api/machine) — Full machine-readable API documentation
-- [Install Guide](${baseUrl}/install.md) — Agent installation instructions
-- [Skill File](${baseUrl}/skill.md) — SKILL.md for agent integration
+- [Homepage](${baseUrlOverride}/) — Product overview and installation
+- [Machine Docs](${baseUrlOverride}/api/machine) — Full machine-readable API documentation
+- [Install Guide](${baseUrlOverride}/install.md) — Agent installation instructions
+- [Skill File](${baseUrlOverride}/skill.md) — SKILL.md for agent integration
 
 ## API Endpoints
 
@@ -186,13 +185,13 @@ Tools: \`create_diagram\`, \`update_diagram\`, \`get_diagram\`
 `;
 }
 
-export function getLlmsFullTxt(baseUrl: string = BASE_URL): string {
+export function getLlmsFullTxt(baseUrlOverride: string = baseUrl): string {
   // Strip the doc index block from machine markdown since llms-full.txt IS the index
-  const machineContent = getMachineMarkdown(baseUrl).replace(
-    getDocIndexBlock(baseUrl),
+  const machineContent = getMachineMarkdown(baseUrlOverride).replace(
+    getDocIndexBlock(baseUrlOverride),
     "",
   );
-  return `${getLlmsTxt(baseUrl)}\n---\n\n${machineContent}`;
+  return `${getLlmsTxt(baseUrlOverride)}\n---\n\n${machineContent}`;
 }
 
 export const LLMS_HEADERS = {

@@ -1,9 +1,7 @@
 import type { MetadataRoute } from "next";
+import { baseUrl } from "@/lib/env";
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL ?? "https://merm.sh";
-
   return {
     rules: [
       {

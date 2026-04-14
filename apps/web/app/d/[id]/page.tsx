@@ -2,6 +2,7 @@ import { getDiagram } from "@mermaid-viewer/db";
 import { notFound } from "next/navigation";
 import { DiagramPageShell } from "@/components/diagram-page-shell";
 import { SourceProvider } from "@/components/diagram-layout";
+import { JsonLd } from "@/components/json-ld";
 import type { MermaidTheme, MermaidLook } from "@/lib/mermaid-client";
 import type { Metadata } from "next";
 
@@ -84,10 +85,7 @@ export default async function DiagramPage({
 
   return (
     <SourceProvider>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <JsonLd id={`diagram-jsonld-${id}`} data={jsonLd} />
       <DiagramPageShell
         diagramId={id}
         title={diagram.title}

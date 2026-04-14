@@ -2,6 +2,7 @@ import { getDiagramByEditId } from "@mermaid-viewer/db";
 import { notFound } from "next/navigation";
 import { DiagramPageShell } from "@/components/diagram-page-shell";
 import { SourceProvider, ChatProvider } from "@/components/diagram-layout";
+import { JsonLd } from "@/components/json-ld";
 import type { MermaidTheme, MermaidLook } from "@/lib/mermaid-client";
 import type { Metadata } from "next";
 
@@ -86,10 +87,7 @@ export default async function EditDiagramPage({
   return (
     <SourceProvider>
       <ChatProvider>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
+        <JsonLd id={`edit-diagram-jsonld-${editId}`} data={jsonLd} />
         <DiagramPageShell
           diagramId={diagram.id}
           title={diagram.title}

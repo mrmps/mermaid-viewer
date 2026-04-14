@@ -6,6 +6,7 @@ import { getDiagramCount, getRecentDiagrams } from "@mermaid-viewer/db";
 import { RecentDiagrams } from "@/components/recent-diagrams";
 import { AddToAgent } from "@/components/add-to-agent";
 import { CompatibleAgents } from "@/components/compatible-agents";
+import { JsonLd } from "@/components/json-ld";
 import { PageWrapper } from "@/components/page-wrapper";
 import { FloatingChatButton } from "@/components/floating-chat-button";
 
@@ -132,10 +133,7 @@ export default async function HomePage() {
     <PageWrapper>
     <FloatingChatButton />
     <main className="max-w-[692px] mx-auto w-full px-6 py-24">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <JsonLd id="home-jsonld" data={jsonLd} />
 
       {/* Hero */}
       <h1 className="text-[28px] sm:text-[36px] font-semibold leading-[1.15] tracking-[-0.02em] text-foreground text-balance">

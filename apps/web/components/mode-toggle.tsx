@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/components/theme-provider";
 
 export function ModeToggle() {
   const { forcedTheme, resolvedTheme, setTheme } = useTheme();

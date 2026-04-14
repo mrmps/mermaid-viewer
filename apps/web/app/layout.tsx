@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
-import Script from "next/script";
 import { ThemeProvider } from "@/components/theme-provider";
 import { QueryProvider } from "@/components/query-provider";
 import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
+import { VercelAnalytics } from "@/components/vercel-analytics";
+import { baseUrl, isDevelopment } from "@/lib/env";
+import { getThemeBootstrapScript } from "@/lib/theme";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -18,9 +20,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_BASE_URL ?? "https://merm.sh"
-  ),
+  metadataBase: new URL(baseUrl),
   title: {
     default: "merm.sh — Versioned Mermaid Diagrams for AI Agents",
     template: "%s | merm.sh",
@@ -84,6 +84,13 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
+      <head>
+        <script
+          id="theme-init"
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{ __html: getThemeBootstrapScript() }}
+        />
+      </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <QueryProvider>
           <ThemeProvider>
@@ -93,11 +100,11 @@ export default function RootLayout({
             </NuqsAdapter>
           </ThemeProvider>
         </QueryProvider>
-        {process.env.NODE_ENV === "development" && (
-          <Script
+        <VercelAnalytics />
+        {isDevelopment && (
+          <script
             src="//unpkg.com/react-grab/dist/index.global.js"
             crossOrigin="anonymous"
-            strategy="afterInteractive"
           />
         )}
       </body>

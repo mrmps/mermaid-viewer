@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   transpilePackages: ["@mermaid-viewer/db"],
+  serverExternalPackages: ["mermaid", "dompurify"],
   async rewrites() {
     return [
       {
