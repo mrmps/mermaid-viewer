@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+/* ── Light mode ── */
+:root {
+  color-scheme: light;
+  --bg-app: oklch(0.99 0 0);
+  --bg-surface: oklch(0.96 0.005 260);
+  --bg-surface-hover: oklch(0.92 0.008 260);
+  --bg-inset: oklch(0.985 0 0);
+  --bg-canvas: oklch(0.975 0.003 260);
+  --border: oklch(0.90 0.01 260);
+  --border-subtle: oklch(0.94 0.005 260);
+  --text-primary: oklch(0.15 0.02 260);
+  --text-secondary: oklch(0.40 0.02 260);
+  --text-muted: oklch(0.60 0.015 260);
+  --text-faint: oklch(0.82 0.01 260);
+  --accent: oklch(0.62 0.19 260);
+  --accent-soft: oklch(0.92 0.04 260);
+}
+
+/* ── Dark mode ── */
+.dark {
+  color-scheme: dark;
+  --bg-app: oklch(0.13 0.015 260);
+  --bg-surface: oklch(0.18 0.015 260);
+  --bg-surface-hover: oklch(0.23 0.015 260);
+  --bg-inset: oklch(0.11 0.015 260);
+  --bg-canvas: oklch(0.13 0.015 260);
+  --border: oklch(0.25 0.015 260);
+  --border-subtle: oklch(0.20 0.015 260);
+  --text-primary: oklch(0.95 0.005 260);
+  --text-secondary: oklch(0.72 0.01 260);
+  --text-muted: oklch(0.50 0.015 260);
+  --text-faint: oklch(0.28 0.015 260);
+  --accent: oklch(0.72 0.17 260);
+  --accent-soft: oklch(0.25 0.06 260);
+}
