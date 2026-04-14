@@ -1,4 +1,4 @@
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://mermaidsh.com";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://merm.sh";
 
 const SKILL = `---
 name: mermaid-viewer

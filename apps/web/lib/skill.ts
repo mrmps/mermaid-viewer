@@ -15,8 +15,8 @@ export function generateSkillContent({
 }): string {
   const safeTitle = title.replace(/"/g, '\\"');
   const desc = secret
-    ? `Read and update the "${safeTitle}" diagram on mermaidsh. Use when asked about this diagram or to update it.`
-    : `Read the "${safeTitle}" diagram on mermaidsh. Use when asked about this diagram or its content.`;
+    ? `Read and update the "${safeTitle}" diagram on merm.sh. Use when asked about this diagram or to update it.`
+    : `Read the "${safeTitle}" diagram on merm.sh. Use when asked about this diagram or its content.`;
 
   let skill = `---
 name: mermaid-${id}
@@ -25,7 +25,7 @@ description: "${desc}"
 
 # ${title}
 
-Hosted on [mermaidsh](${baseUrl}/d/${id}).
+Hosted on [merm.sh](${baseUrl}/d/${id}).
 
 ## Fetch latest content
 

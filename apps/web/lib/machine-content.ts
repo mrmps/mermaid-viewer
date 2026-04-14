@@ -1,5 +1,5 @@
 const BASE_URL =
-  process.env.NEXT_PUBLIC_BASE_URL ?? "https://mermaidsh.com";
+  process.env.NEXT_PUBLIC_BASE_URL ?? "https://merm.sh";
 
 export function getDocIndexBlock(baseUrl: string = BASE_URL): string {
   return `> ## Documentation Index

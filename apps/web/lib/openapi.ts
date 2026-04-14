@@ -3,7 +3,7 @@ import {
   type SchemaObject,
 } from "openapi3-ts/oas31";
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://mermaidsh.com";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://merm.sh";
 
 const DiagramResponse: SchemaObject = {
   type: "object",

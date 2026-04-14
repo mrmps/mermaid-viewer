@@ -18,7 +18,7 @@ export type DiagramEntry = {
   href: string;
 };
 
-const tabs = ["viewer", "list"] as const;
+const tabs = ["viewer", "list", "kanban"] as const;
 
 export function DiagramsList({
   serverDiagrams,
@@ -125,6 +125,16 @@ export function DiagramsList({
         >
           List
         </button>
+        <button
+          onClick={() => setTab("kanban")}
+          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-150 cursor-pointer ${
+            tab === "kanban"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Kanban
+        </button>
       </div>
 
       {/* Result count when searching */}
@@ -140,6 +150,8 @@ export function DiagramsList({
         </p>
       ) : tab === "list" ? (
         <ListView diagrams={filtered} />
+      ) : tab === "kanban" ? (
+        <KanbanBoard diagrams={filtered} />
       ) : (
         <ViewerGrid diagrams={filtered} />
       )}
@@ -187,6 +199,86 @@ function ViewerGrid({ diagrams }: { diagrams: DiagramEntry[] }) {
     <div className="grid grid-cols-2 gap-4">
       {diagrams.map((entry) => (
         <DiagramCard key={entry.id} entry={entry} />
+      ))}
+    </div>
+  );
+}
+
+function getDiagramType(content: string): string {
+  const first = content.trimStart().split(/[\s{(\[]/)[0].toLowerCase();
+  const types: Record<string, string> = {
+    graph: "Flowchart",
+    flowchart: "Flowchart",
+    sequencediagram: "Sequence",
+    sequence: "Sequence",
+    classdiagram: "Class",
+    statediagram: "State",
+    erdiagram: "ER Diagram",
+    gantt: "Gantt",
+    pie: "Pie Chart",
+    mindmap: "Mind Map",
+    timeline: "Timeline",
+    gitgraph: "Git Graph",
+    journey: "User Journey",
+    quadrantchart: "Quadrant",
+    requirementdiagram: "Requirement",
+    c4context: "C4 Context",
+    sankey: "Sankey",
+    block: "Block",
+    xychart: "XY Chart",
+    kanban: "Kanban",
+  };
+  return types[first] ?? "Other";
+}
+
+function KanbanBoard({ diagrams }: { diagrams: DiagramEntry[] }) {
+  const columns = useMemo(() => {
+    const grouped = new Map<string, DiagramEntry[]>();
+    for (const d of diagrams) {
+      const type = getDiagramType(d.content);
+      const list = grouped.get(type) ?? [];
+      list.push(d);
+      grouped.set(type, list);
+    }
+    // Sort columns by count descending
+    return [...grouped.entries()].sort((a, b) => b[1].length - a[1].length);
+  }, [diagrams]);
+
+  return (
+    <div className="flex gap-4 overflow-x-auto pb-4 -mx-6 px-6">
+      {columns.map(([type, items]) => (
+        <div
+          key={type}
+          className="flex flex-col w-64 shrink-0 rounded-xl border border-border bg-muted/30"
+        >
+          <div className="flex items-center justify-between px-3 py-2.5 border-b border-border/50">
+            <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              {type}
+            </span>
+            <span className="text-[10px] tabular-nums px-1.5 py-0.5 rounded-md bg-secondary text-secondary-foreground font-medium">
+              {items.length}
+            </span>
+          </div>
+          <div className="flex flex-col gap-2 p-2 overflow-y-auto max-h-[60vh]">
+            {items.map((entry) => (
+              <Link
+                key={entry.id}
+                href={entry.href}
+                className="group flex flex-col gap-1.5 p-3 rounded-lg bg-background border border-border/60 hover:border-border hover:shadow-sm transition-all duration-150"
+              >
+                <span className="text-sm font-medium text-foreground truncate">
+                  {entry.title}
+                </span>
+                <span
+                  className="text-[11px] text-muted-foreground"
+                  suppressHydrationWarning
+                >
+                  {formatRelative(entry.timestamp)}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
       ))}
     </div>
   );

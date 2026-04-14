@@ -1,0 +1,2 @@
+# Override root .gitignore — dist is the only artifact and there's no source to rebuild
+!dist

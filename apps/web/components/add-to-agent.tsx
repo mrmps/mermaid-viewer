@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { Check, ChevronDown, Copy } from "lucide-react";
 
 const BASE_URL =
-  process.env.NEXT_PUBLIC_BASE_URL ?? "https://mermaidsh.com";
+  process.env.NEXT_PUBLIC_BASE_URL ?? "https://merm.sh";
 
 function getPrompt() {
   return `Follow the installation instructions in the README at https://github.com/mrmps/mermaid-viewer to set up mermaid-viewer — a tool for creating, versioning, and sharing Mermaid diagrams at ${BASE_URL}.

@@ -55,7 +55,7 @@ export function MachineView() {
       <div className="mt-6 space-y-2">
         <p className="text-xs text-muted-foreground font-mono">
           curl -H &quot;Accept: text/markdown&quot;{" "}
-          {typeof window !== "undefined" ? window.location.origin : "https://mermaidsh.com"}/
+          {typeof window !== "undefined" ? window.location.origin : "https://merm.sh"}/
         </p>
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <a
