@@ -303,6 +303,7 @@ export default async function HomePage() {
               { agent: "Claude Code", cmd: "mkdir -p ~/.claude/skills/mermaid-viewer && curl -s https://merm.sh/skill.md > ~/.claude/skills/mermaid-viewer/SKILL.md" },
               { agent: "Codex", cmd: "mkdir -p ~/.agents/skills/mermaid-viewer && curl -s https://merm.sh/skill.md > ~/.agents/skills/mermaid-viewer/SKILL.md" },
               { agent: "OpenClaw", cmd: "mkdir -p ~/.openclaw/skills/mermaid-viewer && curl -s https://merm.sh/skill.md > ~/.openclaw/skills/mermaid-viewer/SKILL.md" },
+              { agent: "opencode", cmd: "mkdir -p ~/.config/opencode && curl -s https://merm.sh/skill.md >> ~/.config/opencode/AGENTS.md" },
             ].map((item) => (
               <div key={item.agent}>
                 <p className="text-xs font-medium text-muted-foreground mb-1">{item.agent}</p>
@@ -457,7 +458,7 @@ export default async function HomePage() {
           />
           <FAQItem
             question="What agents are supported?"
-            answer="Any agent that can make HTTP requests works out of the box. Claude Code, Cursor, Windsurf, Codex, and OpenClaw are all tested. MCP support makes it even smoother."
+            answer="Any agent that can make HTTP requests works out of the box. Claude Code, Cursor, Windsurf, Codex, OpenClaw, and opencode are all tested. MCP support makes it even smoother."
           />
           <FAQItem
             question="Is it free?"

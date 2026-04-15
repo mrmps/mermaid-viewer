@@ -79,6 +79,12 @@ mkdir -p ~/.openclaw/skills/mermaid-viewer
 curl -s ${baseUrl}/skill.md > ~/.openclaw/skills/mermaid-viewer/SKILL.md
 \`\`\`
 
+**opencode:**
+\`\`\`bash
+mkdir -p ~/.config/opencode
+curl -s ${baseUrl}/skill.md >> ~/.config/opencode/AGENTS.md
+\`\`\`
+
 **Cursor / Windsurf / Other agents:**
 \`\`\`bash
 curl -s ${baseUrl}/skill.md

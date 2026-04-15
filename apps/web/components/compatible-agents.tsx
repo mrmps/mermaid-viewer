@@ -24,6 +24,11 @@ const agents = [
     light: "https://svgl.app/library/openclaw.svg",
     dark: "https://svgl.app/library/openclaw.svg",
   },
+  {
+    name: "opencode",
+    light: "https://svgl.app/library/opencode.svg",
+    dark: "https://svgl.app/library/opencode.svg",
+  },
 ];
 
 export function CompatibleAgents() {

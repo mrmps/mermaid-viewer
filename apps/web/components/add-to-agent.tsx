@@ -39,6 +39,12 @@ mkdir -p ~/.openclaw/skills/mermaid-viewer
 curl -s ${baseUrl}/skill.md > ~/.openclaw/skills/mermaid-viewer/SKILL.md
 \`\`\`
 
+**opencode:**
+\`\`\`bash
+mkdir -p ~/.config/opencode
+curl -s ${baseUrl}/skill.md >> ~/.config/opencode/AGENTS.md
+\`\`\`
+
 **Cursor / Windsurf / Other agents:** Run \`curl -s ${baseUrl}/skill.md\` and save the output wherever your agent reads persistent instructions from (.cursorrules, .windsurfrules, etc).
 
 Or install via the skills CLI: \`npx skills add ${baseUrl}\`
