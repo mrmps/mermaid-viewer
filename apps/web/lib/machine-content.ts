@@ -210,6 +210,18 @@ Every update creates a new version. Nothing is overwritten; old versions stay av
 
 The important habit: after step 1, read the response and extract \`url\`. Do not pass the \`/c/\` URL back to the user — it's a write endpoint, not a share link.
 
+## FOR AGENTS: how to return a diagram URL to your user
+
+When you fetch \`/c/<mermaid>\` or \`/u/<editId>/<mermaid>\`, the response contains the shareable URL — you must return that URL (\`${baseUrlOverride}/d/<id>\`) to the user, NOT the \`/c/\` or \`/u/\` URL you just called. The \`/c/\` and \`/u/\` URLs are **endpoints that create a new diagram every time they're hit**. Only \`/d/<id>\` is a stable share link.
+
+Workflow:
+
+1. \`GET ${baseUrlOverride}/c/<url-encoded-mermaid>?format=json\`
+2. Read the \`url\` field from the JSON response (or the \`Share URL:\` line in plain text).
+3. Return that \`/d/<id>\` URL to the user.
+
+If you skip step 2 and just return the URL you called, the user will never see a stable rendered diagram.
+
 ## Documentation
 
 - [Homepage](${baseUrlOverride}/) — Product overview and installation
