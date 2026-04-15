@@ -65,17 +65,22 @@ describe("GET /c/<mermaid> — URL-only create", () => {
     ({ GET } = await import("@/app/c/[...content]/route"));
   });
 
-  it("creates a diagram and returns plain-text body with View/Edit/Secret/Version", async () => {
+  it("creates a diagram and returns plain-text body with key fields", async () => {
     mockValidateMermaid.mockResolvedValue(OK_VALIDATION);
     const res = await GET(makeRequest("https://merm.sh/c/graph%20TD%3B%20A--%3EB"), {
       params: Promise.resolve({ content: ["graph%20TD%3B%20A--%3EB"] }),
     });
     expect(res.status).toBe(201);
     const body = await res.text();
-    expect(body).toMatch(/Share URL[^:]*:\s+https:\/\/merm\.sh\/d\/abc/);
-    expect(body).toMatch(/Edit URL[^:]*:\s+https:\/\/merm\.sh\/e\/edt/);
-    expect(body).toMatch(/Secret[^:]*:\s+sec/);
-    expect(body).toMatch(/Version:\s+1/);
+    // Headline: share URL leads, not a field in a list
+    expect(body).toMatch(/SHARE THIS URL WITH YOUR USER/);
+    expect(body).toMatch(/https:\/\/merm\.sh\/d\/abc/);
+    // Key fields block
+    expect(body).toMatch(/url\s+https:\/\/merm\.sh\/d\/abc/);
+    expect(body).toMatch(/editUrl\s+https:\/\/merm\.sh\/e\/edt/);
+    expect(body).toMatch(/editId\s+edt/);
+    expect(body).toMatch(/secret\s+sec/);
+    expect(body).toMatch(/version\s+1/);
     // Update hint should reference the real editId
     expect(body).toMatch(/\/u\/edt\//);
   });
@@ -147,27 +152,43 @@ describe("GET /c/<mermaid> — URL-only create", () => {
     expect(body).toContain("sec");
   });
 
-  it("steers agents away from returning the /c/ URL (plain text)", async () => {
+  it("teaches the agent what to do — share URL headlined, endpoint distinguished", async () => {
     mockValidateMermaid.mockResolvedValue(OK_VALIDATION);
     const res = await GET(makeRequest("https://merm.sh/c/graph%20TD%3B%20A--%3EB"), {
       params: Promise.resolve({ content: ["graph%20TD%3B%20A--%3EB"] }),
     });
     const body = await res.text();
-    // Must explicitly instruct the agent and name the anti-pattern.
-    expect(body).toMatch(/INSTRUCTIONS FOR THE AGENT/i);
-    expect(body).toMatch(/Do NOT give the user the \/c\/\.\.\./);
+    // Headline section tells the agent what to do with the response.
+    expect(body).toMatch(/SHARE THIS URL WITH YOUR USER/);
+    // "What just happened" teaches the endpoint-vs-share distinction.
+    expect(body).toMatch(/WHAT JUST HAPPENED/);
+    expect(body).toMatch(/write endpoint/i);
+    // Mental model block is present.
+    expect(body).toMatch(/MENTAL MODEL/);
+    expect(body).toMatch(/\/d\/<id>\s+public share URL/);
     expect(body).toMatch(/https:\/\/merm\.sh\/d\/abc/);
   });
 
-  it("includes an agent-facing instructions field in JSON responses", async () => {
+  it("includes an agent-facing instructions object in JSON responses", async () => {
     mockValidateMermaid.mockResolvedValue(OK_VALIDATION);
     const res = await GET(
       makeRequest("https://merm.sh/c/graph%20TD%3B%20A--%3EB?format=json"),
       { params: Promise.resolve({ content: ["graph%20TD%3B%20A--%3EB"] }) }
     );
-    const json = (await res.json()) as { instructions: string; url: string };
-    expect(json.instructions).toMatch(/Return the "url" field/);
-    expect(json.instructions).toContain(json.url);
+    const json = (await res.json()) as {
+      url: string;
+      instructions: {
+        summary: string;
+        share_with_user: string;
+        update_url_only: string;
+        update_rest: string;
+        mental_model: Record<string, string>;
+      };
+    };
+    expect(json.instructions.summary).toMatch(/url.*field/i);
+    expect(json.instructions.share_with_user).toBe(json.url);
+    expect(json.instructions.update_url_only).toMatch(/\/u\/edt\//);
+    expect(json.instructions.mental_model["/d/<id>"]).toMatch(/public share/);
   });
 });
 
@@ -201,8 +222,8 @@ describe("GET /u/<editId>/<mermaid> — URL-only update", () => {
     );
     expect(res.status).toBe(201);
     const body = await res.text();
-    expect(body).toMatch(/already updated/i);
-    expect(body).toMatch(/Version:\s+2/);
+    expect(body).toMatch(/updated on merm\.sh/i);
+    expect(body).toMatch(/version\s+2/);
     expect(mockAddVersion).toHaveBeenCalledWith(
       expect.objectContaining({ editId: "edt", diagramId: "abc" })
     );
