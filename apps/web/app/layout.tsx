@@ -7,10 +7,10 @@ import { QueryProvider } from "@/components/query-provider";
 import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
 import { VercelAnalytics } from "@/components/vercel-analytics";
 import { baseUrl } from "@/lib/env";
-
-const isDevelopment = process.env.NODE_ENV === "development";
 import { getThemeBootstrapScript } from "@/lib/theme";
 import "./globals.css";
+
+const isDevelopment = process.env.NODE_ENV === "development";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -88,9 +88,19 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <Script id="theme-init" strategy="beforeInteractive">
-          {getThemeBootstrapScript()}
-        </Script>
+        {/*
+          Do not swap this for <Script strategy="beforeInteractive"> or next-themes.
+          In App Router, both emit async script chunks that run AFTER first paint —
+          which reintroduces the theme flash. A raw <script dangerouslySetInnerHTML>
+          is the only way to get a synchronous inline script in the SSR <head> that
+          runs before CSS paints. React 19 logs a dev-mode warning about this
+          ("Scripts inside React components are never executed when rendering on
+          the client") — it's cosmetic and does not affect the SSR execution that
+          prevents FOUC. See git blame on this line before changing.
+        */}
+        <script
+          dangerouslySetInnerHTML={{ __html: getThemeBootstrapScript() }}
+        />
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <QueryProvider>
