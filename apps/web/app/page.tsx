@@ -371,6 +371,8 @@ export default async function HomePage() {
         </div>
         <div className="flex flex-col">
           <APIItem method="POST" path="/api/d" description="Create a new diagram" />
+          <APIItem method="GET" path="/c/<mermaid>" description="Create via URL — for GET-only agents" />
+          <APIItem method="GET" path="/u/<editId>/<mermaid>" description="Update via URL — new version of existing diagram" />
           <APIItem method="PUT" path="/api/d/:id" description="Update with a new version" />
           <APIItem method="GET" path="/d/:id" description="View rendered diagram" />
           <APIItem method="GET" path="/api/d/:id" description="Fetch diagram JSON" />
@@ -439,6 +441,34 @@ export default async function HomePage() {
             { field: "versions", type: "array", desc: "[{ version, content, createdAt }]" },
             { field: "skill", type: "string", desc: "Per-diagram skill URL" },
           ]} />
+        </div>
+
+        {/* URL-only endpoints */}
+        <div className="mt-8">
+          <h3 className="text-sm font-medium text-foreground mb-1">
+            GET /c and /u — URL-only creation and update
+          </h3>
+          <p className="text-xs text-muted-foreground mb-2">
+            For agents that can only open URLs (ChatGPT browsing, Perplexity, URL-previewers) — put the diagram directly in the path.
+          </p>
+          <div className="bg-secondary rounded-lg px-4 py-3 mb-3 overflow-x-auto">
+            <pre className="text-xs font-mono text-secondary-foreground m-0">
+{`# raw Mermaid → diagram
+GET /c/graph%20TD%3B%20A--%3EB%3B%20B--%3EC
+
+# new version of an existing diagram (editId from create response)
+GET /u/<editId>/graph%20TD%3B%20A--%3EB%3B%20B--%3EC%3B%20C--%3ED
+
+# alt paste-service style (same as /c, but query param)
+GET /api/d?content=graph%20TD%3B%20A--%3EB`}
+            </pre>
+          </div>
+          <p className="text-xs text-muted-foreground mb-2">
+            Returns <code className="font-mono">201 Created</code> with plain text (View + Edit + Secret lines). Append <code className="font-mono">?format=json</code> (or send <code className="font-mono">Accept: application/json</code>) for a structured response matching <code className="font-mono">POST /api/d</code>. The same URLs are mirrored in <code className="font-mono">x-diagram-url</code>, <code className="font-mono">x-edit-url</code>, and <code className="font-mono">x-diagram-secret</code> response headers, so even agents that can&apos;t parse body content can get the info from headers.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Practical path cap ~8KB. For larger diagrams, fall back to <code className="font-mono">POST /api/d</code>.
+          </p>
         </div>
       </div>
 
