@@ -28,7 +28,7 @@ export function VersionPanel(props: {
   } = props;
 
   return (
-    <div className="w-52 shrink-0 flex flex-col overflow-y-auto bg-background border-r border-border">
+    <div className="hidden md:flex w-52 shrink-0 flex-col overflow-y-auto bg-background border-r border-border">
       <div className="sticky top-0 z-10 px-3 py-2.5 bg-background border-b border-border/50">
         <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
           Versions

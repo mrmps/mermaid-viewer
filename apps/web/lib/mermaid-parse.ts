@@ -119,17 +119,54 @@ async function withServerDomEnvironment<T>(operation: () => Promise<T>) {
 }
 
 /**
+ * Upstream mermaid.parse silently accepts malformed node shapes like
+ * `X[/label]` (parallelogram opener without the matching `/]`) when they
+ * appear inside a `subgraph ... end` block — the renderer then fails.
+ * This scan rejects those before we hand content to mermaid.
+ */
+function preValidateNodeShapes(
+  content: string,
+): { ok: true } | { ok: false; message: string } {
+  const lines = content.split(/\r?\n/);
+  const PATTERN = /\[([\\/])([^\]\n]*)\]/g;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.trim().startsWith("%%")) continue;
+    PATTERN.lastIndex = 0;
+    let match: RegExpExecArray | null;
+    while ((match = PATTERN.exec(line)) !== null) {
+      const [, opener, inner] = match;
+      const lastChar = inner.at(-1);
+      if (lastChar !== "/" && lastChar !== "\\") {
+        return {
+          ok: false,
+          message: `Parsing failed on line ${i + 1}: malformed node shape '[${opener}${inner}]'. A '[${opener}' opener must be closed with '/]' or '\\]'.`,
+        };
+      }
+    }
+  }
+  return { ok: true };
+}
+
+/**
  * Validate Mermaid syntax server-side and fail closed when the parser
  * cannot initialize, so the API never stores content it couldn't verify.
  */
 export async function validateMermaid(
   content: string,
 ): Promise<MermaidValidationResult> {
+  const prepared = prepareMermaidSource(content);
+
+  const shapeCheck = preValidateNodeShapes(prepared);
+  if (!shapeCheck.ok) {
+    return { ok: false, kind: "syntax", message: shapeCheck.message };
+  }
+
   try {
     await withServerDomEnvironment(async () => {
       const mermaid: typeof mermaidType = (await import("mermaid")).default;
       mermaid.initialize({ startOnLoad: false, securityLevel: "antiscript" });
-      await mermaid.parse(prepareMermaidSource(content));
+      await mermaid.parse(prepared);
     });
     return { ok: true };
   } catch (e) {

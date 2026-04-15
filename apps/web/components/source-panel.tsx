@@ -90,7 +90,7 @@ function SourcePanelInner({
   if (!open) return null;
 
   return (
-    <div className="w-96 shrink-0 flex flex-col bg-background border-l border-border">
+    <div className="fixed inset-0 z-40 flex flex-col bg-background md:static md:z-auto md:w-96 md:shrink-0 md:border-l md:border-border">
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-border/50">
         <div className="flex items-center gap-2">

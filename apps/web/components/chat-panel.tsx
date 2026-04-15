@@ -394,7 +394,7 @@ export function ChatPanel({
   if (!open) return null;
 
   return (
-    <div className="w-80 shrink-0 flex flex-col bg-background/80 backdrop-blur-xl border-l border-border/60 animate-in slide-in-from-right-2 duration-200">
+    <div className="fixed inset-0 z-40 flex flex-col bg-background/95 backdrop-blur-xl animate-in slide-in-from-right-2 duration-200 md:static md:z-auto md:w-80 md:shrink-0 md:bg-background/80 md:border-l md:border-border/60">
       {/* Header */}
       <div className="flex items-center justify-between px-3 h-11 shrink-0 border-b border-border/40">
         <div className="flex items-center gap-2">

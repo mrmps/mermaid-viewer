@@ -66,7 +66,92 @@ afterEach(() => {
   }
 });
 
+const PARALLELOGRAM_OPENER_DIAGRAM = `graph TB
+    subgraph Sandbox["Agent Sandbox"]
+        direction TB
+        WS[/workspace dir<br/>File Sync Service]
+        ENV[Env vars:<br/>SESSION_TOKEN]
+    end`;
+
+const SUBGRAPH_HIDES_LEX_ERROR = `graph TB
+    subgraph Sandbox["Agent Sandbox"]
+        AGENT[Agent Loop]
+        WS[/workspace dir<br/>File Sync Service]
+    end`;
+
+const FULL_SUBMITTED_DIAGRAM = `graph TB
+    subgraph Client["User / Client"]
+        U[User Request]
+    end
+
+    subgraph Backend["Backend (ECS Fargate)"]
+        API[REST API<br/>Agent Orchestrator]
+    end
+
+    subgraph Sandbox["Agent Sandbox — Unikraft micro-VM<br/>(Docker in dev/evals)"]
+        direction TB
+        AGENT[Agent Loop<br/>Python bytecode only]
+        GW[Gateway Protocol<br/>ControlPlaneGateway]
+        WS[/workspace dir<br/>File Sync Service]
+        ENV[Env vars:<br/>SESSION_TOKEN<br/>CONTROL_PLANE_URL<br/>SESSION_ID<br/><i>stripped after boot</i>]
+        AGENT --> GW
+        AGENT --> WS
+    end
+
+    subgraph ControlPlane["Control Plane (stateless FastAPI)"]
+        AUTH[Validate<br/>Bearer session_token]
+        LLMProxy[LLM Proxy<br/>owns full history]
+        PreSign[Presigned URL<br/>Generator]
+        Bill[Cost caps<br/>+ Billing]
+        DB[(Session DB<br/>+ Credentials)]
+        AUTH --> LLMProxy
+        AUTH --> PreSign
+        AUTH --> Bill
+        LLMProxy --> DB
+    end
+
+    U --> API
+    API -->|provision VM| Sandbox
+    GW -->|HTTPS| AUTH
+
+    classDef danger fill:#fee,stroke:#c33,color:#000
+    class Sandbox danger`;
+
 describe("validateMermaid", () => {
+  it("rejects the node-shape typo even when nested inside a subgraph (this is what prod misses)", async () => {
+    const { validateMermaid } = await import("../lib/mermaid-parse");
+
+    const result = await validateMermaid(SUBGRAPH_HIDES_LEX_ERROR);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("Expected failure");
+    expect(result.kind).toBe("syntax");
+  });
+
+  it("rejects the node-shape typo that breaks the renderer (WS[/...] without closing /])", async () => {
+    const { validateMermaid } = await import("../lib/mermaid-parse");
+
+    const result = await validateMermaid(PARALLELOGRAM_OPENER_DIAGRAM);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) {
+      throw new Error("Expected validation failure");
+    }
+    expect(result.kind).toBe("syntax");
+  });
+
+  it("rejects the full submitted diagram that renders as Lexical error on line 14", async () => {
+    const { validateMermaid } = await import("../lib/mermaid-parse");
+
+    const result = await validateMermaid(FULL_SUBMITTED_DIAGRAM);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) {
+      throw new Error("Expected validation failure");
+    }
+    expect(result.kind).toBe("syntax");
+  });
+
   it("rejects the architecture-beta sample that the renderer cannot parse", async () => {
     const { validateMermaid } = await import("../lib/mermaid-parse");
 

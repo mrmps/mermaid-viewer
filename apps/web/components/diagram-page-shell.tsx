@@ -113,8 +113,8 @@ export function DiagramPageShell({
     <div className="flex flex-col h-screen bg-background text-foreground">
       <HistoryTracker id={diagramId} title={currentTitle} />
 
-      <header className="flex items-center justify-between px-4 h-12 shrink-0 backdrop-blur-md border-b border-border bg-background">
-        <div className="flex items-center gap-2.5 min-w-0">
+      <header className="flex items-center justify-between gap-2 px-3 md:px-4 h-12 shrink-0 backdrop-blur-md border-b border-border bg-background">
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
           <Link
             href="/"
             className="text-xs font-bold transition-colors shrink-0 text-muted-foreground"
@@ -165,45 +165,53 @@ export function DiagramPageShell({
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <LookPicker
-            current={look}
-            onSelectLook={(nextLook) =>
-              updateSearch(
-                "look",
-                nextLook === "classic" ? null : nextLook,
-                "replace"
-              )
-            }
-          />
-          <div className="w-px h-5 bg-border" />
-          <ThemePicker
-            current={theme}
-            onSelectTheme={(nextTheme) =>
-              updateSearch(
-                "theme",
-                nextTheme === "auto" ? null : nextTheme,
-                "replace"
-              )
-            }
-          />
-          <div className="w-px h-5 bg-border" />
+          <div className="hidden md:flex items-center gap-2">
+            <LookPicker
+              current={look}
+              onSelectLook={(nextLook) =>
+                updateSearch(
+                  "look",
+                  nextLook === "classic" ? null : nextLook,
+                  "replace"
+                )
+              }
+            />
+            <div className="w-px h-5 bg-border" />
+            <ThemePicker
+              current={theme}
+              onSelectTheme={(nextTheme) =>
+                updateSearch(
+                  "theme",
+                  nextTheme === "auto" ? null : nextTheme,
+                  "replace"
+                )
+              }
+            />
+            <div className="w-px h-5 bg-border" />
+          </div>
           <ModeToggle />
-          <div className="w-px h-5 bg-border" />
-          <SourceToggle />
+          <div className="hidden md:flex items-center gap-2">
+            <div className="w-px h-5 bg-border" />
+            <SourceToggle />
+          </div>
           {editId ? <ChatToggle /> : null}
-          <CopyImageButton content={selectedVersion.content} theme={theme} look={look} />
-          <ExcalidrawButton content={selectedVersion.content} />
+          <div className="hidden md:flex items-center gap-2">
+            <CopyImageButton content={selectedVersion.content} theme={theme} look={look} />
+            <ExcalidrawButton content={selectedVersion.content} />
+          </div>
           <ShareButton
             diagramId={diagramId}
             editId={editId}
             title={currentTitle}
           />
           {editId ? (
-            <DeleteDiagramButton
-              diagramId={diagramId}
-              editId={editId}
-              title={currentTitle}
-            />
+            <div className="hidden md:flex">
+              <DeleteDiagramButton
+                diagramId={diagramId}
+                editId={editId}
+                title={currentTitle}
+              />
+            </div>
           ) : null}
         </div>
       </header>
