@@ -35,12 +35,26 @@ const GUESS_CREATE_PATHS = new Set([
 
 function buildGuessHint(origin: string) {
   return (
-    "404 Not Found — but you're close.\n" +
+    "=== merm.sh — not found, but close ===\n" +
     "\n" +
-    "URL-only diagram creation lives at:\n" +
-    `  GET ${origin}/c/<url-encoded-mermaid>\n` +
-    `  GET ${origin}/u/<editId>/<url-encoded-mermaid> (update)\n` +
-    `  GET ${origin}/api/d?content=<url-encoded-mermaid>  (query-param alternative)\n` +
+    "The URL you tried isn't a route, but you're probably looking for\n" +
+    "one of these:\n" +
+    "\n" +
+    "▶ CREATE A DIAGRAM (single GET; no body, no headers)\n" +
+    `    ${origin}/c/<url-encoded-mermaid>\n` +
+    "    Example:\n" +
+    `    ${origin}/c/graph%20TD%3B%20A--%3EB\n` +
+    "\n" +
+    "▶ UPDATE AN EXISTING DIAGRAM\n" +
+    `    ${origin}/u/<editId>/<url-encoded-new-mermaid>\n` +
+    "    (editId is returned by the create response)\n" +
+    "\n" +
+    "▶ QUERY-STYLE CREATE (paste-service convention)\n" +
+    `    ${origin}/api/d?content=<url-encoded-mermaid>\n` +
+    "\n" +
+    "After any of these, the response returns the shareable URL\n" +
+    `(${origin}/d/<id>). Give THAT URL to the user — not the\n` +
+    "endpoint URL you called.\n" +
     "\n" +
     "Full docs: " +
     origin +

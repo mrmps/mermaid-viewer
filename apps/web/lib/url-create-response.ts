@@ -122,10 +122,18 @@ export function urlCreateResponse({
         editUrl,
         secret: result.secret,
         version: result.version,
-        // Explicit steering for agents: many paraphrase the response and
-        // accidentally return the /c/... or /u/... URL they just fetched
-        // instead of the /d/<id> share URL. Say it plainly.
-        instructions: `Diagram ${verb}. Return the "url" field above to the user (${viewUrl}). Do NOT return the /c/... or /u/... URL you just fetched — that's the endpoint, not the share link.`,
+        instructions: {
+          summary: `Diagram ${verb}. The \`url\` field is the shareable rendered-diagram URL — that is what you should hand back to the user.`,
+          share_with_user: viewUrl,
+          update_url_only: `${baseUrl}/u/${result.editId}/<url-encoded-new-mermaid>`,
+          update_rest: `PUT ${baseUrl}/api/d/${result.id} with Authorization: Bearer <secret>`,
+          mental_model: {
+            "/d/<id>": "public share URL — humans open this",
+            "/c/<mermaid>": "create endpoint — each call makes a new diagram",
+            "/u/<editId>/<mermaid>":
+              "update endpoint — adds a version to one existing diagram",
+          },
+        },
         ...(cleanReason
           ? {
               warning: "validation_skipped",
@@ -137,32 +145,73 @@ export function urlCreateResponse({
     );
   }
 
-  const verb = origin === "u" ? "updated" : "created";
-  const warningLine = cleanReason ? `\nWarning: ${cleanReason}\n` : "";
+  const verb = origin === "u" ? "Updated" : "Created";
+  const endpointKind = origin === "u" ? "/u/" : "/c/";
+  const warningBlock = cleanReason
+    ? `\n⚠ Warning\n  ${cleanReason}\n`
+    : "";
 
-  // Top of the body is written AT the agent, not for the human, because
-  // agents paraphrase this into their chat output and often confuse the
-  // creation endpoint they just fetched with the user-facing share URL.
-  // Observed failure: agents return "open /c/<mermaid> to see your diagram"
-  // to the user. The diagram is ALREADY created. Tell them what to say.
+  // Response body is aimed at the agent that just fetched this endpoint.
+  // Three things it has to communicate, in order:
+  //   1. What just happened (state change: a diagram now exists at /d/<id>).
+  //   2. What to do with it (return the share URL to the user).
+  //   3. How to do more (update, read, JSON) — with enough mental model
+  //      for the agent to reason about future calls, not just copy-paste.
+  //
+  // Observed failure mode: agents conflate the endpoint URL (/c/...) they
+  // fetched with the share URL, and return the endpoint URL to the user.
+  // Fix: lead with the share URL as a headline, not as one field in a list.
+  //
+  // Lines capped at ~72 chars to survive narrow terminal/chat rendering.
   const body =
-    `INSTRUCTIONS FOR THE AGENT READING THIS RESPONSE:\n` +
-    `  The diagram is already ${verb}. Give the user this URL:\n` +
-    `    ${viewUrl}\n` +
-    `  Do NOT give the user the /c/... or /u/... URL you just fetched — that\n` +
-    `  is the creation/update endpoint, not the share URL. The share URL\n` +
-    `  above (/d/<id>) is the one that opens the rendered diagram.\n` +
-    `${warningLine}\n` +
-    `Share URL (give to user):  ${viewUrl}\n` +
-    `Edit URL (browser editor): ${editUrl}\n` +
-    `Secret (for REST updates): ${result.secret}\n` +
-    `Version:                   ${result.version}\n` +
+    `=== Diagram ${verb.toLowerCase()} on merm.sh ===\n` +
     `\n` +
-    `# To add a new version to THIS diagram later (GET-only, no POST needed):\n` +
-    `#   ${baseUrl}/u/${result.editId}/<url-encoded-new-mermaid>\n` +
-    `# To update via REST (agents that can POST/PUT):\n` +
-    `#   PUT ${baseUrl}/api/d/${result.id}  (Authorization: Bearer <secret>)\n` +
-    `# For JSON output instead of this text, add ?format=json to any /c or /u URL.\n`;
+    `▶ SHARE THIS URL WITH YOUR USER\n` +
+    `  ${viewUrl}\n` +
+    `  (This is the rendered-diagram page. Humans open it in a browser.)\n` +
+    `\n` +
+    `▶ WHAT JUST HAPPENED\n` +
+    `  You called a write endpoint: ${endpointKind}...\n` +
+    `  merm.sh ${verb.toLowerCase()} a diagram and the URL above is where\n` +
+    `  it lives. The ${endpointKind} URL you fetched is the endpoint —\n` +
+    `  calling it again creates another diagram / version, it is not a\n` +
+    `  share link.\n` +
+    warningBlock +
+    `\n` +
+    `▶ KEY FIELDS\n` +
+    `  url        ${viewUrl}\n` +
+    `             (public; share with humans)\n` +
+    `  editUrl    ${editUrl}\n` +
+    `             (browser editor; share with anyone who should edit)\n` +
+    `  editId     ${result.editId}\n` +
+    `             (use in URL-only update path; no auth needed)\n` +
+    `  secret     ${result.secret}\n` +
+    `             (Bearer token for REST; returned once — save it)\n` +
+    `  version    ${result.version}\n` +
+    `             (every update creates a new version; history is kept)\n` +
+    `\n` +
+    `▶ HOW TO DO MORE\n` +
+    `\n` +
+    `  Add a new version to THIS diagram (URL-only, no POST):\n` +
+    `    ${baseUrl}/u/${result.editId}/<url-encoded-new-mermaid>\n` +
+    `\n` +
+    `  Update via REST (if you can send headers):\n` +
+    `    PUT ${baseUrl}/api/d/${result.id}\n` +
+    `    Authorization: Bearer <secret>\n` +
+    `    body: <raw mermaid>\n` +
+    `\n` +
+    `  Read current content + all versions:\n` +
+    `    ${baseUrl}/api/d/${result.id}\n` +
+    `\n` +
+    `  Get JSON instead of this text:\n` +
+    `    Append ?format=json to any /c, /u, or /api/d GET request.\n` +
+    `\n` +
+    `▶ MENTAL MODEL (5 seconds)\n` +
+    `  /d/<id>          public share URL — humans open this\n` +
+    `  /c/<mermaid>     create endpoint — each call makes a NEW diagram\n` +
+    `  /u/<edit>/<m>    update endpoint — adds a version to one diagram\n` +
+    `  Nothing is overwritten. Every update is a new version you can\n` +
+    `  restore by fetching /api/d/<id>?v=N.\n`;
 
   return new Response(body, { status: 201, headers });
 }

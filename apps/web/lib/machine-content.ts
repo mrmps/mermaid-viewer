@@ -11,22 +11,23 @@ export function getDocIndexBlock(baseUrlOverride: string = baseUrl): string {
 export function getMachineMarkdown(baseUrlOverride: string = baseUrl): string {
   return `${getDocIndexBlock(baseUrlOverride)}# merm.sh
 
-> **How to use**: merm.sh is a versioned Mermaid diagram hosting service for AI agents. Create diagrams via the API or MCP server below. Save the \`secret\` from create responses — it's the only way to update a diagram. Always share the diagram URL with your user so they can view it.
+> **merm.sh** hosts versioned Mermaid diagrams. You create one with a single GET or POST, get back a stable rendered-page URL, and share that URL with the user. Every update creates a new version; nothing is overwritten.
 
-## CRITICAL: if you are an AI agent, read this
+## Two URL shapes, one job each
 
-The endpoints \`/c/<mermaid>\` and \`/u/<editId>/<mermaid>\` are **write endpoints that return a response**. They are NOT the URL to return to the user.
+- \`${baseUrlOverride}/d/<id>\` — **share URL.** Rendered diagram page; give this to the user.
+- \`${baseUrlOverride}/c/<url-encoded-mermaid>\` or \`POST ${baseUrlOverride}/api/d\` — **create.** Returns the share URL plus credentials.
+- \`${baseUrlOverride}/u/<editId>/<url-encoded-mermaid>\` or \`PUT ${baseUrlOverride}/api/d/<id>\` — **update.** Adds a version to an existing diagram.
 
-**Wrong** (common mistake): *"Here's your diagram: \`${baseUrlOverride}/c/graph%20TD...\`"*
-That's the endpoint you just called. It will re-create the diagram every time someone opens it.
+The create and update paths are *endpoints*, not share URLs. After calling them, read the response and use the \`url\` field (or the \`Share URL\` line in plain text) as the user-facing link.
 
-**Right**: fetch \`${baseUrlOverride}/c/<url-encoded-mermaid>\`, read the response body, extract the \`url\` field (or the \`View:\` line), and return THAT URL — \`${baseUrlOverride}/d/<id>\` — to the user. That is the shareable, rendered-diagram URL.
+## Recommended agent flow
 
-A full cycle looks like:
-
-1. You fetch: \`GET ${baseUrlOverride}/c/graph%20TD%3B%20A--%3EB?format=json\`
-2. Response: \`{"url": "${baseUrlOverride}/d/abc123", "editId": "xyz", "secret": "...", ...}\`
-3. You tell the user: "Here's your diagram: ${baseUrlOverride}/d/abc123"
+1. Create: \`GET ${baseUrlOverride}/c/<url-encoded-mermaid>?format=json\` (or POST).
+2. Read the response: \`{ url, editId, secret, version, … }\`.
+3. Give the user the \`url\` (e.g. \`${baseUrlOverride}/d/abc123\`).
+4. Keep \`editId\` (URL-only updates) and/or \`secret\` (REST updates) for the session.
+5. To add a version later, call the update endpoint with the new Mermaid.
 
 
 ## MCP Server (recommended)
@@ -183,7 +184,31 @@ ${versionRows}
 export function getLlmsTxt(baseUrlOverride: string = baseUrl): string {
   return `# merm.sh
 
-> Versioned Mermaid diagram hosting for AI agents
+> Versioned Mermaid diagram hosting. Create and update diagrams with a single GET request; share the rendered result with a stable URL.
+
+## How merm.sh works
+
+Three URL shapes, each with one job:
+
+| Path | Purpose |
+|---|---|
+| \`${baseUrlOverride}/d/<id>\` | **Share URL.** Rendered diagram page. This is what you give to humans. |
+| \`${baseUrlOverride}/c/<url-encoded-mermaid>\` | **Create endpoint.** Each call creates a new diagram and returns its share URL. |
+| \`${baseUrlOverride}/u/<editId>/<url-encoded-mermaid>\` | **Update endpoint.** Adds a new version to the diagram identified by \`editId\`. |
+
+Every update creates a new version. Nothing is overwritten; old versions stay available at \`/api/d/<id>?v=N\`.
+
+## The flow, for agents
+
+\`\`\`
+1. Fetch   GET ${baseUrlOverride}/c/<url-encoded-mermaid>?format=json
+2. Read    { "url": "${baseUrlOverride}/d/abc123",
+             "editId": "…", "secret": "…", "version": 1 }
+3. Return  "${baseUrlOverride}/d/abc123" to the user
+4. Save    editId (for URL-only updates) and/or secret (for REST updates)
+\`\`\`
+
+The important habit: after step 1, read the response and extract \`url\`. Do not pass the \`/c/\` URL back to the user — it's a write endpoint, not a share link.
 
 ## FOR AGENTS: how to return a diagram URL to your user
 
