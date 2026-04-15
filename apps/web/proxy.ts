@@ -40,10 +40,14 @@ function buildGuessHint(origin: string) {
     "The URL you tried isn't a route, but you're probably looking for\n" +
     "one of these:\n" +
     "\n" +
+    "▶ SANDBOXED-AGENT SHORTCUT (just add ?content= to the homepage)\n" +
+    `    ${origin}/?content=<url-encoded-mermaid>\n` +
+    "    Example:\n" +
+    `    ${origin}/?content=graph%20TD%3B%20A--%3EB\n` +
+    "    Use this if your tool blocks 'dynamic' sub-paths.\n" +
+    "\n" +
     "▶ CREATE A DIAGRAM (single GET; no body, no headers)\n" +
     `    ${origin}/c/<url-encoded-mermaid>\n` +
-    "    Example:\n" +
-    `    ${origin}/c/graph%20TD%3B%20A--%3EB\n` +
     "\n" +
     "▶ UPDATE AN EXISTING DIAGRAM\n" +
     `    ${origin}/u/<editId>/<url-encoded-new-mermaid>\n` +
@@ -65,6 +69,23 @@ function buildGuessHint(origin: string) {
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const method = request.method;
+
+  // --- Sandboxed-agent shortcut: GET /?content=<mermaid> ---
+  // Sandboxed browse tools (ChatGPT, Claude.ai web) typically only allow
+  // fetching the exact URL the user mentioned. They reliably accept query
+  // params on that URL but block "dynamic" sub-paths like /c/<long>.
+  // So the homepage doubles as a creator: just add ?content=... and we
+  // rewrite internally to /api/d?content=... — same response shape, no
+  // permission heuristic to trigger.
+  if (
+    method === "GET" &&
+    pathname === "/" &&
+    request.nextUrl.searchParams.has("content")
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/api/d";
+    return NextResponse.rewrite(url);
+  }
 
   // --- URL-only-agent guess redirects ---
   // Real subagent traces showed that GET-only agents naturally try
