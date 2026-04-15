@@ -370,6 +370,7 @@ export default async function HomePage() {
           API
         </div>
         <div className="flex flex-col">
+          <APIItem method="GET" path="/go/<mermaid>" description="Create + 302 to /d/<id> — for agents that hand off a link" />
           <APIItem method="GET" path="/?content=<mermaid>" description="Create via homepage — works in sandboxed browse tools" />
           <APIItem method="POST" path="/api/d" description="Create a new diagram" />
           <APIItem method="GET" path="/c/<mermaid>" description="Create via URL — for GET-only agents" />

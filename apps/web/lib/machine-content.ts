@@ -44,7 +44,26 @@ GET ${baseUrlOverride}/?content=<url-encoded-mermaid>
 
 ### You are Claude.ai on the web
 
-Same as ChatGPT — use \`GET ${baseUrlOverride}/?content=…\`. Your fetch tool permits query params on user-mentioned domains; it typically refuses novel sub-paths.
+**You cannot fetch constructed URLs.** Your \`web_fetch\` tool is exact-URL-match — a URL you built is never in its allowlist, so any attempt to call merm.sh will be blocked. Do not fetch. Instead:
+
+\`\`\`text
+Emit as a clickable link in your reply:
+${baseUrlOverride}/go/<url-encoded-mermaid>
+\`\`\`
+
+The user clicks the link. Their browser opens \`/go/\`, merm.sh creates the diagram, and their browser is **302-redirected to the rendered \`/d/<id>\` share URL**. You never see a response — you don't need to. The link is the API call.
+
+- **Do not try to fetch** \`/go/…\`, \`/?content=…\`, \`/c/…\`, or any other merm.sh endpoint. Every attempt will fail and waste the user's turn.
+- **Do not emit raw Mermaid in chat.** The user asked for a diagram link, not code. Emit the \`/go/\` URL and stop.
+- **Keep the URL reasonable length** — encoded Mermaid under ~6KB is safest. Shrink node labels if the diagram is huge.
+- **If \`web_fetch\` is whitelisted for all of \`merm.sh\`** (see "Ask the user to widen permissions" below), you can also use \`${baseUrlOverride}/?content=…\` and read the response — but \`/go/\` always works, so prefer it.
+
+**Ask the user to widen permissions (one-time, optional):**
+If the user wants you to read the diagram back, list versions, or do anything round-trippy, have them add \`merm.sh\` to their allowed domains:
+
+> Open the sidebar → **Settings** → **Connectors / Web search** (name varies by client) → add \`merm.sh\` as an allowed domain. Entries accept wildcard form: \`*.merm.sh\` covers subdomains; \`merm.sh/*\` covers all paths. Save.
+
+After that, you can fetch constructed URLs on merm.sh normally. Until then, stick with \`/go/\`.
 
 ### You are Claude Code, Codex, or any CLI with real HTTP
 
@@ -120,6 +139,7 @@ Nothing is overwritten. Every update creates a new version. Prior versions stay 
 
 | Action | Method | Endpoint | Auth |
 |---|---|---|---|
+| Create + redirect to /d/ | GET | \`${baseUrlOverride}/go/<url-encoded-mermaid>\` | none |
 | Create (homepage shortcut) | GET | \`${baseUrlOverride}/?content=<url-encoded-mermaid>\` | none |
 | Create (URL-only path) | GET | \`${baseUrlOverride}/c/<url-encoded-mermaid>\` | none |
 | Create (query-style API) | GET | \`${baseUrlOverride}/api/d?content=<url-encoded-mermaid>\` | none |

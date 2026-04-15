@@ -40,11 +40,16 @@ function buildGuessHint(origin: string) {
     "The URL you tried isn't a route, but you're probably looking for\n" +
     "one of these:\n" +
     "\n" +
-    "▶ SANDBOXED-AGENT SHORTCUT (just add ?content= to the homepage)\n" +
+    "▶ HAND-OFF LINK (Claude.ai web — no fetch needed)\n" +
+    `    ${origin}/go/<url-encoded-mermaid>\n` +
+    "    Emit as a clickable link. User clicks; browser creates\n" +
+    "    the diagram and lands on /d/<id>. You never fetch.\n" +
+    "\n" +
+    "▶ SANDBOXED-AGENT SHORTCUT (ChatGPT browse — query param on homepage)\n" +
     `    ${origin}/?content=<url-encoded-mermaid>\n` +
     "    Example:\n" +
     `    ${origin}/?content=graph%20TD%3B%20A--%3EB\n` +
-    "    Use this if your tool blocks 'dynamic' sub-paths.\n" +
+    "    Use when your tool blocks sub-paths but allows query params.\n" +
     "\n" +
     "▶ CREATE A DIAGRAM (single GET; no body, no headers)\n" +
     `    ${origin}/c/<url-encoded-mermaid>\n` +
