@@ -3,6 +3,11 @@ import { validateMermaid } from "@/lib/mermaid-parse";
 import { getMermaidValidationErrorResponse } from "@/lib/mermaid-validation-response";
 import { prepareMermaidSource } from "@/lib/mermaid-source";
 import { baseUrl } from "@/lib/env";
+import {
+  pickFormat,
+  urlCreateResponse,
+  urlErrorResponse,
+} from "@/lib/url-create-response";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 
@@ -10,6 +15,53 @@ const createDiagramSchema = z.object({
   content: z.string(),
   title: z.string().optional(),
 });
+
+/**
+ * GET fallback for URL-only agents that naturally guess /api/d?content=...
+ * instead of the /c/<path> form. Same create pipeline, same response shape.
+ */
+export async function GET(request: NextRequest) {
+  const params = request.nextUrl.searchParams;
+  const content = params.get("content");
+  const title = params.get("title") ?? undefined;
+  const format = pickFormat(
+    request.headers.get("accept"),
+    params.get("format")
+  );
+
+  if (!content?.trim()) {
+    return urlErrorResponse(
+      format,
+      400,
+      "content_required",
+      "Pass ?content=<url-encoded-mermaid> to create a diagram via GET, or POST to this endpoint with a JSON body. You can also use GET /c/<url-encoded-mermaid> (content in the path)."
+    );
+  }
+
+  const prepared = prepareMermaidSource(content.trim());
+  const validation = await validateMermaid(prepared);
+
+  if (!validation.ok && validation.kind === "syntax") {
+    return urlErrorResponse(
+      format,
+      400,
+      "invalid_syntax",
+      validation.message,
+      { mermaid: prepared }
+    );
+  }
+
+  const validationSkippedReason =
+    !validation.ok ? validation.message : undefined;
+
+  const result = await createDiagram({ content: prepared, title });
+  return urlCreateResponse({
+    result,
+    format,
+    origin: "c",
+    validationSkippedReason,
+  });
+}
 
 export async function POST(request: NextRequest) {
   let content: string;
