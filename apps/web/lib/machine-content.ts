@@ -1,5 +1,11 @@
 import { baseUrl } from "@/lib/env";
 
+/**
+ * Kept for backwards compatibility with internal callers, but the machine
+ * markdown no longer prepends it. Historically this block told agents to
+ * go fetch /llms.txt before doing anything; we now serve the full spec
+ * inline at the root, so the redirection isn't helpful any more.
+ */
 export function getDocIndexBlock(baseUrlOverride: string = baseUrl): string {
   return `> ## Documentation Index
 > Fetch the complete documentation index at: ${baseUrlOverride}/llms.txt
@@ -8,80 +14,109 @@ export function getDocIndexBlock(baseUrlOverride: string = baseUrl): string {
 `;
 }
 
+/**
+ * The full spec, served at `/` (content-negotiated to non-HTML clients) and
+ * at `/api/machine`. Everything an agent needs to successfully create,
+ * read, and update a diagram lives on this page — no follow-on fetches.
+ */
 export function getMachineMarkdown(baseUrlOverride: string = baseUrl): string {
-  return `${getDocIndexBlock(baseUrlOverride)}# merm.sh
+  return `# merm.sh — complete spec
 
-> **merm.sh** hosts versioned Mermaid diagrams. You create one with a single GET or POST, get back a stable rendered-page URL, and share that URL with the user. Every update creates a new version; nothing is overwritten.
+> **This page is everything you need.** You do not need to fetch other docs. merm.sh hosts versioned Mermaid diagrams: one GET or POST creates a diagram, you get back a stable rendered-page URL, and that URL is what you hand to the user.
 
-## Two URL shapes, one job each
+---
 
-- \`${baseUrlOverride}/d/<id>\` — **share URL.** Rendered diagram page; give this to the user.
-- \`${baseUrlOverride}/c/<url-encoded-mermaid>\` or \`POST ${baseUrlOverride}/api/d\` — **create.** Returns the share URL plus credentials.
-- \`${baseUrlOverride}/u/<editId>/<url-encoded-mermaid>\` or \`PUT ${baseUrlOverride}/api/d/<id>\` — **update.** Adds a version to an existing diagram.
+## If you only read one section
 
-The create and update paths are *endpoints*, not share URLs. After calling them, read the response and use the \`url\` field (or the \`Share URL\` line in plain text) as the user-facing link.
+\`\`\`bash
+# 1. You call:
+curl '${baseUrlOverride}/c/graph%20TD%3B%20A--%3EB?format=json'
 
-## Recommended agent flow
+# 2. You get back (JSON):
+{
+  "id": "abc123",
+  "editId": "xyz789",
+  "url":     "${baseUrlOverride}/d/abc123",
+  "editUrl": "${baseUrlOverride}/e/xyz789",
+  "secret":  "s3cr3t…",
+  "version": 1,
+  "instructions": { "share_with_user": "${baseUrlOverride}/d/abc123", ... }
+}
 
-1. Create: \`GET ${baseUrlOverride}/c/<url-encoded-mermaid>?format=json\` (or POST).
-2. Read the response: \`{ url, editId, secret, version, … }\`.
-3. Give the user the \`url\` (e.g. \`${baseUrlOverride}/d/abc123\`).
-4. Keep \`editId\` (URL-only updates) and/or \`secret\` (REST updates) for the session.
-5. To add a version later, call the update endpoint with the new Mermaid.
+# 3. You tell the user:
+"Your diagram is at ${baseUrlOverride}/d/abc123"
+\`\`\`
 
+The \`/c/<mermaid>\` URL you called is a **write endpoint**, not a share link. It is the input side. The \`url\` field in the response is the output — a stable rendered-diagram page at \`/d/<id>\`. That is the one humans open.
 
-## MCP Server (recommended)
+---
 
-Add to your MCP settings for native tool integration:
+## Three URL shapes, three jobs
+
+| Shape | Job | Who uses it |
+|---|---|---|
+| \`${baseUrlOverride}/d/<id>\` | **Share URL.** Rendered diagram page. | Humans, in a browser. |
+| \`${baseUrlOverride}/c/<url-encoded-mermaid>\` | **Create.** Each call makes a new diagram. | Agents, one GET. |
+| \`${baseUrlOverride}/u/<editId>/<url-encoded-mermaid>\` | **Update.** Adds a version to an existing diagram. | Agents, one GET. |
+
+Nothing is overwritten. Every update creates a new version. Prior versions stay at \`${baseUrlOverride}/api/d/<id>?v=N\`.
+
+---
+
+## All endpoints
+
+| Action | Method | Endpoint | Auth |
+|---|---|---|---|
+| Create (URL-only) | GET | \`${baseUrlOverride}/c/<url-encoded-mermaid>\` | none |
+| Create (query-style) | GET | \`${baseUrlOverride}/api/d?content=<url-encoded-mermaid>\` | none |
+| Create (REST) | POST | \`${baseUrlOverride}/api/d\` | none |
+| Update (URL-only) | GET | \`${baseUrlOverride}/u/<editId>/<url-encoded-mermaid>\` | editId in path |
+| Update (REST) | PUT | \`${baseUrlOverride}/api/d/:id\` | \`Bearer <secret>\` |
+| Read diagram | GET | \`${baseUrlOverride}/api/d/:id\` | none |
+| Read a version | GET | \`${baseUrlOverride}/api/d/:id?v=N\` | none |
+| View rendered | GET | \`${baseUrlOverride}/d/:id\` | none |
+
+All create/update endpoints return the same response shape (JSON or plain text). Add \`?format=json\` for JSON; otherwise you get plain text.
+
+---
+
+## Request / response, verbatim
+
+### GET /c/&lt;mermaid&gt;?format=json   (recommended for agents)
+
+\`\`\`bash
+curl '${baseUrlOverride}/c/graph%20TD%3B%20A--%3EB?format=json'
+\`\`\`
+
+Returns \`201 Created\`:
 
 \`\`\`json
 {
-  "mcpServers": {
-    "mermaid-viewer": {
-      "url": "${baseUrlOverride}/mcp"
+  "id": "abc123",
+  "editId": "xyz789",
+  "url": "${baseUrlOverride}/d/abc123",
+  "editUrl": "${baseUrlOverride}/e/xyz789",
+  "secret": "s3cr3t…",
+  "version": 1,
+  "instructions": {
+    "summary": "Diagram created. The \\\`url\\\` field is the shareable rendered-diagram URL — that is what you should hand back to the user.",
+    "share_with_user": "${baseUrlOverride}/d/abc123",
+    "update_url_only": "${baseUrlOverride}/u/xyz789/<url-encoded-new-mermaid>",
+    "update_rest":     "PUT ${baseUrlOverride}/api/d/abc123 with Authorization: Bearer <secret>",
+    "mental_model": {
+      "/d/<id>":               "public share URL — humans open this",
+      "/c/<mermaid>":          "create endpoint — each call makes a new diagram",
+      "/u/<editId>/<mermaid>": "update endpoint — adds a version to one existing diagram"
     }
   }
 }
 \`\`\`
 
-Tools: \`create_diagram\`, \`update_diagram\`, \`get_diagram\`
+### GET /c/&lt;mermaid&gt;   (plain text, default)
 
-## Skill File
+Same endpoint without \`?format=json\`. Returns the same information as a labeled plain-text block headlined by "SHARE THIS URL WITH YOUR USER". Every key field (\`url\`, \`editUrl\`, \`editId\`, \`secret\`, \`version\`) is also mirrored in response headers \`x-diagram-url\`, \`x-edit-url\`, \`x-edit-id\`, \`x-diagram-secret\`.
 
-\`\`\`bash
-npx skills add ${baseUrlOverride}
-\`\`\`
-
-## REST API
-
-| Action | Method | Endpoint | Auth |
-|---|---|---|---|
-| Create | POST | \`${baseUrlOverride}/api/d\` | None |
-| Create (GET) | GET | \`${baseUrlOverride}/c/<url-encoded-mermaid>\` | None |
-| Update (GET) | GET | \`${baseUrlOverride}/u/<editId>/<url-encoded-mermaid>\` | editId in path |
-| Update | PUT | \`${baseUrlOverride}/api/d/:id\` | \`Bearer <secret>\` |
-| Get JSON | GET | \`${baseUrlOverride}/api/d/:id\` | None |
-| Get version | GET | \`${baseUrlOverride}/api/d/:id?v=N\` | None |
-| View | GET | \`${baseUrlOverride}/d/:id\` | None |
-
-### URL-only creation (for GET-only agents)
-
-Agents that can only make GET requests (e.g. ChatGPT browsing, Perplexity, URL-previewers) can create and update diagrams by putting the content directly in the URL path:
-
-\`\`\`bash
-# Create from raw Mermaid
-curl '${baseUrlOverride}/c/graph%20TD%3B%20A--%3EB%3B%20B--%3EC'
-
-# Update an existing diagram (adds a new version; <editId> came from the create response)
-curl '${baseUrlOverride}/u/<editId>/graph%20TD%3B%20A--%3EB%3B%20B--%3EC%3B%20C--%3ED'
-
-# Paste-service style alternative (same as /c, but content in a query param)
-curl '${baseUrlOverride}/api/d?content=graph%20TD%3B%20A--%3EB%3B%20B--%3EC'
-\`\`\`
-
-All return \`201 Created\`. Body format: plain text (\`View:\`, \`Edit:\`, \`Secret:\`, \`Version:\` lines) by default, or JSON if you append \`?format=json\` (same shape as \`POST /api/d\`). The view URL, edit URL, and secret are also mirrored in response headers \`x-diagram-url\`, \`x-edit-url\`, and \`x-diagram-secret\` — useful for header-only agents. Practical URL length cap: ~8KB — for larger diagrams use \`POST /api/d\`.
-
-### Create a diagram
+### POST /api/d   (REST, if you can send headers + body)
 
 \`\`\`bash
 curl -X POST ${baseUrlOverride}/api/d \\
@@ -89,63 +124,84 @@ curl -X POST ${baseUrlOverride}/api/d \\
   -d '{"content": "graph TD; A-->B", "title": "My Diagram"}'
 \`\`\`
 
-Response: \`{ id, editId, url, editUrl, secret, version, skill }\`
+Same response shape as above.
 
-### Update a diagram
+### GET /u/&lt;editId&gt;/&lt;mermaid&gt;   (URL-only update)
 
-\`\`\`bash
-curl -X PUT ${baseUrlOverride}/api/d/:id \\
-  -H "Authorization: Bearer <secret>" \\
-  -H "Content-Type: text/plain" \\
-  -d 'graph TD; A-->B; B-->C'
-\`\`\`
-
-### Get diagram data (all versions)
+Adds a new version to the diagram identified by \`editId\`. The \`id\` and \`url\` in the response are the *same* as on create (the diagram never moves); \`version\` increments.
 
 \`\`\`bash
-curl ${baseUrlOverride}/api/d/:id
+curl '${baseUrlOverride}/u/xyz789/graph%20TD%3B%20A--%3EB%3B%20B--%3EC'
 \`\`\`
 
-Response: \`{ id, title, version, content, createdAt, versions, skill }\`
-
-The \`versions\` array contains every version with \`{ version, content, createdAt }\`.
-
-### Get a specific version
+### GET /api/d/:id   (read)
 
 \`\`\`bash
-curl ${baseUrlOverride}/api/d/:id?v=2
+curl ${baseUrlOverride}/api/d/abc123
 \`\`\`
 
-Returns the same shape, but \`content\` and \`version\` reflect the requested version. The \`versions\` array still includes all versions.
+Returns \`{ id, title, version, content, createdAt, versions: [{version, content, createdAt}...], skill }\`. Append \`?v=N\` to read a specific version.
 
-## Content Negotiation
+---
 
-All page URLs support content negotiation. Send \`Accept: text/markdown\` to receive clean Markdown instead of HTML:
+## Encoding rule (one sentence)
 
-\`\`\`bash
-curl -H "Accept: text/markdown" ${baseUrlOverride}/
-curl -H "Accept: text/markdown" ${baseUrlOverride}/d/:id
+URL-encode your Mermaid with *nothing* left raw: percent-encode spaces, newlines, semicolons, slashes, colons, brackets. Python: \`urllib.parse.quote(mermaid, safe='')\`. JavaScript: \`encodeURIComponent(mermaid)\`.
+
+---
+
+## Practical limits & edge cases
+
+- **URL length cap**: ~8KB URL (~5KB raw Mermaid after encoding). Beyond that, switch to \`POST /api/d\`. URLs between ~8KB and ~25KB may 502 at the edge; 25KB+ returns 414.
+- **Invalid Mermaid** → \`400 invalid_syntax\` with the parser message. Your content is *not* saved.
+- **Validator crash on our side** (rare) → the diagram is saved anyway; response includes \`x-validation: skipped\` and a \`warning\` field. Open the view URL to confirm it rendered.
+- **Unicode** (Chinese, emoji, etc.) round-trips fine as long as you URL-encode it.
+- **Supported types**: flowchart, sequence, class, state, entity-relationship, gantt, pie, quadrant, requirement, gitgraph, mindmap, timeline, sankey, block, packet, kanban, architecture.
+
+---
+
+## Agent failure modes to avoid
+
+1. **Returning the \`/c/…\` URL to the user.** That's the endpoint, not the share link. Return the \`url\` field from the response.
+2. **Not fetching the endpoint at all.** Constructing a \`/c/...\` URL without actually calling it does *not* create a diagram. The diagram is created *by the call*.
+3. **Losing the \`secret\`.** It's returned exactly once on create. If you may update via REST later, store it for the session.
+4. **Calling \`/c/\` again to update.** That creates a *new* diagram. Use \`/u/<editId>/…\` to add a version to an existing one.
+
+---
+
+## Content negotiation
+
+Send \`Accept: text/markdown\` (or no \`Accept\` header, or anything that isn't \`text/html\`) to any page URL and you get clean Markdown. That's how this page is served to you. Human browsers get the rendered site.
+
+---
+
+## MCP (for MCP-connected agents)
+
+\`\`\`json
+{ "mcpServers": { "mermaid-viewer": { "url": "${baseUrlOverride}/mcp" } } }
 \`\`\`
 
-Diagram pages return the diagram source, metadata, and version history in Markdown.
+Tools: \`create_diagram\`, \`update_diagram\`, \`get_diagram\`. Same backing store; use whichever transport (URL, REST, MCP) suits your agent.
 
-## Supported Diagram Types
-
-flowchart, sequence, class, state, entity-relationship, gantt, pie, quadrant, requirement, gitgraph, mindmap, timeline, sankey, block, packet, kanban, architecture
+---
 
 ## Rules
 
-1. Save the \`secret\` from create — it's returned only once and is required for updates
-2. Content must be valid Mermaid syntax
-3. Each update creates a new version — previous content is never lost
-4. Always send the diagram URL (\`${baseUrlOverride}/d/:id\`) to the user
-5. The \`skill\` URL in create/update responses points to a per-diagram SKILL.md you can share with other agents
-6. Diagrams are free and public — anyone with the URL can view them
+1. Save the \`secret\` from create — returned once, required for REST updates.
+2. Content must be valid Mermaid syntax.
+3. Each update creates a new version. Nothing is ever overwritten.
+4. Return the \`url\` field (\`${baseUrlOverride}/d/<id>\`) to the user. Never return the endpoint URL you called.
+5. Diagrams are free, public, and permanent. Anyone with the URL can view.
 `;
 }
 
+/**
+ * Per-diagram markdown (served from `/d/<id>` when the client asks for
+ * non-HTML). Self-contained: diagram ID, source, version history, and a
+ * pointer back to the single-page spec above.
+ */
 export function getDiagramMarkdown(
-  baseUrl: string,
+  baseUrlArg: string,
   diagram: { id: string; title: string; createdAt: string },
   currentVersion: { version: number; content: string; createdAt: string },
   allVersions: { version: number; createdAt: string }[],
@@ -154,12 +210,12 @@ export function getDiagramMarkdown(
     .map((v) => `| v${v.version} | ${v.createdAt} |`)
     .join("\n");
 
-  return `${getDocIndexBlock(baseUrl)}# ${diagram.title}
+  return `# ${diagram.title}
 
 - **ID**: \`${diagram.id}\`
 - **Version**: ${currentVersion.version} of ${allVersions.length}
 - **Created**: ${diagram.createdAt}
-- **View**: [${baseUrl}/d/${diagram.id}](${baseUrl}/d/${diagram.id})
+- **View**: [${baseUrlArg}/d/${diagram.id}](${baseUrlArg}/d/${diagram.id})
 
 ## Diagram Source (v${currentVersion.version})
 
@@ -175,123 +231,44 @@ ${versionRows}
 
 ## API
 
-- Fetch this diagram as JSON: \`GET ${baseUrl}/api/d/${diagram.id}\`
-- Fetch a specific version: \`GET ${baseUrl}/api/d/${diagram.id}?v=N\`
-- Full documentation: [${baseUrl}/llms.txt](${baseUrl}/llms.txt)
+- Fetch this diagram as JSON: \`GET ${baseUrlArg}/api/d/${diagram.id}\`
+- Fetch a specific version: \`GET ${baseUrlArg}/api/d/${diagram.id}?v=N\`
+- Full API spec (single page, everything): [${baseUrlArg}/](${baseUrlArg}/)
 `;
 }
 
+/**
+ * /llms.txt — the lightweight discovery file that some tooling conventions
+ * look for at the root. Points at the full spec; doesn't duplicate it.
+ */
 export function getLlmsTxt(baseUrlOverride: string = baseUrl): string {
   return `# merm.sh
 
-> Versioned Mermaid diagram hosting. Create and update diagrams with a single GET request; share the rendered result with a stable URL.
+> Versioned Mermaid diagram hosting. One GET creates a diagram; share the returned \`/d/<id>\` URL with the user.
 
-## How merm.sh works
+## The full spec is one page
 
-Three URL shapes, each with one job:
+Everything an agent needs — endpoints, request/response shapes, encoding rules, failure modes, MCP — lives at:
 
-| Path | Purpose |
-|---|---|
-| \`${baseUrlOverride}/d/<id>\` | **Share URL.** Rendered diagram page. This is what you give to humans. |
-| \`${baseUrlOverride}/c/<url-encoded-mermaid>\` | **Create endpoint.** Each call creates a new diagram and returns its share URL. |
-| \`${baseUrlOverride}/u/<editId>/<url-encoded-mermaid>\` | **Update endpoint.** Adds a new version to the diagram identified by \`editId\`. |
+  ${baseUrlOverride}/
 
-Every update creates a new version. Nothing is overwritten; old versions stay available at \`/api/d/<id>?v=N\`.
+You are already getting that page as Markdown if you \`curl\` the root or send \`Accept: text/markdown\`. Just read it; there's nothing more to discover.
 
-## The flow, for agents
+## 30-second summary
 
-\`\`\`
-1. Fetch   GET ${baseUrlOverride}/c/<url-encoded-mermaid>?format=json
-2. Read    { "url": "${baseUrlOverride}/d/abc123",
-             "editId": "…", "secret": "…", "version": 1 }
-3. Return  "${baseUrlOverride}/d/abc123" to the user
-4. Save    editId (for URL-only updates) and/or secret (for REST updates)
+\`\`\`bash
+curl '${baseUrlOverride}/c/<url-encoded-mermaid>?format=json'
+# returns { url: "${baseUrlOverride}/d/<id>", editId, secret, version, ... }
+# give the user the "url" field — never give them the /c/... URL.
 \`\`\`
 
-The important habit: after step 1, read the response and extract \`url\`. Do not pass the \`/c/\` URL back to the user — it's a write endpoint, not a share link.
-
-## FOR AGENTS: how to return a diagram URL to your user
-
-When you fetch \`/c/<mermaid>\` or \`/u/<editId>/<mermaid>\`, the response contains the shareable URL — you must return that URL (\`${baseUrlOverride}/d/<id>\`) to the user, NOT the \`/c/\` or \`/u/\` URL you just called. The \`/c/\` and \`/u/\` URLs are **endpoints that create a new diagram every time they're hit**. Only \`/d/<id>\` is a stable share link.
-
-Workflow:
-
-1. \`GET ${baseUrlOverride}/c/<url-encoded-mermaid>?format=json\`
-2. Read the \`url\` field from the JSON response (or the \`Share URL:\` line in plain text).
-3. Return that \`/d/<id>\` URL to the user.
-
-If you skip step 2 and just return the URL you called, the user will never see a stable rendered diagram.
-
-## Documentation
-
-- [Homepage](${baseUrlOverride}/) — Product overview and installation
-- [Machine Docs](${baseUrlOverride}/api/machine) — Full machine-readable API documentation
-- [Install Guide](${baseUrlOverride}/install.md) — Agent installation instructions
-- [Skill File](${baseUrlOverride}/skill.md) — SKILL.md for agent integration
-
-## API Endpoints
-
-- \`POST ${baseUrl}/api/d\` — Create a diagram
-- \`PUT ${baseUrl}/api/d/:id\` — Update a diagram
-- \`GET ${baseUrl}/api/d/:id\` — Fetch diagram JSON (includes all versions)
-- \`GET ${baseUrl}/api/d/:id?v=N\` — Fetch a specific version
-- \`GET ${baseUrl}/d/:id\` — View rendered diagram (supports \`Accept: text/markdown\`)
-
-## URL-only endpoints (for agents that can only open URLs)
-
-If your agent can only make GET requests (e.g. ChatGPT browsing, Perplexity, a URL-previewer), use these path-encoded shortcuts. The diagram source goes directly in the URL path.
-
-- \`GET ${baseUrl}/c/<url-encoded-mermaid>\` — Create a diagram from raw Mermaid source
-- \`GET ${baseUrl}/u/<editId>/<url-encoded-mermaid>\` — Append a new version to an existing diagram (use \`editId\` from the create response)
-- \`GET ${baseUrl}/api/d?content=<url-encoded-mermaid>\` — Same as \`/c/\` but with the content in a query parameter (familiar paste-service style)
-
-All return \`201 Created\` with plain text:
-
-\`\`\`
-View: ${baseUrl}/d/<id>
-Edit: ${baseUrl}/e/<editId>
-\`\`\`
-
-The view URL, edit URL, and secret are mirrored in response headers \`x-diagram-url\`, \`x-edit-url\`, and \`x-diagram-secret\` — convenient for agents that only parse headers.
-
-For JSON output, append \`?format=json\` to the URL (or send \`Accept: application/json\`). JSON is recommended — plain text body is human-friendly but JSON is easier to parse.
-
-Example:
-
-\`\`\`
-curl '${baseUrl}/c/graph%20TD%3B%20A--%3EB%3B%20B--%3EC'
-curl '${baseUrl}/u/<editId>/graph%20TD%3B%20A--%3EB%3B%20B--%3EC%3B%20C--%3ED'
-\`\`\`
-
-Practical path length limit: ~8KB. For larger diagrams, prefer \`POST /api/d\` / \`PUT /api/d/:id\`.
-
-## Content Negotiation
-
-All page URLs support content negotiation. Send \`Accept: text/markdown\` to receive clean Markdown instead of HTML. Diagram pages return the diagram source, metadata, and version history in Markdown.
-
-## MCP Server
-
-\`\`\`json
-{
-  "mcpServers": {
-    "mermaid-viewer": {
-      "url": "${baseUrl}/mcp"
-    }
-  }
-}
-\`\`\`
-
-Tools: \`create_diagram\`, \`update_diagram\`, \`get_diagram\`
+Updates go through \`${baseUrlOverride}/u/<editId>/<url-encoded-new-mermaid>\` (GET) or \`PUT ${baseUrlOverride}/api/d/<id>\` with \`Bearer <secret>\` (REST).
 `;
 }
 
 export function getLlmsFullTxt(baseUrlOverride: string = baseUrl): string {
-  // Strip the doc index block from machine markdown since llms-full.txt IS the index
-  const machineContent = getMachineMarkdown(baseUrlOverride).replace(
-    getDocIndexBlock(baseUrlOverride),
-    "",
-  );
-  return `${getLlmsTxt(baseUrlOverride)}\n---\n\n${machineContent}`;
+  // llms-full.txt is the full spec verbatim — no separate index prepended.
+  return getMachineMarkdown(baseUrlOverride);
 }
 
 export const LLMS_HEADERS = {
