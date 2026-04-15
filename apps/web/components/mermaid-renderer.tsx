@@ -8,6 +8,7 @@ import {
   type ReactZoomPanPinchRef,
 } from "react-zoom-pan-pinch";
 import { renderMermaid, fixSvgTextContrast, type MermaidTheme, type MermaidLook } from "@/lib/mermaid-client";
+import { MermaidRenderFailure } from "@/lib/mermaid-error";
 
 const btnClass = "bg-muted/85 text-secondary-foreground border border-border";
 
@@ -49,6 +50,8 @@ export function MermaidRenderer({
     key: string;
     status: "loading" | "ready" | "error";
     error?: string;
+    errorLine?: number | null;
+    errorColumn?: number | null;
   }>({
     key: renderKey,
     status: "loading",
@@ -117,19 +120,31 @@ export function MermaidRenderer({
       })
       .catch((e) => {
         if (currentRender !== renderIdRef.current) return;
+        const failure = e instanceof MermaidRenderFailure ? e : null;
         setRenderState({
           key: renderKey,
           status: "error",
-          error: e instanceof Error ? e.message : "Failed to render diagram",
+          error: failure?.message ?? (e instanceof Error ? e.message : "Failed to render diagram"),
+          errorLine: failure?.line ?? null,
+          errorColumn: failure?.column ?? null,
         });
       });
   }, [content, renderKey, theme, look, uiMode]);
 
   if (currentState.status === "error") {
+    const locationLabel =
+      currentState.errorLine != null
+        ? currentState.errorColumn != null
+          ? `Line ${currentState.errorLine}, column ${currentState.errorColumn}`
+          : `Line ${currentState.errorLine}`
+        : null;
     return (
       <div className="flex items-center justify-center w-full h-full p-8">
         <div className="p-6 rounded-xl max-w-lg bg-destructive/10 border border-destructive/30 text-foreground" role="alert">
           <p className="font-semibold mb-2">Render Error</p>
+          {locationLabel && (
+            <p className="text-xs font-mono text-muted-foreground mb-2">{locationLabel}</p>
+          )}
           <pre className="text-sm whitespace-pre-wrap font-mono text-secondary-foreground">{currentState.error}</pre>
         </div>
       </div>

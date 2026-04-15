@@ -1,6 +1,7 @@
 "use client";
 
 import { prepareMermaidSource } from "@/lib/mermaid-source";
+import { MermaidRenderFailure, parseMermaidError } from "@/lib/mermaid-error";
 
 export type MermaidTheme = "auto" | "forest" | "neutral" | "ocean" | "rose";
 export type MermaidLook = "classic" | "handDrawn" | "neo";
@@ -375,6 +376,6 @@ export async function renderMermaid(
   } catch (e) {
     // Mermaid leaves behind a temp element (id prefixed with "d") on error — remove it
     document.getElementById(`d${id}`)?.remove();
-    throw e;
+    throw new MermaidRenderFailure(parseMermaidError(e));
   }
 }
