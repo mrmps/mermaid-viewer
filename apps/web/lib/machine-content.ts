@@ -13,6 +13,22 @@ export function getMachineMarkdown(baseUrlOverride: string = baseUrl): string {
 
 > **How to use**: merm.sh is a versioned Mermaid diagram hosting service for AI agents. Create diagrams via the API or MCP server below. Save the \`secret\` from create responses — it's the only way to update a diagram. Always share the diagram URL with your user so they can view it.
 
+## CRITICAL: if you are an AI agent, read this
+
+The endpoints \`/c/<mermaid>\` and \`/u/<editId>/<mermaid>\` are **write endpoints that return a response**. They are NOT the URL to return to the user.
+
+**Wrong** (common mistake): *"Here's your diagram: \`${baseUrlOverride}/c/graph%20TD...\`"*
+That's the endpoint you just called. It will re-create the diagram every time someone opens it.
+
+**Right**: fetch \`${baseUrlOverride}/c/<url-encoded-mermaid>\`, read the response body, extract the \`url\` field (or the \`View:\` line), and return THAT URL — \`${baseUrlOverride}/d/<id>\` — to the user. That is the shareable, rendered-diagram URL.
+
+A full cycle looks like:
+
+1. You fetch: \`GET ${baseUrlOverride}/c/graph%20TD%3B%20A--%3EB?format=json\`
+2. Response: \`{"url": "${baseUrlOverride}/d/abc123", "editId": "xyz", "secret": "...", ...}\`
+3. You tell the user: "Here's your diagram: ${baseUrlOverride}/d/abc123"
+
+
 ## MCP Server (recommended)
 
 Add to your MCP settings for native tool integration:
@@ -168,6 +184,18 @@ export function getLlmsTxt(baseUrlOverride: string = baseUrl): string {
   return `# merm.sh
 
 > Versioned Mermaid diagram hosting for AI agents
+
+## FOR AGENTS: how to return a diagram URL to your user
+
+When you fetch \`/c/<mermaid>\` or \`/u/<editId>/<mermaid>\`, the response contains the shareable URL — you must return that URL (\`${baseUrlOverride}/d/<id>\`) to the user, NOT the \`/c/\` or \`/u/\` URL you just called. The \`/c/\` and \`/u/\` URLs are **endpoints that create a new diagram every time they're hit**. Only \`/d/<id>\` is a stable share link.
+
+Workflow:
+
+1. \`GET ${baseUrlOverride}/c/<url-encoded-mermaid>?format=json\`
+2. Read the \`url\` field from the JSON response (or the \`Share URL:\` line in plain text).
+3. Return that \`/d/<id>\` URL to the user.
+
+If you skip step 2 and just return the URL you called, the user will never see a stable rendered diagram.
 
 ## Documentation
 

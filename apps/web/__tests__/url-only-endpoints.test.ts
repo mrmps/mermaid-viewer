@@ -72,9 +72,9 @@ describe("GET /c/<mermaid> — URL-only create", () => {
     });
     expect(res.status).toBe(201);
     const body = await res.text();
-    expect(body).toMatch(/View:\s+https:\/\/merm\.sh\/d\/abc/);
-    expect(body).toMatch(/Edit:\s+https:\/\/merm\.sh\/e\/edt/);
-    expect(body).toMatch(/Secret:\s+sec/);
+    expect(body).toMatch(/Share URL[^:]*:\s+https:\/\/merm\.sh\/d\/abc/);
+    expect(body).toMatch(/Edit URL[^:]*:\s+https:\/\/merm\.sh\/e\/edt/);
+    expect(body).toMatch(/Secret[^:]*:\s+sec/);
     expect(body).toMatch(/Version:\s+1/);
     // Update hint should reference the real editId
     expect(body).toMatch(/\/u\/edt\//);
@@ -146,6 +146,29 @@ describe("GET /c/<mermaid> — URL-only create", () => {
     const body = await res.text();
     expect(body).toContain("sec");
   });
+
+  it("steers agents away from returning the /c/ URL (plain text)", async () => {
+    mockValidateMermaid.mockResolvedValue(OK_VALIDATION);
+    const res = await GET(makeRequest("https://merm.sh/c/graph%20TD%3B%20A--%3EB"), {
+      params: Promise.resolve({ content: ["graph%20TD%3B%20A--%3EB"] }),
+    });
+    const body = await res.text();
+    // Must explicitly instruct the agent and name the anti-pattern.
+    expect(body).toMatch(/INSTRUCTIONS FOR THE AGENT/i);
+    expect(body).toMatch(/Do NOT give the user the \/c\/\.\.\./);
+    expect(body).toMatch(/https:\/\/merm\.sh\/d\/abc/);
+  });
+
+  it("includes an agent-facing instructions field in JSON responses", async () => {
+    mockValidateMermaid.mockResolvedValue(OK_VALIDATION);
+    const res = await GET(
+      makeRequest("https://merm.sh/c/graph%20TD%3B%20A--%3EB?format=json"),
+      { params: Promise.resolve({ content: ["graph%20TD%3B%20A--%3EB"] }) }
+    );
+    const json = (await res.json()) as { instructions: string; url: string };
+    expect(json.instructions).toMatch(/Return the "url" field/);
+    expect(json.instructions).toContain(json.url);
+  });
 });
 
 describe("GET /u/<editId>/<mermaid> — URL-only update", () => {
@@ -178,7 +201,7 @@ describe("GET /u/<editId>/<mermaid> — URL-only update", () => {
     );
     expect(res.status).toBe(201);
     const body = await res.text();
-    expect(body).toMatch(/Updated/);
+    expect(body).toMatch(/already updated/i);
     expect(body).toMatch(/Version:\s+2/);
     expect(mockAddVersion).toHaveBeenCalledWith(
       expect.objectContaining({ editId: "edt", diagramId: "abc" })
