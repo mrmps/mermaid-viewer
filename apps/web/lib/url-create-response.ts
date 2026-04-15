@@ -113,6 +113,7 @@ export function urlCreateResponse({
   } as Record<string, string>;
 
   if (format === "json") {
+    const verb = origin === "u" ? "updated" : "created";
     return new Response(
       JSON.stringify({
         id: result.id,
@@ -121,6 +122,10 @@ export function urlCreateResponse({
         editUrl,
         secret: result.secret,
         version: result.version,
+        // Explicit steering for agents: many paraphrase the response and
+        // accidentally return the /c/... or /u/... URL they just fetched
+        // instead of the /d/<id> share URL. Say it plainly.
+        instructions: `Diagram ${verb}. Return the "url" field above to the user (${viewUrl}). Do NOT return the /c/... or /u/... URL you just fetched — that's the endpoint, not the share link.`,
         ...(cleanReason
           ? {
               warning: "validation_skipped",
@@ -132,27 +137,32 @@ export function urlCreateResponse({
     );
   }
 
-  const originHint =
-    origin === "u"
-      ? "Updated: new version saved on the existing diagram.\n"
-      : origin === "c"
-        ? "Created from the Mermaid source in your URL.\n"
-        : "";
-
+  const verb = origin === "u" ? "updated" : "created";
   const warningLine = cleanReason ? `\nWarning: ${cleanReason}\n` : "";
 
+  // Top of the body is written AT the agent, not for the human, because
+  // agents paraphrase this into their chat output and often confuse the
+  // creation endpoint they just fetched with the user-facing share URL.
+  // Observed failure: agents return "open /c/<mermaid> to see your diagram"
+  // to the user. The diagram is ALREADY created. Tell them what to say.
   const body =
-    `${originHint}${warningLine}` +
-    `\nView:    ${viewUrl}\n` +
-    `Edit:    ${editUrl}\n` +
-    `Secret:  ${result.secret}\n` +
-    `Version: ${result.version}\n` +
+    `INSTRUCTIONS FOR THE AGENT READING THIS RESPONSE:\n` +
+    `  The diagram is already ${verb}. Give the user this URL:\n` +
+    `    ${viewUrl}\n` +
+    `  Do NOT give the user the /c/... or /u/... URL you just fetched — that\n` +
+    `  is the creation/update endpoint, not the share URL. The share URL\n` +
+    `  above (/d/<id>) is the one that opens the rendered diagram.\n` +
+    `${warningLine}\n` +
+    `Share URL (give to user):  ${viewUrl}\n` +
+    `Edit URL (browser editor): ${editUrl}\n` +
+    `Secret (for REST updates): ${result.secret}\n` +
+    `Version:                   ${result.version}\n` +
     `\n` +
-    `# To add a new version of THIS diagram (URL-only agents, no POST):\n` +
-    `#   GET ${baseUrl}/u/${result.editId}/<url-encoded-new-mermaid>\n` +
+    `# To add a new version to THIS diagram later (GET-only, no POST needed):\n` +
+    `#   ${baseUrl}/u/${result.editId}/<url-encoded-new-mermaid>\n` +
     `# To update via REST (agents that can POST/PUT):\n` +
     `#   PUT ${baseUrl}/api/d/${result.id}  (Authorization: Bearer <secret>)\n` +
-    `# For JSON output, add ?format=json to any /c or /u URL.\n`;
+    `# For JSON output instead of this text, add ?format=json to any /c or /u URL.\n`;
 
   return new Response(body, { status: 201, headers });
 }
