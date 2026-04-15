@@ -28,11 +28,27 @@ export function getMachineMarkdown(baseUrlOverride: string = baseUrl): string {
 
 ## If you only read one section
 
+Pick whichever shape your environment supports. **All three create a diagram in one call** and return the same response. \`?format=json\` is optional but recommended.
+
 \`\`\`bash
-# 1. You call:
+# Option A — sandboxed-browse agents (ChatGPT, Claude.ai web).
+# Just add ?content= to the homepage URL. Works when your fetch tool
+# only allows the exact domain the user mentioned and rejects
+# "dynamic" sub-paths.
+curl '${baseUrlOverride}/?content=graph%20TD%3B%20A--%3EB&format=json'
+
+# Option B — agents that can fetch arbitrary paths on the domain.
 curl '${baseUrlOverride}/c/graph%20TD%3B%20A--%3EB?format=json'
 
-# 2. You get back (JSON):
+# Option C — anyone that can POST.
+curl -X POST '${baseUrlOverride}/api/d' \\
+  -H 'Content-Type: text/plain' \\
+  -d 'graph TD; A-->B'
+\`\`\`
+
+You get back (JSON):
+
+\`\`\`json
 {
   "id": "abc123",
   "editId": "xyz789",
@@ -42,12 +58,15 @@ curl '${baseUrlOverride}/c/graph%20TD%3B%20A--%3EB?format=json'
   "version": 1,
   "instructions": { "share_with_user": "${baseUrlOverride}/d/abc123", ... }
 }
-
-# 3. You tell the user:
-"Your diagram is at ${baseUrlOverride}/d/abc123"
 \`\`\`
 
-The \`/c/<mermaid>\` URL you called is a **write endpoint**, not a share link. It is the input side. The \`url\` field in the response is the output — a stable rendered-diagram page at \`/d/<id>\`. That is the one humans open.
+Then you tell the user: *"Your diagram is at ${baseUrlOverride}/d/abc123"*. The URL you *called* (\`/?content=…\`, \`/c/…\`, or \`POST /api/d\`) is the **write endpoint**, not a share link. The \`url\` field in the response is the output — a stable rendered-diagram page at \`/d/<id>\`. That is the one humans open.
+
+### Which shape should I use?
+
+- **Sandboxed in a browse tool** (ChatGPT browse, Claude.ai web, Perplexity): use **Option A** — \`${baseUrlOverride}/?content=…\`. It only needs permission for the exact domain the user named. No path heuristic to trip on.
+- **Have full HTTP access** (Claude Code, Codex, your own backend, curl in a real terminal): use **Option C** (POST) for diagrams over ~5KB, otherwise any of A/B/C works. POST avoids URL length caps and is what the CLI uses.
+- **Have GET-only access but can fetch any path**: use **Option B** — \`/c/<mermaid>\` is slightly more idiomatic.
 
 ---
 
@@ -67,8 +86,9 @@ Nothing is overwritten. Every update creates a new version. Prior versions stay 
 
 | Action | Method | Endpoint | Auth |
 |---|---|---|---|
-| Create (URL-only) | GET | \`${baseUrlOverride}/c/<url-encoded-mermaid>\` | none |
-| Create (query-style) | GET | \`${baseUrlOverride}/api/d?content=<url-encoded-mermaid>\` | none |
+| Create (homepage shortcut) | GET | \`${baseUrlOverride}/?content=<url-encoded-mermaid>\` | none |
+| Create (URL-only path) | GET | \`${baseUrlOverride}/c/<url-encoded-mermaid>\` | none |
+| Create (query-style API) | GET | \`${baseUrlOverride}/api/d?content=<url-encoded-mermaid>\` | none |
 | Create (REST) | POST | \`${baseUrlOverride}/api/d\` | none |
 | Update (URL-only) | GET | \`${baseUrlOverride}/u/<editId>/<url-encoded-mermaid>\` | editId in path |
 | Update (REST) | PUT | \`${baseUrlOverride}/api/d/:id\` | \`Bearer <secret>\` |
