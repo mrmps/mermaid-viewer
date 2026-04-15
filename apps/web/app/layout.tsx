@@ -6,7 +6,9 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { QueryProvider } from "@/components/query-provider";
 import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
 import { VercelAnalytics } from "@/components/vercel-analytics";
-import { baseUrl, isDevelopment } from "@/lib/env";
+import { baseUrl } from "@/lib/env";
+
+const isDevelopment = process.env.NODE_ENV === "development";
 import { getThemeBootstrapScript } from "@/lib/theme";
 import "./globals.css";
 
@@ -86,11 +88,9 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <script
-          id="theme-init"
-          suppressHydrationWarning
-          dangerouslySetInnerHTML={{ __html: getThemeBootstrapScript() }}
-        />
+        <Script id="theme-init" strategy="beforeInteractive">
+          {getThemeBootstrapScript()}
+        </Script>
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <QueryProvider>

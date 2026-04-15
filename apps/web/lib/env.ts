@@ -25,4 +25,3 @@ export const environment = createEnv({
 });
 
 export const baseUrl = environment.NEXT_PUBLIC_BASE_URL;
-export const isDevelopment = environment.NODE_ENV === "development";
