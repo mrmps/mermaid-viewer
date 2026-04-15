@@ -40,10 +40,29 @@ npx skills add ${baseUrlOverride}
 | Action | Method | Endpoint | Auth |
 |---|---|---|---|
 | Create | POST | \`${baseUrlOverride}/api/d\` | None |
+| Create (GET) | GET | \`${baseUrlOverride}/c/<url-encoded-mermaid>\` | None |
+| Update (GET) | GET | \`${baseUrlOverride}/u/<editId>/<url-encoded-mermaid>\` | editId in path |
 | Update | PUT | \`${baseUrlOverride}/api/d/:id\` | \`Bearer <secret>\` |
 | Get JSON | GET | \`${baseUrlOverride}/api/d/:id\` | None |
 | Get version | GET | \`${baseUrlOverride}/api/d/:id?v=N\` | None |
 | View | GET | \`${baseUrlOverride}/d/:id\` | None |
+
+### URL-only creation (for GET-only agents)
+
+Agents that can only make GET requests (e.g. ChatGPT browsing, Perplexity, URL-previewers) can create and update diagrams by putting the content directly in the URL path:
+
+\`\`\`bash
+# Create from raw Mermaid
+curl '${baseUrlOverride}/c/graph%20TD%3B%20A--%3EB%3B%20B--%3EC'
+
+# Update an existing diagram (adds a new version; <editId> came from the create response)
+curl '${baseUrlOverride}/u/<editId>/graph%20TD%3B%20A--%3EB%3B%20B--%3EC%3B%20C--%3ED'
+
+# Paste-service style alternative (same as /c, but content in a query param)
+curl '${baseUrlOverride}/api/d?content=graph%20TD%3B%20A--%3EB%3B%20B--%3EC'
+\`\`\`
+
+All return \`201 Created\`. Body format: plain text (\`View:\`, \`Edit:\`, \`Secret:\`, \`Version:\` lines) by default, or JSON if you append \`?format=json\` (same shape as \`POST /api/d\`). The view URL, edit URL, and secret are also mirrored in response headers \`x-diagram-url\`, \`x-edit-url\`, and \`x-diagram-secret\` — useful for header-only agents. Practical URL length cap: ~8KB — for larger diagrams use \`POST /api/d\`.
 
 ### Create a diagram
 
@@ -164,6 +183,34 @@ export function getLlmsTxt(baseUrlOverride: string = baseUrl): string {
 - \`GET ${baseUrl}/api/d/:id\` — Fetch diagram JSON (includes all versions)
 - \`GET ${baseUrl}/api/d/:id?v=N\` — Fetch a specific version
 - \`GET ${baseUrl}/d/:id\` — View rendered diagram (supports \`Accept: text/markdown\`)
+
+## URL-only endpoints (for agents that can only open URLs)
+
+If your agent can only make GET requests (e.g. ChatGPT browsing, Perplexity, a URL-previewer), use these path-encoded shortcuts. The diagram source goes directly in the URL path.
+
+- \`GET ${baseUrl}/c/<url-encoded-mermaid>\` — Create a diagram from raw Mermaid source
+- \`GET ${baseUrl}/u/<editId>/<url-encoded-mermaid>\` — Append a new version to an existing diagram (use \`editId\` from the create response)
+- \`GET ${baseUrl}/api/d?content=<url-encoded-mermaid>\` — Same as \`/c/\` but with the content in a query parameter (familiar paste-service style)
+
+All return \`201 Created\` with plain text:
+
+\`\`\`
+View: ${baseUrl}/d/<id>
+Edit: ${baseUrl}/e/<editId>
+\`\`\`
+
+The view URL, edit URL, and secret are mirrored in response headers \`x-diagram-url\`, \`x-edit-url\`, and \`x-diagram-secret\` — convenient for agents that only parse headers.
+
+For JSON output, append \`?format=json\` to the URL (or send \`Accept: application/json\`). JSON is recommended — plain text body is human-friendly but JSON is easier to parse.
+
+Example:
+
+\`\`\`
+curl '${baseUrl}/c/graph%20TD%3B%20A--%3EB%3B%20B--%3EC'
+curl '${baseUrl}/u/<editId>/graph%20TD%3B%20A--%3EB%3B%20B--%3EC%3B%20C--%3ED'
+\`\`\`
+
+Practical path length limit: ~8KB. For larger diagrams, prefer \`POST /api/d\` / \`PUT /api/d/:id\`.
 
 ## Content Negotiation
 
