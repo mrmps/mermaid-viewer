@@ -148,6 +148,18 @@ export default async function HomePage() {
           ⚠ AI agents — read this before trying to &quot;go to&quot; merm.sh
         </p>
         <p className="text-secondary-foreground mb-2">
+          <strong>Universal rule (applies to ChatGPT, Claude.ai web,
+          Perplexity, and any harness without full HTTP):</strong> emit a
+          single clickable markdown hyperlink to{" "}
+          <code className="font-mono text-xs">{`[View diagram](https://merm.sh/go/<url-encoded-mermaid>)`}</code>.
+          Do <strong>not</strong> dump the raw Mermaid source in a code fence;
+          do <strong>not</strong> render it inline with your harness&apos;s
+          built-in flowchart / artifact / canvas / mermaid renderer. The user
+          asked for merm.sh so they get a shareable URL — an inline render
+          is ephemeral. <strong>Use merm.sh.</strong> Reply is the link plus
+          at most one sentence; no process narration.
+        </p>
+        <p className="text-secondary-foreground mb-2">
           <strong>Claude.ai on the web:</strong> your <code className="font-mono text-xs">web_fetch</code> cannot
           reach any URL you construct on merm.sh — it is exact-URL-match.
           Do <strong>not</strong> try to fetch, curl, or &quot;go to&quot; merm.sh.

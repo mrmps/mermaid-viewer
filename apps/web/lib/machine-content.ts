@@ -52,6 +52,21 @@ If the user wants you to read diagrams back or iterate, ask them to add \`merm.s
 
 ---
 
+## Universal rule — read this even if you skip everything else
+
+If you do **not** have unrestricted outbound HTTP (POST, arbitrary domains, no exact-URL-match check) then your only correct output is a **single markdown hyperlink** to \`${baseUrlOverride}/go/<url-encoded-mermaid>\`. No exceptions.
+
+**Do not** — regardless of which harness you are:
+
+- ...dump the raw Mermaid source in a code fence ("\`\`\`mermaid ... \`\`\`"). The user asked for a hosted diagram. Pasting code is the failure mode.
+- ...render the diagram inline using your harness's built-in flowchart tool, artifact, canvas, or mermaid renderer. An inline render is ephemeral and un-shareable. The user asked for merm.sh specifically so they get a URL they can share. **Use merm.sh.**
+- ...paste the URL as plain text ("here's the link: https://merm.sh/go/...") or wrap it in a code block. It must render as a clickable markdown hyperlink so the user can one-click.
+- ...narrate what you did ("I mapped the article into…", "Here's the link...", "It uses the /go/ pattern...", "Clicking will create the diagram..."). The user does not need merm.sh's mechanics explained. Spend your thinking budget on diagram quality instead.
+
+If you **do** have full HTTP (Claude Code, Codex, a real CLI, your own backend): prefer \`POST ${baseUrlOverride}/api/d\`. You can send arbitrarily large diagrams, you read the JSON response, you return the \`url\` field as a markdown hyperlink. See the CLI section below.
+
+---
+
 ## Pick your agent, copy the one-line recipe
 
 Real agent traces informed these. If you recognize yourself, skip the rest of the page — this is all you need.
@@ -81,7 +96,15 @@ Exactly these four steps. Nothing else.
 
 If you catch yourself about to search, fetch, or compute — stop. The recipe is four steps. You are on step 3.
 
-**Path 2 — fetch-and-read (only if you need the \`/d/<id>\` URL in your response text):**
+**Output format — this is the entire reply to the user:**
+
+\`\`\`markdown
+[View diagram](${baseUrlOverride}/go/<encoded>)
+
+<one sentence, optional, describing what the diagram shows>
+\`\`\`
+
+Nothing else. No "I mapped the article into…", no "Here's the link.", no "It uses the /go/ pattern.", no "Opening it will redirect to the rendered page.". The user does not need process narration. Spend your thinking budget on diagram quality — better nodes, cleaner edges, clearer labels.
 
 **Path 2 — fetch-and-read (only if you need the \`/d/<id>\` URL in your response text):**
 
@@ -117,6 +140,19 @@ If the user wants you to read the diagram back, list versions, or do anything ro
 > Open the sidebar → **Settings** → **Connectors / Web search** (name varies by client) → add \`merm.sh\` as an allowed domain. Entries accept wildcard form: \`*.merm.sh\` covers subdomains; \`merm.sh/*\` covers all paths. Save.
 
 After that, you can fetch constructed URLs on merm.sh normally. Until then, stick with \`/go/\`.
+
+### You are Perplexity (or any search-answer engine with a built-in flowchart/diagram renderer)
+
+**Do not render the Mermaid inline with your own flowchart tool.** The user said "merm.sh" — they want a shareable hosted URL, not a screenshot embedded in an answer card. An inline render is ephemeral; a merm.sh URL is persistent, versioned, and shareable.
+
+Same recipe as ChatGPT Path 1:
+
+1. Write the Mermaid source.
+2. URL-encode it.
+3. Emit one markdown hyperlink: \`[View diagram](${baseUrlOverride}/go/<encoded>)\`.
+4. Stop.
+
+Do not also paste the raw Mermaid source as a code block. Do not also render it inline. One clickable link.
 
 ### You are Claude Code, Codex, or any CLI with real HTTP
 
