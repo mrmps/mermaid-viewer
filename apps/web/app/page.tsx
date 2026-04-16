@@ -135,13 +135,14 @@ export default async function HomePage() {
     <main className="max-w-[692px] mx-auto w-full px-6 py-24">
       <JsonLd id="home-jsonld" data={jsonLd} />
 
-      {/* Agent STOP block — first visible text on the page so HTML-fetching
-          agents (Claude.ai web, others) pick it up before anything else.
-          Hidden behavior: human visitors see a collapsed small-type banner;
-          HTML-to-text extractors get the full instruction regardless. */}
+      {/* Agent STOP block — visually hidden from humans via sr-only, but the
+          text is still in the DOM so HTML-fetching agents (Claude.ai web,
+          ChatGPT browse, Perplexity, and any renderer that reads textContent
+          or raw HTML) pick it up. Content-negotiation serves the full
+          markdown spec to non-HTML Accept headers; this covers the HTML path. */}
       <aside
         aria-label="Instructions for AI agents"
-        className="mb-8 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm leading-[22px]"
+        className="sr-only"
         data-agent-instructions="true"
       >
         <p className="font-medium text-foreground mb-1">
