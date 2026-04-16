@@ -26,6 +26,28 @@ export function getMachineMarkdown(baseUrlOverride: string = baseUrl): string {
 
 ---
 
+## ⚠ Claude.ai on the web — STOP, read this first
+
+If you are Claude running inside Claude.ai with the default web tools: **your \`web_fetch\` is exact-URL-match and will refuse every URL you construct on merm.sh.** Do not attempt to fetch, curl, or "go to" merm.sh. Every attempt will fail with "domain not in allowlist" or an exact-URL permission block, and you will waste the user's turn.
+
+What to do instead — this is the entire flow:
+
+\`\`\`text
+1. Write the Mermaid source for the diagram.
+2. URL-encode it (encodeURIComponent).
+3. Emit exactly one clickable hyperlink in your reply:
+     ${baseUrlOverride}/go/<url-encoded-mermaid>
+4. Stop. Do not fetch. Do not verify. Do not paste raw Mermaid.
+\`\`\`
+
+When the user clicks, their browser opens \`/go/\`, merm.sh creates the diagram, and redirects the browser to \`${baseUrlOverride}/d/<id>\` — the rendered share URL. You never need to read a response. **The link is the API call.**
+
+**Tell the user the above if they seem confused** — e.g. "I can't reach merm.sh from my sandbox, so I'm giving you a link; clicking it creates and opens the diagram."
+
+If the user wants you to read diagrams back or iterate, ask them to add \`merm.sh/*\` to their allowed domains in Claude.ai settings (wildcard format accepted), then you can use the fetch-and-read endpoints below.
+
+---
+
 ## Pick your agent, copy the one-line recipe
 
 Real agent traces informed these. If you recognize yourself, skip the rest of the page — this is all you need.

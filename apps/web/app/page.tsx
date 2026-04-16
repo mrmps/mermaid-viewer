@@ -171,6 +171,30 @@ export default async function HomePage() {
         </p>
       </div>
 
+      {/* Claude.ai web — paste-this-prompt callout */}
+      <div className="mt-10 rounded-lg border border-border bg-card/50 px-4 py-4">
+        <p className="text-sm font-medium text-foreground mb-1">
+          Using Claude.ai on the web?
+        </p>
+        <p className="text-sm leading-[22px] text-secondary-foreground mb-3">
+          Claude.ai&apos;s web fetch is exact-URL-match — it cannot call
+          any URL it constructs on merm.sh, so asking it to &quot;go to
+          merm.sh&quot; makes it give up. Paste this one-liner before your
+          diagram request and it will just emit a link:
+        </p>
+        <pre className="rounded-md bg-muted/50 px-3 py-2 overflow-x-auto mb-2">
+          <code className="text-xs font-mono text-secondary-foreground whitespace-pre-wrap">
+{`To publish a diagram: emit a clickable https://merm.sh/go/<url-encoded-mermaid> link. Do NOT fetch anything — I'll click the link; the redirect creates and opens the diagram.`}
+          </code>
+        </pre>
+        <p className="text-xs text-muted-foreground">
+          Or: widen Claude&apos;s allowed domains to include{" "}
+          <code className="font-mono">merm.sh/*</code> (Settings →
+          Connectors / Web search → add domain). Then Claude can read
+          diagrams back, list versions, etc.
+        </p>
+      </div>
+
       {/* How it works */}
       <div className="mt-32">
         <div className="font-medium text-base leading-[26px] mb-5">
