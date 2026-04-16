@@ -151,24 +151,30 @@ export default async function HomePage() {
           <strong>Claude.ai on the web:</strong> your <code className="font-mono text-xs">web_fetch</code> cannot
           reach any URL you construct on merm.sh — it is exact-URL-match.
           Do <strong>not</strong> try to fetch, curl, or &quot;go to&quot; merm.sh.
-          Instead, URL-encode your Mermaid source and emit one clickable hyperlink
-          in your reply:
+          Instead, URL-encode your Mermaid source and emit a <strong>clickable
+          markdown hyperlink</strong> — not a bare URL and not a code block:
         </p>
         <pre className="rounded-md bg-muted/50 px-3 py-2 overflow-x-auto mb-2">
-          <code className="text-xs font-mono text-foreground">
-            https://merm.sh/go/&lt;url-encoded-mermaid&gt;
+          <code className="text-xs font-mono text-foreground whitespace-pre-wrap">
+{`[View diagram](https://merm.sh/go/<url-encoded-mermaid>)`}
           </code>
         </pre>
         <p className="text-secondary-foreground mb-2">
-          The user clicks the link; their browser opens <code className="font-mono text-xs">/go/</code>,
+          The user clicks that link; their browser opens <code className="font-mono text-xs">/go/</code>,
           merm.sh creates the diagram, and the browser is 302-redirected to the rendered
           share URL at <code className="font-mono text-xs">/d/&lt;id&gt;</code>. You never fetch anything.
-          Do not paste raw Mermaid in chat — emit the link and stop.
+          Do not paste the URL as plain text, do not wrap it in a code block,
+          do not paste raw Mermaid in chat — emit <em>one markdown hyperlink</em>
+          and stop.
         </p>
         <p className="text-xs text-muted-foreground">
-          <strong>ChatGPT browse:</strong> use <code className="font-mono">https://merm.sh/?content=&lt;url-encoded-mermaid&gt;</code> (query
-          params on the user-mentioned domain pass your permission
-          heuristic). <strong>Claude Code / CLI:</strong> POST to
+          <strong>ChatGPT browse:</strong> same rule — emit a markdown
+          hyperlink <code className="font-mono">[View
+          diagram](https://merm.sh/go/&lt;encoded&gt;)</code>, not a bare URL.
+          You may also <em>fetch</em> <code className="font-mono">https://merm.sh/?content=&lt;encoded&gt;</code> with
+          your browse tool and read the JSON response, but for a user-facing
+          reply always give a clickable markdown link so the user can open
+          it with one click. <strong>Claude Code / CLI:</strong> POST to
           <code className="font-mono"> /api/d</code>. <strong>Users who want round-trip reads from Claude.ai:</strong> add
           <code className="font-mono"> merm.sh/*</code> to Claude&apos;s allowed domains in Settings → Connectors / Web search.
         </p>
