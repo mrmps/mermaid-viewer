@@ -11,10 +11,10 @@ function getPrompt() {
 
 ### 0. Install the CLI (recommended)
 
-Install the mermaidsh CLI globally so both you and I can use it:
+Install the mermaidsh CLI so both you and I can use it:
 
 \`\`\`bash
-npm i -g mermaidsh
+curl -fsSL https://merm.sh/install.sh | sh
 \`\`\`
 
 This gives you \`mermaidsh create\`, \`mermaidsh push\`, \`mermaidsh get\`, \`mermaidsh open\`, and more. Secrets are saved locally so you never need to track them manually.

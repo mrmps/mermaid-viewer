@@ -18,6 +18,10 @@ const nextConfig: NextConfig = {
         destination: "/api/install",
       },
       {
+        source: "/install.sh",
+        destination: "/api/install-sh",
+      },
+      {
         source: "/llms.txt",
         destination: "/api/llms-txt",
       },

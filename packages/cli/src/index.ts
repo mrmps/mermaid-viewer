@@ -8,7 +8,7 @@ import { execSync } from "node:child_process";
 
 // ── Config ──────────────────────────────────────────────────────────
 
-const BASE_URL = process.env.MERMAIDSH_URL ?? "https://mermaidsh.com";
+const BASE_URL = process.env.MERMAIDSH_URL ?? "https://merm.sh";
 const CONFIG_DIR = join(homedir(), ".config", "mermaidsh");
 const CONFIG_FILE = join(CONFIG_DIR, "config.json");
 
@@ -385,10 +385,10 @@ ${c.bold}Examples:${c.reset}
   mermaidsh open abc123
 
 ${c.bold}Environment:${c.reset}
-  MERMAIDSH_URL    Override API base URL (default: https://mermaidsh.com)
+  MERMAIDSH_URL    Override API base URL (default: https://merm.sh)
   NO_COLOR         Disable colored output
 
-${c.dim}https://mermaidsh.com${c.reset}
+${c.dim}https://merm.sh${c.reset}
 `);
 }
 

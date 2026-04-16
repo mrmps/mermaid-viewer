@@ -233,7 +233,7 @@ export default async function HomePage() {
         <AddToAgent />
         <p className="mt-3 text-xs text-muted-foreground">
           Or install the CLI:{" "}
-          <code className="font-mono text-foreground/70">npm i -g mermaidsh</code>
+          <code className="font-mono text-foreground/70">curl -fsSL https://merm.sh/install.sh | sh</code>
         </p>
       </div>
 
@@ -310,7 +310,7 @@ export default async function HomePage() {
           </p>
           <pre className="rounded-md bg-muted/50 px-3 py-2 overflow-x-auto">
             <code className="text-sm font-mono text-secondary-foreground">
-              {"npm i -g mermaidsh"}
+              {"curl -fsSL https://merm.sh/install.sh | sh"}
             </code>
           </pre>
           <p className="text-xs text-muted-foreground mt-2">
@@ -607,7 +607,7 @@ GET /api/d?content=graph%20TD%3B%20A--%3EB`}
         <AddToAgent />
         <p className="mt-3 text-xs text-muted-foreground">
           Or install the CLI:{" "}
-          <code className="font-mono text-foreground/70">npm i -g mermaidsh</code>
+          <code className="font-mono text-foreground/70">curl -fsSL https://merm.sh/install.sh | sh</code>
         </p>
       </div>
 
