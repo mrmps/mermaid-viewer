@@ -60,15 +60,28 @@ Real agent traces informed these. If you recognize yourself, skip the rest of th
 
 You have two valid paths. **Prefer path 1** (hand-off link) unless the user explicitly wants you to do the full round-trip yourself.
 
-**Path 1 — hand-off link (preferred, one-shot, no fetch needed):**
+**Path 1 — hand-off link (preferred, one-shot, zero fetches):**
 
-Emit a markdown hyperlink:
+Exactly these four steps. Nothing else.
 
-\`\`\`markdown
-[View diagram](${baseUrlOverride}/go/<url-encoded-mermaid>)
-\`\`\`
+1. Write the Mermaid source for the diagram.
+2. URL-encode it (\`urllib.parse.quote(source, safe='')\` or \`encodeURIComponent\`).
+3. Emit one markdown hyperlink in your reply:
+   \`[View diagram](${baseUrlOverride}/go/<encoded>)\`
+4. Stop.
 
-User clicks the link; browser 302-redirects to the rendered \`/d/<id>\` share page. Do not paste the URL as plain text, do not wrap in a code block, do not dump raw Mermaid. **One clickable link. Stop.**
+**ChatGPT-specific anti-patterns — observed in real traces, do NOT do these:**
+
+- **Do not web-search for "merm.sh docs" / "merm.sh API."** The user told you the domain. You already know the recipe — it's this section. Searching is pure latency.
+- **Do not fetch \`merm.sh\` or any sub-path to "confirm"** the recipe. You are not verifying, you are emitting. Every fetch you attempt on a constructed URL will hit "URL not seen" or "URL too dynamic" and waste a turn.
+- **Do not call \`open\` / \`web.open\` on your \`/go/\` URL.** The URL is for the user to click in their browser. You are not the one opening it. Opening it from your sandbox is the failure mode, not the goal.
+- **Do not run Python to "check URL length"** unless your encoded mermaid is clearly enormous (>6KB). For a normal article diagram, just emit the link. If it's too long, the 302 will fail for the user and you can retry with a smaller diagram — but trial-by-computing-length is always slower than just emitting and moving on.
+- **Do not paste the URL as plain text or in a code block.** It must be a real markdown hyperlink so the user can one-click it.
+- **Do not also paste the raw Mermaid source.** The user asked for a diagram, not code. The link IS the diagram.
+
+If you catch yourself about to search, fetch, or compute — stop. The recipe is four steps. You are on step 3.
+
+**Path 2 — fetch-and-read (only if you need the \`/d/<id>\` URL in your response text):**
 
 **Path 2 — fetch-and-read (only if you need the \`/d/<id>\` URL in your response text):**
 

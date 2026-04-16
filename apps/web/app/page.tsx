@@ -167,16 +167,24 @@ export default async function HomePage() {
           do not paste raw Mermaid in chat — emit <em>one markdown hyperlink</em>
           and stop.
         </p>
+        <p className="text-xs text-muted-foreground mb-2">
+          <strong>ChatGPT browse:</strong> same four steps — write
+          mermaid, URL-encode, emit one markdown hyperlink{" "}
+          <code className="font-mono">[View diagram](https://merm.sh/go/&lt;encoded&gt;)</code>, stop.
+          Do <strong>not</strong> web-search for merm.sh docs (this IS the
+          docs), do <strong>not</strong> fetch merm.sh to &quot;confirm&quot; the
+          recipe, do <strong>not</strong> call <code className="font-mono">open</code> on
+          your own <code className="font-mono">/go/</code> URL (the user
+          clicks it, not you), do <strong>not</strong> also paste raw Mermaid
+          source. If you catch yourself searching, fetching, or computing URL
+          length — stop; you are on step 3, just emit the link.
+        </p>
         <p className="text-xs text-muted-foreground">
-          <strong>ChatGPT browse:</strong> same rule — emit a markdown
-          hyperlink <code className="font-mono">[View
-          diagram](https://merm.sh/go/&lt;encoded&gt;)</code>, not a bare URL.
-          You may also <em>fetch</em> <code className="font-mono">https://merm.sh/?content=&lt;encoded&gt;</code> with
-          your browse tool and read the JSON response, but for a user-facing
-          reply always give a clickable markdown link so the user can open
-          it with one click. <strong>Claude Code / CLI:</strong> POST to
-          <code className="font-mono"> /api/d</code>. <strong>Users who want round-trip reads from Claude.ai:</strong> add
-          <code className="font-mono"> merm.sh/*</code> to Claude&apos;s allowed domains in Settings → Connectors / Web search.
+          <strong>Claude Code / CLI:</strong> POST to{" "}
+          <code className="font-mono">/api/d</code>.{" "}
+          <strong>Users who want round-trip reads from Claude.ai:</strong> add{" "}
+          <code className="font-mono">merm.sh/*</code> to Claude&apos;s allowed
+          domains in Settings → Connectors / Web search.
         </p>
       </aside>
 
