@@ -239,6 +239,44 @@ export default async function HomePage() {
         </p>
       </div>
 
+      {/* Hero image — right under the install CTA */}
+      <div className="mt-8 -mx-6 sm:-mx-10 md:-mx-16">
+        <Link
+          href="/d/kv8RfUmtlb"
+          className="block rounded-2xl p-1 shadow-[0_0_0_1px_rgba(255,255,255,0.13)] hover:shadow-[0_0_0_1px_rgba(255,255,255,0.2)] transition-shadow duration-200"
+        >
+          <div className="rounded-xl border border-border overflow-hidden relative aspect-[16/9]">
+            <Image
+              src="/hero.png"
+              alt="Mermaid diagram viewer showing a versioned flowchart with version history sidebar"
+              fill
+              sizes="(max-width: 768px) 100vw, 692px"
+              className="object-cover"
+              priority
+            />
+          </div>
+        </Link>
+        <div className="flex justify-center mt-3">
+          <Link
+            href="/d/kv8RfUmtlb"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors duration-150"
+          >
+            Try an example
+            <svg
+              className="w-3.5 h-3.5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M7 17L17 7M7 7h10v10" />
+            </svg>
+          </Link>
+        </div>
+      </div>
+
       {/* How it works */}
       <div className="mt-32">
         <div className="font-medium text-base leading-[26px] mb-5">
@@ -355,44 +393,6 @@ export default async function HomePage() {
             /install.md
           </Link>
         </p>
-      </div>
-
-      {/* Hero image */}
-      <div className="mt-8 -mx-6 sm:-mx-10 md:-mx-16">
-        <Link
-          href="/d/kv8RfUmtlb"
-          className="block rounded-2xl p-1 shadow-[0_0_0_1px_rgba(255,255,255,0.13)] hover:shadow-[0_0_0_1px_rgba(255,255,255,0.2)] transition-shadow duration-200"
-        >
-          <div className="rounded-xl border border-border overflow-hidden relative aspect-[16/9]">
-            <Image
-              src="/hero.png"
-              alt="Mermaid diagram viewer showing a versioned flowchart with version history sidebar"
-              fill
-              sizes="(max-width: 768px) 100vw, 692px"
-              className="object-cover"
-              priority
-            />
-          </div>
-        </Link>
-        <div className="flex justify-center mt-3">
-          <Link
-            href="/d/kv8RfUmtlb"
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors duration-150"
-          >
-            Try an example
-            <svg
-              className="w-3.5 h-3.5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M7 17L17 7M7 7h10v10" />
-            </svg>
-          </Link>
-        </div>
       </div>
 
       {/* API */}
