@@ -6,6 +6,8 @@ import { getDiagramCount, getRecentDiagrams } from "@mermaid-viewer/db";
 import { RecentDiagrams } from "@/components/recent-diagrams";
 import { AddToAgent } from "@/components/add-to-agent";
 import { CompatibleAgents } from "@/components/compatible-agents";
+import { McpInstallTabs } from "@/components/mcp-install-tabs";
+import { CopyBlock } from "@/components/copy-block";
 import { JsonLd } from "@/components/json-ld";
 import { PageWrapper } from "@/components/page-wrapper";
 import { FloatingChatButton } from "@/components/floating-chat-button";
@@ -284,11 +286,7 @@ export default async function HomePage() {
             <span className="text-foreground font-medium">CLI:</span>{" "}
             Create, version, and share diagrams from the terminal.
           </p>
-          <pre className="rounded-md bg-muted/50 px-3 py-2 overflow-x-auto">
-            <code className="text-sm font-mono text-secondary-foreground">
-              {"curl -fsSL https://merm.sh/install.sh | sh"}
-            </code>
-          </pre>
+          <CopyBlock prompt text="curl -fsSL https://merm.sh/install.sh | sh" />
           <p className="text-xs text-muted-foreground mt-2">
             Then: <code className="font-mono">mermaidsh create diagram.mmd</code>,{" "}
             <code className="font-mono">mermaidsh push &lt;id&gt; updated.mmd</code>,{" "}
@@ -301,52 +299,19 @@ export default async function HomePage() {
           <p className="text-sm text-secondary-foreground mb-3">
             <span className="text-foreground font-medium">Pipe to your agent:</span>
           </p>
-          <pre className="rounded-md bg-muted/50 px-3 py-2 overflow-x-auto">
-            <code className="text-sm font-mono text-secondary-foreground">
-              {"curl -fsSL https://merm.sh/install.md | claude"}
-            </code>
-          </pre>
+          <CopyBlock prompt text="curl -fsSL https://merm.sh/install.md | claude" />
           <p className="text-xs text-muted-foreground mt-2">
             Works with any LLM CLI. The agent reads the instructions and installs autonomously.
           </p>
         </div>
 
         {/* MCP option */}
-        <details className="group border border-border rounded-lg mb-3">
-          <summary className="flex items-center justify-between px-4 py-3 cursor-pointer select-none text-sm font-medium text-foreground hover:text-foreground/80 transition-[color] duration-150">
-            <span>Option A: MCP Server (recommended)</span>
-            <svg
-              className="w-4 h-4 text-muted-foreground transition-transform duration-200 group-open:rotate-180 shrink-0 ml-4"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M6 9l6 6 6-6" />
-            </svg>
-          </summary>
-          <div className="px-4 pb-4">
-            <p className="text-sm text-secondary-foreground mb-3">
-              Add to your MCP settings for native tool integration:
-            </p>
-            <pre className="rounded-md bg-muted/50 px-3 py-2 overflow-x-auto">
-              <code className="text-xs font-mono text-secondary-foreground">
-{`{
-  "mcpServers": {
-    "mermaid-viewer": {
-      "url": "https://merm.sh/mcp"
-    }
-  }
-}`}
-              </code>
-            </pre>
-            <p className="text-xs text-muted-foreground mt-2">
-              Gives you <code className="font-mono">create_diagram</code>, <code className="font-mono">update_diagram</code>, and <code className="font-mono">get_diagram</code> tools.
-            </p>
-          </div>
-        </details>
+        <div className="mb-3">
+          <p className="text-sm text-secondary-foreground mb-2">
+            <span className="text-foreground font-medium">Option A: MCP Server</span> — native tools (<code className="font-mono">create_diagram</code>, <code className="font-mono">update_diagram</code>, <code className="font-mono">get_diagram</code>).
+          </p>
+          <McpInstallTabs />
+        </div>
 
         {/* Skill file option */}
         <details className="group border border-border rounded-lg mb-3">
@@ -393,7 +358,7 @@ export default async function HomePage() {
       </div>
 
       {/* Hero image */}
-      <div className="mt-32 -mx-6 sm:-mx-10 md:-mx-16">
+      <div className="mt-8 -mx-6 sm:-mx-10 md:-mx-16">
         <Link
           href="/d/kv8RfUmtlb"
           className="block rounded-2xl p-1 shadow-[0_0_0_1px_rgba(255,255,255,0.13)] hover:shadow-[0_0_0_1px_rgba(255,255,255,0.2)] transition-shadow duration-200"
