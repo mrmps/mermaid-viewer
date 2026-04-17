@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { renderMermaid } from "@/lib/mermaid-client";
+import { renderBeautiful, renderMermaid } from "@/lib/mermaid-client";
 import { formatRelative } from "@/lib/utils";
 import type { DiagramEntry } from "./diagrams-list";
 
@@ -42,14 +42,14 @@ export function DiagramCard({ entry }: { entry: DiagramEntry }) {
 
     const currentRender = ++renderIdRef.current;
 
-    renderMermaid(entry.content, "auto")
+    renderBeautiful(entry.content)
+      .catch(() => renderMermaid(entry.content, "auto"))
       .then((svg) => {
         if (currentRender !== renderIdRef.current) return;
         if (containerRef.current) {
           containerRef.current.innerHTML = svg;
           const svgEl = containerRef.current.querySelector("svg");
           if (svgEl) {
-            svgEl.removeAttribute("style");
             svgEl.style.width = "100%";
             svgEl.style.height = "100%";
             svgEl.style.objectFit = "contain";

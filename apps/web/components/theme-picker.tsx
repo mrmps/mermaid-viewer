@@ -1,16 +1,26 @@
 "use client";
 
-import { THEMES, type MermaidTheme } from "@/lib/mermaid-client";
+import {
+  THEMES,
+  BEAUTIFUL_THEMES,
+  type DiagramRenderer,
+} from "@/lib/mermaid-client";
 
 export function ThemePicker(props: {
-  current: MermaidTheme;
-  onSelectTheme: (theme: MermaidTheme) => void;
+  renderer: DiagramRenderer;
+  current: string;
+  onSelectTheme: (theme: string) => void;
 }) {
-  const { current, onSelectTheme } = props;
+  const { renderer, current, onSelectTheme } = props;
+
+  const themes =
+    renderer === "beautiful"
+      ? BEAUTIFUL_THEMES
+      : THEMES;
 
   return (
     <div className="flex items-center gap-1">
-      {THEMES.map((t) => (
+      {themes.map((t) => (
         <button
           key={t.id}
           onClick={() => onSelectTheme(t.id)}

@@ -1,13 +1,22 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   TransformWrapper,
   TransformComponent,
   useControls,
   type ReactZoomPanPinchRef,
 } from "react-zoom-pan-pinch";
-import { renderMermaid, fixSvgTextContrast, type MermaidTheme, type MermaidLook } from "@/lib/mermaid-client";
+import {
+  renderMermaid,
+  renderBeautifulSync,
+  loadBeautifulMermaid,
+  fixSvgTextContrast,
+  type MermaidTheme,
+  type MermaidLook,
+  type DiagramRenderer,
+  type BeautifulTheme,
+} from "@/lib/mermaid-client";
 import { MermaidRenderFailure } from "@/lib/mermaid-error";
 
 const btnClass = "bg-muted/85 text-secondary-foreground border border-border";
@@ -31,38 +40,54 @@ function ZoomControls() {
   );
 }
 
+/**
+ * Post-process an SVG element in the DOM: fit to container + center view.
+ */
+function fitAndCenter(
+  svgEl: SVGElement,
+  wrapperEl: HTMLDivElement,
+  transformRef: React.RefObject<ReactZoomPanPinchRef | null>,
+) {
+  const vb = svgEl.getAttribute("viewBox");
+  if (vb) {
+    const parts = vb.split(/[\s,]+/).map(Number);
+    const svgW = parts[2];
+    const svgH = parts[3];
+    const wrapW = wrapperEl.clientWidth;
+    const wrapH = wrapperEl.clientHeight;
+
+    const scaleX = (wrapW * 0.85) / svgW;
+    const scaleY = (wrapH * 0.85) / svgH;
+    const fitScale = Math.min(scaleX, scaleY, 3);
+
+    svgEl.setAttribute("width", String(Math.round(svgW * fitScale)));
+    svgEl.setAttribute("height", String(Math.round(svgH * fitScale)));
+  }
+
+  requestAnimationFrame(() => {
+    transformRef.current?.centerView(1, 0);
+  });
+}
+
 export function MermaidRenderer({
   content,
+  renderer = "beautiful",
   theme,
   look = "classic",
 }: {
   content: string;
-  theme: MermaidTheme;
+  renderer?: DiagramRenderer;
+  theme: string;
   look?: MermaidLook;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const transformRef = useRef<ReactZoomPanPinchRef>(null);
   const [uiMode, setUiMode] = useState<"dark" | "light">(getInitialUIMode);
-  const renderKey = `${content}::${theme}::${look}::${uiMode}`;
-  const [hasRenderedOnce, setHasRenderedOnce] = useState(false);
-  const [renderState, setRenderState] = useState<{
-    key: string;
-    status: "loading" | "ready" | "error";
-    error?: string;
-    errorLine?: number | null;
-    errorColumn?: number | null;
-  }>({
-    key: renderKey,
-    status: "loading",
-  });
+  const [bmReady, setBmReady] = useState(false);
   const renderIdRef = useRef(0);
-  const currentState =
-    renderState.key === renderKey
-      ? renderState
-      : { key: renderKey, status: "loading" as const };
 
-  // Watch for light/dark mode changes so diagram re-renders with correct palette
+  // Watch for light/dark mode changes
   useEffect(() => {
     const observer = new MutationObserver(() => {
       setUiMode(getInitialUIMode());
@@ -71,10 +96,65 @@ export function MermaidRenderer({
     return () => observer.disconnect();
   }, []);
 
+  // Preload beautiful-mermaid module on mount
   useEffect(() => {
+    loadBeautifulMermaid().then(() => setBmReady(true));
+  }, []);
+
+  // ── Beautiful path: sync render via useMemo (per README recommendation) ──
+  // renderMermaidSVG is synchronous — no flash, no loading state.
+  // beautiful-mermaid generates safe SVGs, so no HTML sanitizer needed.
+  const beautifulResult = useMemo(() => {
+    if (renderer !== "beautiful" || !bmReady) return null;
+
+    try {
+      const svg = renderBeautifulSync(content, theme as BeautifulTheme, uiMode);
+      if (svg) return { svg, error: null };
+      return null; // module not loaded yet
+    } catch (e) {
+      // Unsupported diagram type — will fall back to classic
+      return { svg: null, error: e };
+    }
+  }, [renderer, bmReady, content, theme, uiMode]);
+
+  // Inject beautiful SVG into DOM after sync render
+  useLayoutEffect(() => {
+    if (renderer !== "beautiful" || !beautifulResult?.svg) return;
+    if (!containerRef.current || !wrapperRef.current) return;
+
+    containerRef.current.innerHTML = beautifulResult.svg;
+    const svgEl = containerRef.current.querySelector("svg");
+    if (!svgEl) return;
+
+    // beautiful-mermaid sets CSS custom properties on the SVG root — keep them intact
+    fitAndCenter(svgEl, wrapperRef.current, transformRef);
+  }, [renderer, beautifulResult?.svg]);
+
+  // ── Classic mermaid.js path: async render via useEffect ──
+  const needsClassicFallback =
+    renderer === "mermaid" ||
+    (renderer === "beautiful" && bmReady && beautifulResult?.error) ||
+    (renderer === "beautiful" && bmReady && !beautifulResult);
+
+  const classicTheme = renderer === "mermaid" ? (theme as MermaidTheme) : "auto";
+  const classicLook = renderer === "mermaid" ? look : "classic";
+  const classicKey = needsClassicFallback
+    ? `classic::${content}::${classicTheme}::${classicLook}::${uiMode}`
+    : null;
+
+  const [classicState, setClassicState] = useState<{
+    key: string;
+    status: "ready" | "error";
+    error?: string;
+    errorLine?: number | null;
+    errorColumn?: number | null;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!needsClassicFallback || !classicKey) return;
     const currentRender = ++renderIdRef.current;
 
-    renderMermaid(content, theme, look)
+    renderMermaid(content, classicTheme, classicLook)
       .then((svg) => {
         if (currentRender !== renderIdRef.current) return;
         if (!containerRef.current || !wrapperRef.current) return;
@@ -84,59 +164,40 @@ export function MermaidRenderer({
         if (!svgEl) return;
 
         svgEl.removeAttribute("style");
-
-        // Fix text contrast after SVG is in the live DOM
-        // (getComputedStyle works here for CSS-applied fills)
         fixSvgTextContrast(svgEl as SVGSVGElement);
-
-        // Read the natural viewBox dimensions
-        const vb = svgEl.getAttribute("viewBox");
-        if (vb) {
-          const parts = vb.split(/[\s,]+/).map(Number);
-          const svgW = parts[2];
-          const svgH = parts[3];
-          const wrapW = wrapperRef.current!.clientWidth;
-          const wrapH = wrapperRef.current!.clientHeight;
-
-          // Fit the SVG to fill ~85% of the container
-          const scaleX = (wrapW * 0.85) / svgW;
-          const scaleY = (wrapH * 0.85) / svgH;
-          const fitScale = Math.min(scaleX, scaleY, 3);
-
-          const displayW = Math.round(svgW * fitScale);
-          const displayH = Math.round(svgH * fitScale);
-
-          svgEl.setAttribute("width", String(displayW));
-          svgEl.setAttribute("height", String(displayH));
-        }
-
-        setHasRenderedOnce(true);
-        setRenderState({ key: renderKey, status: "ready" });
-
-        // Center after a brief delay to let the DOM update
-        requestAnimationFrame(() => {
-          transformRef.current?.centerView(1, 0);
-        });
+        fitAndCenter(svgEl, wrapperRef.current!, transformRef);
+        setClassicState({ key: classicKey, status: "ready" });
       })
       .catch((e) => {
         if (currentRender !== renderIdRef.current) return;
         const failure = e instanceof MermaidRenderFailure ? e : null;
-        setRenderState({
-          key: renderKey,
+        setClassicState({
+          key: classicKey,
           status: "error",
           error: failure?.message ?? (e instanceof Error ? e.message : "Failed to render diagram"),
           errorLine: failure?.line ?? null,
           errorColumn: failure?.column ?? null,
         });
       });
-  }, [content, renderKey, theme, look, uiMode]);
+  }, [needsClassicFallback, classicKey, content, classicTheme, classicLook]);
 
-  if (currentState.status === "error") {
+  // ── Determine visible state ──
+  const classicSettled = classicState?.key === classicKey;
+  const isClassicLoading = needsClassicFallback && !classicSettled;
+  const isModuleLoading = renderer === "beautiful" && !bmReady;
+  const loading = isModuleLoading || isClassicLoading;
+
+  const errorState =
+    needsClassicFallback && classicSettled && classicState?.status === "error"
+      ? classicState
+      : null;
+
+  if (errorState) {
     const locationLabel =
-      currentState.errorLine != null
-        ? currentState.errorColumn != null
-          ? `Line ${currentState.errorLine}, column ${currentState.errorColumn}`
-          : `Line ${currentState.errorLine}`
+      errorState.errorLine != null
+        ? errorState.errorColumn != null
+          ? `Line ${errorState.errorLine}, column ${errorState.errorColumn}`
+          : `Line ${errorState.errorLine}`
         : null;
     return (
       <div className="flex items-center justify-center w-full h-full p-8">
@@ -145,14 +206,11 @@ export function MermaidRenderer({
           {locationLabel && (
             <p className="text-xs font-mono text-muted-foreground mb-2">{locationLabel}</p>
           )}
-          <pre className="text-sm whitespace-pre-wrap font-mono text-secondary-foreground">{currentState.error}</pre>
+          <pre className="text-sm whitespace-pre-wrap font-mono text-secondary-foreground">{errorState.error}</pre>
         </div>
       </div>
     );
   }
-
-  const loading = currentState.status === "loading";
-  const hideWhileLoading = loading && !hasRenderedOnce;
 
   return (
     <div ref={wrapperRef} className="relative w-full h-full bg-background">
@@ -178,7 +236,7 @@ export function MermaidRenderer({
         >
           <div
             ref={containerRef}
-            className={`transition-[opacity] duration-150 ${hideWhileLoading ? "opacity-0" : "opacity-100"}`}
+            className={`transition-[opacity] duration-150 ${loading ? "opacity-0" : "opacity-100"}`}
           />
         </TransformComponent>
       </TransformWrapper>

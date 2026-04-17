@@ -2,7 +2,7 @@
 
 import { VersionThumb } from "./version-thumb";
 import { formatRelative } from "@/lib/utils";
-import type { MermaidTheme, MermaidLook } from "@/lib/mermaid-client";
+import type { MermaidLook, DiagramRenderer } from "@/lib/mermaid-client";
 
 type Version = {
   version: number;
@@ -14,7 +14,8 @@ export function VersionPanel(props: {
   versions: Version[];
   currentVersion: number;
   diagramId: string;
-  theme: MermaidTheme;
+  renderer?: DiagramRenderer;
+  theme: string;
   look?: MermaidLook;
   onSelectVersion: (version: number) => void;
 }) {
@@ -22,6 +23,7 @@ export function VersionPanel(props: {
   versions,
   currentVersion,
   diagramId,
+  renderer = "beautiful",
   theme,
   look = "classic",
   onSelectVersion,
@@ -44,7 +46,7 @@ export function VersionPanel(props: {
               className={`group text-left rounded-xl overflow-hidden transition-[background-color,box-shadow] duration-150 cursor-pointer ${active ? "bg-accent ring-2 ring-accent" : "bg-secondary ring-1 ring-border/50"}`}
             >
               <div className="p-1.5">
-                <VersionThumb content={v.content} id={`${diagramId}-${v.version}`} theme={theme} look={look} />
+                <VersionThumb content={v.content} id={`${diagramId}-${v.version}`} renderer={renderer} theme={theme} look={look} />
               </div>
               <div className="px-2.5 pb-2 flex items-center justify-between">
                 <span

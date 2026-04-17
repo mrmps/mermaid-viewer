@@ -6,6 +6,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { MermaidRenderer } from "@/components/mermaid-renderer";
 import { VersionPanel } from "@/components/version-panel";
 import { ThemePicker } from "@/components/theme-picker";
+import { RendererPicker } from "@/components/renderer-picker";
 import { ExcalidrawButton } from "@/components/excalidraw-button";
 import { CopyImageButton } from "@/components/copy-image-button";
 import { DeleteDiagramButton } from "@/components/delete-diagram-button";
@@ -18,8 +19,12 @@ import { LookPicker } from "@/components/look-picker";
 import {
   LOOKS,
   THEMES,
+  RENDERERS,
+  BEAUTIFUL_THEMES,
   type MermaidLook,
   type MermaidTheme,
+  type DiagramRenderer,
+  type BeautifulTheme,
 } from "@/lib/mermaid-client";
 
 type DiagramVersion = {
@@ -38,7 +43,9 @@ type DiagramPageShellProps = {
 };
 
 const THEME_IDS = new Set(THEMES.map((theme) => theme.id));
+const BEAUTIFUL_THEME_IDS = new Set(BEAUTIFUL_THEMES.map((theme) => theme.id));
 const LOOK_IDS = new Set(LOOKS.map((look) => look.id));
+const RENDERER_IDS = new Set(RENDERERS.map((r) => r.id));
 
 export function DiagramPageShell({
   diagramId,
@@ -57,7 +64,11 @@ export function DiagramPageShell({
   );
 
   const latestVersion = versions[versions.length - 1];
-  const theme = getTheme(searchParams.get("theme"), initialTheme);
+  const renderer = getRenderer(searchParams.get("renderer"));
+  const theme =
+    renderer === "beautiful"
+      ? getBeautifulTheme(searchParams.get("theme"))
+      : getTheme(searchParams.get("theme"), initialTheme);
   const look = getLook(searchParams.get("look"), initialLook);
   const selectedVersion = getVersion(
     searchParams.get("v"),
@@ -166,26 +177,49 @@ export function DiagramPageShell({
 
         <div className="flex items-center gap-2 shrink-0">
           <div className="hidden md:flex items-center gap-2">
-            <LookPicker
-              current={look}
-              onSelectLook={(nextLook) =>
-                updateSearch(
-                  "look",
-                  nextLook === "classic" ? null : nextLook,
-                  "replace"
-                )
-              }
+            <RendererPicker
+              current={renderer}
+              onSelectRenderer={(nextRenderer) => {
+                const params = new URLSearchParams(searchParams.toString());
+                // Reset theme when switching renderers since theme namespaces differ
+                params.delete("theme");
+                params.delete("look");
+                if (nextRenderer !== "beautiful") {
+                  params.set("renderer", nextRenderer);
+                } else {
+                  params.delete("renderer");
+                }
+                const next = params.toString() ? `${pathname}?${params.toString()}` : pathname;
+                window.history.pushState(null, "", next);
+              }}
             />
             <div className="w-px h-5 bg-border" />
+            {renderer === "mermaid" && (
+              <>
+                <LookPicker
+                  current={look}
+                  onSelectLook={(nextLook) =>
+                    updateSearch(
+                      "look",
+                      nextLook === "classic" ? null : nextLook,
+                      "replace"
+                    )
+                  }
+                />
+                <div className="w-px h-5 bg-border" />
+              </>
+            )}
             <ThemePicker
+              renderer={renderer}
               current={theme}
-              onSelectTheme={(nextTheme) =>
+              onSelectTheme={(nextTheme) => {
+                const defaultTheme = renderer === "beautiful" ? "zinc" : "auto";
                 updateSearch(
                   "theme",
-                  nextTheme === "auto" ? null : nextTheme,
+                  nextTheme === defaultTheme ? null : nextTheme,
                   "replace"
-                )
-              }
+                );
+              }}
             />
             <div className="w-px h-5 bg-border" />
           </div>
@@ -196,7 +230,7 @@ export function DiagramPageShell({
           </div>
           {editId ? <ChatToggle /> : null}
           <div className="hidden md:flex items-center gap-2">
-            <CopyImageButton content={selectedVersion.content} theme={theme} look={look} />
+            <CopyImageButton content={selectedVersion.content} renderer={renderer} theme={theme} look={look} />
             <ExcalidrawButton content={selectedVersion.content} />
           </div>
           <ShareButton
@@ -221,6 +255,7 @@ export function DiagramPageShell({
           versions={versions}
           currentVersion={selectedVersion.version}
           diagramId={diagramId}
+          renderer={renderer}
           theme={theme}
           look={look}
           onSelectVersion={(version) =>
@@ -234,6 +269,7 @@ export function DiagramPageShell({
         <main className="flex-1 min-w-0 overflow-hidden">
           <MermaidRenderer
             content={selectedVersion.content}
+            renderer={renderer}
             theme={theme}
             look={look}
           />
@@ -278,6 +314,20 @@ function getLook(
   }
 
   return fallback;
+}
+
+function getRenderer(value: string | null): DiagramRenderer {
+  if (value && RENDERER_IDS.has(value as DiagramRenderer)) {
+    return value as DiagramRenderer;
+  }
+  return "beautiful";
+}
+
+function getBeautifulTheme(value: string | null): string {
+  if (value && BEAUTIFUL_THEME_IDS.has(value as BeautifulTheme)) {
+    return value;
+  }
+  return "zinc";
 }
 
 function getVersion(

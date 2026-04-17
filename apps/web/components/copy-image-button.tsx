@@ -2,7 +2,14 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useMediaQuery } from "@/lib/use-media-query";
-import { renderMermaid, type MermaidTheme, type MermaidLook } from "@/lib/mermaid-client";
+import {
+  renderMermaid,
+  renderBeautiful,
+  type MermaidTheme,
+  type MermaidLook,
+  type DiagramRenderer,
+  type BeautifulTheme,
+} from "@/lib/mermaid-client";
 import { ImageIcon, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -88,16 +95,18 @@ function svgToPngBlob(svg: string): Promise<Blob> {
 
 function ImagePreview({
   content,
+  renderer = "beautiful",
   theme,
   look = "classic",
   onReady,
 }: {
   content: string;
-  theme: MermaidTheme;
+  renderer?: DiagramRenderer;
+  theme: string;
   look?: MermaidLook;
   onReady: (blob: Blob, url: string) => void;
 }) {
-  const requestKey = `${content}\u0000${theme}\u0000${look}`;
+  const requestKey = `${renderer}\u0000${content}\u0000${theme}\u0000${look}`;
   const [state, setState] = useState<
     | { requestKey: string; status: "generating" }
     | { requestKey: string; status: "error"; error: string }
@@ -108,7 +117,12 @@ function ImagePreview({
     let cancelled = false;
     let previewUrl: string | null = null;
 
-    renderMermaid(content, theme, look)
+    const renderFn =
+      renderer === "beautiful"
+        ? renderBeautiful(content, theme as BeautifulTheme)
+        : renderMermaid(content, theme as MermaidTheme, look);
+
+    renderFn
       .then((svg) => svgToPngBlob(svg))
       .then((blob) => {
         if (cancelled) return;
@@ -131,7 +145,7 @@ function ImagePreview({
         URL.revokeObjectURL(previewUrl);
       }
     };
-  }, [content, look, onReady, requestKey, theme]);
+  }, [content, look, onReady, renderer, requestKey, theme]);
 
   const visibleState =
     state.requestKey === requestKey
@@ -168,11 +182,13 @@ function ImagePreview({
 
 export function CopyImageButton({
   content,
+  renderer = "beautiful",
   theme,
   look = "classic",
 }: {
   content: string;
-  theme: MermaidTheme;
+  renderer?: DiagramRenderer;
+  theme: string;
   look?: MermaidLook;
 }) {
   const [open, setOpen] = useState(false);
@@ -219,7 +235,7 @@ export function CopyImageButton({
 
   const body = (
     <>
-      <ImagePreview content={content} theme={theme} look={look} onReady={handleReady} />
+      <ImagePreview content={content} renderer={renderer} theme={theme} look={look} onReady={handleReady} />
       <div className="flex justify-end">
         <Button
           variant="secondary"

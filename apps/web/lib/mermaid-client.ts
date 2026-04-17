@@ -3,6 +3,51 @@
 import { prepareMermaidSource } from "@/lib/mermaid-source";
 import { MermaidRenderFailure, parseMermaidError } from "@/lib/mermaid-error";
 
+/* ── Renderer type ──────────────────────────────────────────────────── */
+
+export type DiagramRenderer = "beautiful" | "mermaid";
+
+export const RENDERERS: { id: DiagramRenderer; label: string }[] = [
+  { id: "beautiful", label: "Beautiful" },
+  { id: "mermaid", label: "Classic" },
+];
+
+/* ── Beautiful-mermaid themes ───────────────────────────────────────── */
+
+export type BeautifulTheme =
+  | "zinc"
+  | "tokyo-night"
+  | "catppuccin"
+  | "nord"
+  | "github"
+  | "solarized"
+  | "dracula"
+  | "one-dark";
+
+export const BEAUTIFUL_THEMES: { id: BeautifulTheme; label: string; dot: string }[] = [
+  { id: "zinc", label: "Zinc", dot: "#71717a" },
+  { id: "tokyo-night", label: "Tokyo Night", dot: "#7aa2f7" },
+  { id: "catppuccin", label: "Catppuccin", dot: "#f5c2e7" },
+  { id: "nord", label: "Nord", dot: "#88c0d0" },
+  { id: "github", label: "GitHub", dot: "#2ea043" },
+  { id: "solarized", label: "Solarized", dot: "#b58900" },
+  { id: "dracula", label: "Dracula", dot: "#bd93f9" },
+  { id: "one-dark", label: "One Dark", dot: "#e06c75" },
+];
+
+const BEAUTIFUL_THEME_MAP: Record<BeautifulTheme, { light: string; dark: string }> = {
+  "zinc": { light: "zinc-light", dark: "zinc-dark" },
+  "tokyo-night": { light: "tokyo-night-light", dark: "tokyo-night" },
+  "catppuccin": { light: "catppuccin-latte", dark: "catppuccin-mocha" },
+  "nord": { light: "nord-light", dark: "nord" },
+  "github": { light: "github-light", dark: "github-dark" },
+  "solarized": { light: "solarized-light", dark: "solarized-dark" },
+  "dracula": { light: "github-light", dark: "dracula" },
+  "one-dark": { light: "zinc-light", dark: "one-dark" },
+};
+
+/* ── Classic mermaid themes ─────────────────────────────────────────── */
+
 export type MermaidTheme = "auto" | "forest" | "neutral" | "ocean" | "rose";
 export type MermaidLook = "classic" | "handDrawn" | "neo";
 
@@ -378,4 +423,97 @@ export async function renderMermaid(
     document.getElementById(`d${id}`)?.remove();
     throw new MermaidRenderFailure(parseMermaidError(e));
   }
+}
+
+/* ── Beautiful-mermaid renderer ─────────────────────────────────────── */
+
+/**
+ * beautiful-mermaid uses CSS custom properties for text colors.
+ * The default `--_text-muted` (40% fg / 60% bg) and built-in theme `muted`
+ * colors often fail WCAG AA 4.5:1 on dark backgrounds.
+ * Inject overrides that ensure readability while preserving the theme palette.
+ */
+function boostBeautifulContrast(svg: string): string {
+  const contrastCSS = `
+    svg {
+      --_text-muted: color-mix(in srgb, var(--fg) 70%, var(--bg));
+      --_text-faint: color-mix(in srgb, var(--fg) 50%, var(--bg));
+      --_line:       color-mix(in srgb, var(--fg) 55%, var(--bg));
+    }`;
+  return svg.replace("</style>", contrastCSS + "\n</style>");
+}
+
+// Module cache — after first import, renderMermaidSVG is available synchronously
+let _bm: typeof import("beautiful-mermaid") | null = null;
+let _bmLoading: Promise<typeof import("beautiful-mermaid")> | null = null;
+
+export function loadBeautifulMermaid(): Promise<typeof import("beautiful-mermaid")> {
+  if (_bm) return Promise.resolve(_bm);
+  if (!_bmLoading) {
+    _bmLoading = import("beautiful-mermaid").then((mod) => {
+      _bm = mod;
+      return mod;
+    });
+  }
+  return _bmLoading;
+}
+
+export function getBeautifulModule() {
+  return _bm;
+}
+
+/**
+ * Resolve a BeautifulTheme family + UI mode to a concrete theme key and colors.
+ */
+export function resolveBeautifulTheme(
+  theme: BeautifulTheme,
+  mode: "dark" | "light",
+): { themeKey: string; colors: import("beautiful-mermaid").DiagramColors } | null {
+  const bm = _bm;
+  if (!bm) return null;
+  const mapping = BEAUTIFUL_THEME_MAP[theme];
+  const themeKey = mapping ? mapping[mode] : (mode === "dark" ? "zinc-dark" : "zinc-light");
+  const colors = bm.THEMES[themeKey] ?? bm.THEMES["zinc-light"];
+  return { themeKey, colors };
+}
+
+/**
+ * Render a diagram with beautiful-mermaid synchronously.
+ * Returns the SVG string, or null if the module isn't loaded yet.
+ * Throws on parse errors (unsupported diagram types, syntax errors).
+ *
+ * Per the README: use renderMermaidSVG (sync) + useMemo() for React.
+ * beautiful-mermaid generates safe SVGs — no HTML sanitizer needed.
+ */
+export function renderBeautifulSync(
+  content: string,
+  theme: BeautifulTheme = "zinc",
+  mode?: "dark" | "light",
+): string | null {
+  const bm = _bm;
+  if (!bm) return null;
+
+  const uiMode = mode ?? getUIMode();
+  const resolved = resolveBeautifulTheme(theme, uiMode);
+  if (!resolved) return null;
+
+  const svg = bm.renderMermaidSVG(content, {
+    ...resolved.colors,
+    font: "ui-sans-serif, system-ui, -apple-system, sans-serif",
+  });
+
+  return boostBeautifulContrast(svg);
+}
+
+/**
+ * Async wrapper for first-load scenarios (version thumbs, copy-image, etc.)
+ */
+export async function renderBeautiful(
+  content: string,
+  theme: BeautifulTheme = "zinc",
+): Promise<string> {
+  await loadBeautifulMermaid();
+  const svg = renderBeautifulSync(content, theme);
+  if (!svg) throw new Error("beautiful-mermaid failed to load");
+  return svg;
 }
