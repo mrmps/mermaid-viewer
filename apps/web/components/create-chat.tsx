@@ -169,6 +169,10 @@ export function CreateChat() {
     el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
   }, [input]);
 
+  useEffect(() => {
+    textareaRef.current?.focus();
+  }, []);
+
   const handleExampleClick = useCallback((prompt: string) => {
     setInput(prompt);
     requestAnimationFrame(() => {
