@@ -14,10 +14,10 @@ import { FloatingChatButton } from "@/components/floating-chat-button";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "merm.sh — A URL for the diagram your Claude Code session just drew",
+    absolute: "Versioned Mermaid diagrams for teams and agents | merm.sh",
   },
   description:
-    "Claude Code draws you a diagram. The session ends. A week later you want to change one box — but a fresh session redraws it from scratch. merm.sh is a URL you come back to: edits bump a version instead of redrawing, and any Claude Code session can pick up where yours left off.",
+    "Every Mermaid diagram your Claude Code session creates gets a permanent URL, full version history, and a shareable link any other Claude Code session can edit.",
   alternates: {
     canonical: "/",
   },
@@ -121,7 +121,7 @@ export default async function HomePage() {
     "@type": "WebApplication",
     name: "merm.sh",
     description:
-      "A URL for the Mermaid diagram your Claude Code session just drew. Edits bump a version instead of redrawing. Share the link and another Claude Code session can push the next version.",
+      "Every Mermaid diagram your Claude Code session creates gets a permanent URL, full version history, and a shareable link any other Claude Code session can edit.",
     applicationCategory: "DeveloperApplication",
     operatingSystem: "Any",
     offers: {
@@ -205,16 +205,13 @@ export default async function HomePage() {
 
       {/* Hero */}
       <h1 className="text-[28px] sm:text-[36px] font-semibold leading-[1.15] tracking-[-0.02em] text-foreground text-balance">
-        Your diagrams shouldn&apos;t die with the chat.
+        Versioned Mermaid diagrams for teams and agents.
       </h1>
 
       {/* Description */}
       <p className="text-base leading-[26px] text-secondary-foreground mt-5 mb-4">
-        I&apos;ve lost more Claude Code diagrams than I can count — the session
-        ends and they&apos;re gone with it. merm.sh is where they live now: every
-        edit becomes a new version, so I can watch my architecture change over
-        time and share the URL with anyone working on it with me. I&apos;d
-        wanted this for a while, so I built it.
+        Every diagram gets a permanent URL, full version history, and a
+        shareable link any Claude Code session can edit.
       </p>
 
       {/* Recent diagrams — data fetched at page level, no Suspense = zero layout shift */}
@@ -288,16 +285,16 @@ export default async function HomePage() {
         <div className="flex flex-col gap-4">
           {[
             {
-              title: "Save it once",
-              desc: "Tell Claude Code to ship the Mermaid to merm.sh. One API call, one URL back. No signup. End the session — the diagram is still there.",
+              title: "Save every diagram",
+              desc: "Ask Claude Code to ship a Mermaid diagram to merm.sh and get a permanent URL back, with no signup or login required.",
             },
             {
-              title: "Come back next week",
-              desc: "Paste the URL into a fresh Claude Code session and ask for a change. Claude fetches the current Mermaid, edits it, pushes v2. v1 is still there if you want to diff or roll back.",
+              title: "Track every edit",
+              desc: "Each change saves a new version, so you can diff revisions, roll back mistakes, and watch your architecture evolve over time.",
             },
             {
-              title: "Hand it to a teammate",
-              desc: "Drop the URL in Slack. Their Claude Code picks up the current version, fixes a typo, pushes v3 to the same diagram. Nobody redraws from memory.",
+              title: "Share with your team",
+              desc: "Send one URL that anyone on your team can open, ready for their Claude Code session to push the next version.",
             },
           ].map((item) => (
             <div key={item.title}>
@@ -519,11 +516,11 @@ GET /api/d?content=graph%20TD%3B%20A--%3EB`}
         <div className="border-t border-border">
           <FAQItem
             question="What is merm.sh?"
-            answer="A URL for the Mermaid diagram your Claude Code session just drew. Edits bump a version instead of overwriting. Share the link and another Claude Code session can push the next version. Free, no signup."
+            answer="A permanent, versioned URL for every Mermaid diagram your Claude Code session creates. Share the link and any collaborator's Claude Code can push the next version. Free, no signup."
           />
           <FAQItem
             question="Is there a dashboard for my diagrams?"
-            answer="No — there are no accounts. A diagram is just its URL, secured by a per-diagram secret. Keep your URLs wherever you already keep important links (README, Notion, pinned Slack). The tradeoff buys you: your agent creates and shares a diagram in one call, with nothing to log into."
+            answer="No. merm.sh has no accounts or central dashboard. Each diagram is a URL protected by a per-diagram secret, so you track your diagrams wherever you already keep important links, such as a README, Notion page, or shared channel. Creating and sharing a diagram takes a single API call, with nothing to sign into."
           />
           <FAQItem
             question="How do I use it with my agent?"
