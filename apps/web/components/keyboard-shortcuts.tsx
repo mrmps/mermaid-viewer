@@ -18,10 +18,10 @@ export function KeyboardShortcuts() {
         return;
       }
 
-      // Cmd/Ctrl + I → navigate to kanban
+      // Cmd/Ctrl + I → create with chat
       if ((e.metaKey || e.ctrlKey) && e.key === "i") {
         e.preventDefault();
-        router.push("/diagrams?tab=kanban");
+        router.push("/chat");
       }
     }
 

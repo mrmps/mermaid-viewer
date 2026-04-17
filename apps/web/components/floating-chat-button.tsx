@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { Kbd } from "@/components/ui/kbd";
 
 export function FloatingChatButton() {
   return (
     <Link
       href="/chat"
-      className="group fixed bottom-6 right-6 z-50 flex items-center gap-2.5 rounded-full h-11 pl-4 pr-5 text-sm font-semibold
+      aria-keyshortcuts="Meta+I Control+I"
+      className="group fixed bottom-6 right-6 z-50 flex items-center gap-2.5 rounded-full h-11 pl-4 pr-3 text-sm font-semibold
         bg-white text-zinc-900 border border-zinc-200
         shadow-[0_1px_3px_rgba(0,0,0,0.08),0_4px_16px_rgba(0,0,0,0.12)]
         hover:bg-zinc-50 hover:border-zinc-300 hover:shadow-[0_2px_6px_rgba(0,0,0,0.1),0_8px_24px_rgba(0,0,0,0.16)]
@@ -30,6 +32,10 @@ export function FloatingChatButton() {
         </svg>
       </span>
       <span>Create with chat</span>
+      <Kbd className="ml-1 h-6 px-1.5 gap-0.5 text-[11px] font-medium bg-zinc-100/80 border-zinc-200 text-zinc-500 dark:bg-zinc-700/60 dark:border-zinc-600 dark:text-zinc-300">
+        <span className="text-[13px] leading-none">⌘</span>
+        <span>I</span>
+      </Kbd>
     </Link>
   );
 }
