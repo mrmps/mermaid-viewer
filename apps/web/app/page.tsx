@@ -210,11 +210,11 @@ export default async function HomePage() {
 
       {/* Description */}
       <p className="text-base leading-[26px] text-secondary-foreground mt-5 mb-4">
-        You ask Claude Code to draw an architecture diagram. It nails it.
-        Session ends. A week later you want to change one box — but the new
-        session doesn&apos;t have the old one, so Claude redraws the whole thing
-        from scratch, subtly different. merm.sh is a URL you come back to.
-        Edits bump a version; they don&apos;t redraw your work.
+        I&apos;ve lost more Claude Code diagrams than I can count — the session
+        ends and they&apos;re gone with it. merm.sh is where they live now: every
+        edit becomes a new version, so I can watch my architecture change over
+        time and share the URL with anyone working on it with me. I&apos;d
+        wanted this for a while, so I built it.
       </p>
 
       {/* Recent diagrams — data fetched at page level, no Suspense = zero layout shift */}
