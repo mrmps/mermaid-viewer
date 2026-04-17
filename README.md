@@ -25,6 +25,7 @@ Add the MCP server to your agent's settings:
 {
   "mcpServers": {
     "mermaid-viewer": {
+      "type": "http",
       "url": "https://mermaidsh.com/mcp"
     }
   }

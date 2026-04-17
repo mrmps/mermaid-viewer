@@ -37,7 +37,7 @@ export function McpInstallTabs() {
       JSON.stringify(
         {
           mcpServers: {
-            [SERVER_NAME]: { url: mcpUrl },
+            [SERVER_NAME]: { type: "http", url: mcpUrl },
           },
         },
         null,

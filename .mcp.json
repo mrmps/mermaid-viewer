@@ -1,6 +1,7 @@
 {
   "mcpServers": {
     "mermaid-viewer": {
+      "type": "http",
       "url": "https://merm.sh/mcp"
     }
   }

@@ -58,6 +58,7 @@ For native tool integration, also add to your MCP settings:
 {
   "mcpServers": {
     "mermaid-viewer": {
+      "type": "http",
       "url": "${baseUrl}/mcp"
     }
   }

@@ -27,6 +27,7 @@ Add to your MCP settings file. The location depends on your agent:
 {
   "mcpServers": {
     "mermaid-viewer": {
+      "type": "http",
       "url": "${baseUrl}/mcp"
     }
   }
@@ -38,6 +39,7 @@ Add to your MCP settings file. The location depends on your agent:
 {
   "mcpServers": {
     "mermaid-viewer": {
+      "type": "http",
       "url": "${baseUrl}/mcp"
     }
   }
@@ -49,6 +51,7 @@ Add to your MCP settings file. The location depends on your agent:
 {
   "mcpServers": {
     "mermaid-viewer": {
+      "type": "http",
       "url": "${baseUrl}/mcp"
     }
   }

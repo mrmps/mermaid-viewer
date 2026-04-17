@@ -341,7 +341,7 @@ Send \`Accept: text/markdown\` (or no \`Accept\` header, or anything that isn't 
 ## MCP (for MCP-connected agents)
 
 \`\`\`json
-{ "mcpServers": { "mermaid-viewer": { "url": "${baseUrlOverride}/mcp" } } }
+{ "mcpServers": { "mermaid-viewer": { "type": "http", "url": "${baseUrlOverride}/mcp" } } }
 \`\`\`
 
 Tools: \`create_diagram\`, \`update_diagram\`, \`get_diagram\`. Same backing store; use whichever transport (URL, REST, MCP) suits your agent.
