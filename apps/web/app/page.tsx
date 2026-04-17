@@ -14,10 +14,10 @@ import { FloatingChatButton } from "@/components/floating-chat-button";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "merm.sh — Versioned Mermaid Diagrams for AI Agents",
+    absolute: "merm.sh — A URL for the diagram your Claude Code session just drew",
   },
   description:
-    "Dead-simple versioned Mermaid diagrams for AI agents. Create, update, and share diagrams via a single API call with full version history.",
+    "Claude Code draws you a diagram. The session ends. A week later you want to change one box — but a fresh session redraws it from scratch. merm.sh is a URL you come back to: edits bump a version instead of redrawing, and any Claude Code session can pick up where yours left off.",
   alternates: {
     canonical: "/",
   },
@@ -121,7 +121,7 @@ export default async function HomePage() {
     "@type": "WebApplication",
     name: "merm.sh",
     description:
-      "Dead-simple versioned Mermaid diagrams for AI agents. Create, update, and share diagrams via a single API call with full version history.",
+      "A URL for the Mermaid diagram your Claude Code session just drew. Edits bump a version instead of redrawing. Share the link and another Claude Code session can push the next version.",
     applicationCategory: "DeveloperApplication",
     operatingSystem: "Any",
     offers: {
@@ -205,13 +205,16 @@ export default async function HomePage() {
 
       {/* Hero */}
       <h1 className="text-[28px] sm:text-[36px] font-semibold leading-[1.15] tracking-[-0.02em] text-foreground text-balance">
-        Versioned Mermaid diagrams for AI agents
+        Your diagrams shouldn&apos;t die with the chat.
       </h1>
 
       {/* Description */}
       <p className="text-base leading-[26px] text-secondary-foreground mt-5 mb-4">
-        Dead-simple versioned Mermaid diagrams built for AI agents. One API call
-        to create, update, and share — with full version history baked in.
+        You ask Claude Code to draw an architecture diagram. It nails it.
+        Session ends. A week later you want to change one box — but the new
+        session doesn&apos;t have the old one, so Claude redraws the whole thing
+        from scratch, subtly different. merm.sh is a URL you come back to.
+        Edits bump a version; they don&apos;t redraw your work.
       </p>
 
       {/* Recent diagrams — data fetched at page level, no Suspense = zero layout shift */}
@@ -285,16 +288,16 @@ export default async function HomePage() {
         <div className="flex flex-col gap-4">
           {[
             {
-              title: "Tell your agent to create a diagram",
-              desc: "Your agent calls the API, gets back a shareable URL and an edit secret. No setup, no config.",
+              title: "Save it once",
+              desc: "Tell Claude Code to ship the Mermaid to merm.sh. One API call, one URL back. No signup. End the session — the diagram is still there.",
             },
             {
-              title: "Every update is a new version",
-              desc: "Push changes with the edit secret. Each update creates a new version — nothing is overwritten.",
+              title: "Come back next week",
+              desc: "Paste the URL into a fresh Claude Code session and ask for a change. Claude fetches the current Mermaid, edits it, pushes v2. v1 is still there if you want to diff or roll back.",
             },
             {
-              title: "Share with people or agents",
-              desc: "Generate a SKILL.md file so any teammate's agent can read or contribute to your diagram.",
+              title: "Hand it to a teammate",
+              desc: "Drop the URL in Slack. Their Claude Code picks up the current version, fixes a typo, pushes v3 to the same diagram. Nobody redraws from memory.",
             },
           ].map((item) => (
             <div key={item.title}>
@@ -516,7 +519,11 @@ GET /api/d?content=graph%20TD%3B%20A--%3EB`}
         <div className="border-t border-border">
           <FAQItem
             question="What is merm.sh?"
-            answer="A free hosted service for creating, versioning, and sharing Mermaid diagrams. It's built for AI agents but works just as well for humans."
+            answer="A URL for the Mermaid diagram your Claude Code session just drew. Edits bump a version instead of overwriting. Share the link and another Claude Code session can push the next version. Free, no signup."
+          />
+          <FAQItem
+            question="Is there a dashboard for my diagrams?"
+            answer="No — there are no accounts. A diagram is just its URL, secured by a per-diagram secret. Keep your URLs wherever you already keep important links (README, Notion, pinned Slack). The tradeoff buys you: your agent creates and shares a diagram in one call, with nothing to log into."
           />
           <FAQItem
             question="How do I use it with my agent?"
