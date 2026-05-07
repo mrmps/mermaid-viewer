@@ -1,6 +1,13 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
-import { createDiagram, getDiagram, addVersion } from "@mermaid-viewer/db";
+import {
+  addDiagramToBoard,
+  addVersion,
+  createBoard,
+  createDiagram,
+  getBoard,
+  getDiagram,
+} from "@mermaid-viewer/db";
 import { baseUrl } from "@/lib/env";
 import { z } from "zod";
 
@@ -32,7 +39,7 @@ function createMcpServer(baseUrl: string) {
     "create_diagram",
     {
       title: "Create Mermaid Diagram",
-      description: `Create a new versioned Mermaid diagram hosted on ${baseUrl}. Returns a shareable URL and an edit secret. IMPORTANT: save the secret — you need it to push updates later. Always send the diagram URL to the user so they can view it in the browser.`,
+      description: `Create a new versioned Mermaid diagram hosted on ${baseUrl}. New diagrams also get a one-item board because boards are the main workspace primitive. IMPORTANT: save the diagram secret to push content updates, and save the board secret to add related diagrams later. If the user is building a set of related diagrams, first create a board with create_board, then pass boardId and boardSecret here so the diagram appears on that board.`,
       inputSchema: {
         content: z
           .string()
@@ -46,19 +53,89 @@ function createMcpServer(baseUrl: string) {
           .describe(
             "Human-readable title for the diagram. Displayed in the viewer and used in the skill file.",
           ),
+        boardId: z
+          .string()
+          .optional()
+          .describe("Optional board ID to add this new diagram to."),
+        boardSecret: z
+          .string()
+          .optional()
+          .describe("Edit secret for boardId, returned by create_board."),
+        pageId: z
+          .string()
+          .optional()
+          .describe("Optional board page ID to place the diagram on."),
+        pageName: z
+          .string()
+          .optional()
+          .describe("Optional board page name. Created if it does not exist."),
+        x: z
+          .number()
+          .optional()
+          .describe(
+            "Optional preferred board x coordinate. If it overlaps an existing card, merm.sh will move the card to the nearest open spot.",
+          ),
+        y: z
+          .number()
+          .optional()
+          .describe(
+            "Optional preferred board y coordinate. If it overlaps an existing card, merm.sh will move the card to the nearest open spot.",
+          ),
+        width: z
+          .number()
+          .optional()
+          .describe("Optional board card width in pixels. Minimum 320."),
+        height: z
+          .number()
+          .optional()
+          .describe("Optional board card height in pixels. Minimum 260."),
       },
       outputSchema: {
         id: z.string().describe("Unique diagram ID"),
-        url: z.string().describe("Shareable URL to view the rendered diagram"),
+        url: z
+          .string()
+          .describe("Shareable board URL when available, otherwise diagram URL"),
         editUrl: z
           .string()
-          .describe("URL with edit secret for browser-based editing"),
+          .describe("Editable board URL when available, otherwise diagram edit URL"),
+        diagramUrl: z.string().describe("Focused diagram URL"),
+        diagramEditUrl: z.string().describe("Focused diagram edit URL"),
         secret: z
           .string()
           .describe(
             "Edit secret — save this to push updates. Only returned on create.",
           ),
         version: z.number().describe("Version number (starts at 1)"),
+        boardUrl: z
+          .string()
+          .optional()
+          .describe("Board URL when the diagram was added to a board."),
+        boardEditUrl: z
+          .string()
+          .optional()
+          .describe("Editable board URL when the diagram was added to a board."),
+        boardId: z.string().optional().describe("Primary board ID for this diagram."),
+        boardSecret: z
+          .string()
+          .optional()
+          .describe("Primary board edit secret for this diagram."),
+        boardItemId: z
+          .string()
+          .optional()
+          .describe("Board card item ID when added to a board."),
+        boardPageId: z
+          .string()
+          .optional()
+          .describe("Board page ID when added to a board."),
+        placement: z
+          .object({
+            x: z.number(),
+            y: z.number(),
+            width: z.number(),
+            height: z.number(),
+          })
+          .optional()
+          .describe("Actual board card bounds after non-overlap placement."),
       },
       annotations: {
         readOnlyHint: false,
@@ -67,16 +144,125 @@ function createMcpServer(baseUrl: string) {
         openWorldHint: true,
       },
     },
-    async ({ content, title }) => {
+    async ({
+      content,
+      title,
+      boardId,
+      boardSecret,
+      pageId,
+      pageName,
+      x,
+      y,
+      width,
+      height,
+    }) => {
       try {
-        const result = await withRetry(() => createDiagram({ content, title }));
-        const data = {
+        const targetBoard =
+          boardId && boardSecret
+            ? await withRetry(() => getBoard({ id: boardId }))
+            : null;
+
+        if (boardId && (!targetBoard || targetBoard.board.secret !== boardSecret)) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: targetBoard
+                  ? "Error: Invalid board secret"
+                  : "Error: Board not found",
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        const result = await withRetry(() =>
+          createDiagram({ content, title, primaryBoard: !targetBoard }),
+        );
+        const diagramUrl = `${baseUrl}/d/${result.id}`;
+        const diagramEditUrl = `${baseUrl}/e/${result.editId}`;
+        const data: {
+          id: string;
+          url: string;
+          editUrl: string;
+          diagramUrl: string;
+          diagramEditUrl: string;
+          secret: string;
+          version: number;
+          boardId?: string;
+          boardSecret?: string;
+          boardUrl?: string;
+          boardEditUrl?: string;
+          boardItemId?: string;
+          boardPageId?: string;
+          placement?: { x: number; y: number; width: number; height: number };
+        } = {
           id: result.id,
-          url: `${baseUrl}/d/${result.id}`,
-          editUrl: `${baseUrl}/e/${result.editId}`,
+          url: result.boardId ? `${baseUrl}/b/${result.boardId}` : diagramUrl,
+          editUrl: result.boardEditId
+            ? `${baseUrl}/be/${result.boardEditId}`
+            : diagramEditUrl,
+          diagramUrl,
+          diagramEditUrl,
           secret: result.secret,
           version: result.version,
         };
+        if (result.boardId && result.boardSecret) {
+          data.boardId = result.boardId;
+          data.boardSecret = result.boardSecret;
+          data.boardUrl = `${baseUrl}/b/${result.boardId}`;
+          if (result.boardEditId) {
+            data.boardEditUrl = `${baseUrl}/be/${result.boardEditId}`;
+          }
+        }
+
+        if (targetBoard && boardId && boardSecret) {
+          const boardResult = await withRetry(() =>
+            addDiagramToBoard({
+              boardId,
+              secret: boardSecret,
+              diagramId: result.id,
+              pageId,
+              pageName,
+              title,
+              x,
+              y,
+              width,
+              height,
+            }),
+          );
+
+          if ("error" in boardResult) {
+            return {
+              content: [
+                {
+                  type: "text" as const,
+                  text: `Error: Failed to add diagram to board (${boardResult.error})`,
+                },
+              ],
+              isError: true,
+            };
+          }
+
+          data.boardItemId = boardResult.itemId;
+          data.boardPageId = boardResult.pageId;
+          data.placement = {
+            x: boardResult.x,
+            y: boardResult.y,
+            width: boardResult.width,
+            height: boardResult.height,
+          };
+          const board = await withRetry(() => getBoard({ id: boardId }));
+          if (board) {
+            data.boardId = board.board.id;
+            data.boardSecret = boardSecret;
+            data.boardUrl = `${baseUrl}/b/${board.board.id}`;
+            data.boardEditUrl = `${baseUrl}/be/${board.board.editId}`;
+            data.url = data.boardUrl;
+            data.editUrl = data.boardEditUrl;
+          }
+        }
+
         return {
           structuredContent: data,
           content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
@@ -84,6 +270,193 @@ function createMcpServer(baseUrl: string) {
       } catch {
         return {
           content: [{ type: "text" as const, text: "Error: Failed to create diagram. Please try again." }],
+          isError: true,
+        };
+      }
+    },
+  );
+
+  server.registerTool(
+    "create_board",
+    {
+      title: "Create Mermaid Board",
+      description:
+        "Create a shareable Mermaid diagram board with pages and draggable/resizable diagram cards. Use this before creating several related diagrams so they land in one workspace.",
+      inputSchema: {
+        title: z
+          .string()
+          .optional()
+          .describe("Human-readable board title, such as 'Auth Architecture'."),
+        diagramId: z
+          .string()
+          .optional()
+          .describe("Optional existing diagram ID to place on the first page."),
+      },
+      outputSchema: {
+        id: z.string().describe("Unique board ID"),
+        url: z.string().describe("Shareable board URL"),
+        editUrl: z.string().describe("Editable board URL"),
+        secret: z
+          .string()
+          .describe("Board edit secret. Save this to add diagrams later."),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: true,
+      },
+    },
+    async ({ title, diagramId }) => {
+      try {
+        const result = await withRetry(() => createBoard({ title, diagramId }));
+        const data = {
+          id: result.id,
+          url: `${baseUrl}/b/${result.id}`,
+          editUrl: `${baseUrl}/be/${result.editId}`,
+          secret: result.secret,
+        };
+        return {
+          structuredContent: data,
+          content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
+        };
+      } catch {
+        return {
+          content: [{ type: "text" as const, text: "Error: Failed to create board. Please try again." }],
+          isError: true,
+        };
+      }
+    },
+  );
+
+  server.registerTool(
+    "add_diagram_to_board",
+    {
+      title: "Add Diagram To Board",
+      description:
+        "Place an existing Mermaid diagram onto a board page. Use this when a new diagram is relevant to a previous diagram and should appear in the same workspace.",
+      inputSchema: {
+        boardId: z.string().describe("Board ID from create_board"),
+        boardSecret: z.string().describe("Board secret from create_board"),
+        diagramId: z.string().describe("Existing diagram ID to place on the board"),
+        pageId: z.string().optional().describe("Optional page ID"),
+        pageName: z
+          .string()
+          .optional()
+          .describe("Optional page name. Created if it does not exist."),
+        title: z.string().optional().describe("Optional card title override"),
+        x: z
+          .number()
+          .optional()
+          .describe(
+            "Optional preferred board x coordinate. If it overlaps an existing card, merm.sh moves it to the nearest open spot.",
+          ),
+        y: z
+          .number()
+          .optional()
+          .describe(
+            "Optional preferred board y coordinate. If it overlaps an existing card, merm.sh moves it to the nearest open spot.",
+          ),
+        width: z
+          .number()
+          .optional()
+          .describe("Optional board card width in pixels. Minimum 320."),
+        height: z
+          .number()
+          .optional()
+          .describe("Optional board card height in pixels. Minimum 260."),
+      },
+      outputSchema: {
+        boardId: z.string().describe("Board ID"),
+        itemId: z.string().describe("Board card item ID"),
+        pageId: z.string().describe("Page ID where the diagram was placed"),
+        url: z.string().describe("Shareable board URL"),
+        editUrl: z.string().describe("Editable board URL"),
+        placement: z
+          .object({
+            x: z.number(),
+            y: z.number(),
+            width: z.number(),
+            height: z.number(),
+          })
+          .describe("Actual board card bounds after non-overlap placement."),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: true,
+      },
+    },
+    async ({
+      boardId,
+      boardSecret,
+      diagramId,
+      pageId,
+      pageName,
+      title,
+      x,
+      y,
+      width,
+      height,
+    }) => {
+      try {
+        const result = await withRetry(() =>
+          addDiagramToBoard({
+            boardId,
+            secret: boardSecret,
+            diagramId,
+            pageId,
+            pageName,
+            title,
+            x,
+            y,
+            width,
+            height,
+          }),
+        );
+
+        if ("error" in result) {
+          const message =
+            result.error === "diagram_not_found"
+              ? "Diagram not found"
+              : result.error === "not_found"
+                ? "Board not found"
+                : "Invalid board secret";
+          return {
+            content: [{ type: "text" as const, text: `Error: ${message}` }],
+            isError: true,
+          };
+        }
+
+        const board = await withRetry(() => getBoard({ id: boardId }));
+        if (!board) {
+          return {
+            content: [{ type: "text" as const, text: "Error: Board not found" }],
+            isError: true,
+          };
+        }
+
+        const data = {
+          boardId,
+          itemId: result.itemId,
+          pageId: result.pageId,
+          url: `${baseUrl}/b/${board.board.id}`,
+          editUrl: `${baseUrl}/be/${board.board.editId}`,
+          placement: {
+            x: result.x,
+            y: result.y,
+            width: result.width,
+            height: result.height,
+          },
+        };
+        return {
+          structuredContent: data,
+          content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
+        };
+      } catch {
+        return {
+          content: [{ type: "text" as const, text: "Error: Failed to add diagram to board. Please try again." }],
           isError: true,
         };
       }
@@ -231,6 +604,94 @@ function createMcpServer(baseUrl: string) {
     },
   );
 
+  server.registerTool(
+    "get_board",
+    {
+      title: "Get Mermaid Board",
+      description:
+        "Fetch a board's pages and diagrams. Use this before adding related diagrams when the user has already shared a board ID or URL.",
+      inputSchema: {
+        id: z.string().describe("Board ID"),
+      },
+      outputSchema: {
+        id: z.string().describe("Board ID"),
+        title: z.string().describe("Board title"),
+        url: z.string().describe("Shareable board URL"),
+        editUrl: z.string().describe("Editable board URL"),
+        pages: z
+          .array(
+            z.object({
+              id: z.string(),
+              name: z.string(),
+              diagrams: z.array(
+                z.object({
+                  itemId: z.string(),
+                  diagramId: z.string(),
+                  title: z.string(),
+                  url: z.string(),
+                  content: z.string(),
+                  x: z.number(),
+                  y: z.number(),
+                  width: z.number(),
+                  height: z.number(),
+                }),
+              ),
+            }),
+          )
+          .describe("Board pages and diagram cards"),
+      },
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    async ({ id }) => {
+      try {
+        const board = await withRetry(() => getBoard({ id }));
+        if (!board) {
+          return {
+            content: [{ type: "text" as const, text: "Error: Board not found" }],
+            isError: true,
+          };
+        }
+
+        const result = {
+          id: board.board.id,
+          title: board.board.title,
+          url: `${baseUrl}/b/${board.board.id}`,
+          editUrl: `${baseUrl}/be/${board.board.editId}`,
+          pages: board.state.pages.map((page) => ({
+            id: page.id,
+            name: page.name,
+            diagrams: page.items.map((item) => ({
+              itemId: item.id,
+              diagramId: item.diagramId,
+              title: item.title,
+              url: `${baseUrl}${item.href}`,
+              content: item.content,
+              x: item.x,
+              y: item.y,
+              width: item.width,
+              height: item.height,
+            })),
+          })),
+        };
+
+        return {
+          structuredContent: result,
+          content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+        };
+      } catch {
+        return {
+          content: [{ type: "text" as const, text: "Error: Failed to fetch board. Please try again." }],
+          isError: true,
+        };
+      }
+    },
+  );
+
   return server;
 }
 
@@ -273,7 +734,7 @@ export async function GET(request: Request) {
       protocol: "MCP Streamable HTTP",
       protocolVersion: "2025-03-26",
       description:
-        "Create, update, and fetch versioned Mermaid diagrams. Every update creates a new version — nothing is overwritten. Add this URL as a remote MCP server in your client.",
+        "Create, update, and fetch versioned Mermaid diagrams and multi-diagram boards. Every diagram update creates a new version — nothing is overwritten. Add this URL as a remote MCP server in your client.",
       url: `${baseUrl}/mcp`,
       skill: `${baseUrl}/skill.md`,
     },

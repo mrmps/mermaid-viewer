@@ -227,9 +227,14 @@ export function CopyImageButton({
   }, []);
 
   const trigger = (
-    <Button variant="outline" size="sm" onClick={() => handleOpenChange(true)}>
+    <Button
+      aria-label="Copy image"
+      variant="outline"
+      size="sm"
+      onClick={() => handleOpenChange(true)}
+    >
       <ImageIcon className="size-3.5" data-icon="inline-start" aria-hidden="true" />
-      Copy Image
+      <span className="hidden min-[520px]:inline">Copy Image</span>
     </Button>
   );
 

@@ -8,7 +8,7 @@ I want you to install merm.sh for me. Execute all the steps below autonomously.
 
 OBJECTIVE: Set up merm.sh so you can create, update, and share versioned Mermaid diagrams via API or MCP.
 
-DONE WHEN: You can successfully create a diagram by calling \`POST ${baseUrl}/api/d\` and receive back a diagram URL and secret.
+DONE WHEN: You can successfully create a diagram by calling \`POST ${baseUrl}/api/d\` and receive back a board URL, diagram URL, and secret.
 
 ## TODO
 
@@ -58,7 +58,7 @@ Add to your MCP settings file. The location depends on your agent:
 }
 \`\`\`
 
-This gives you native \`create_diagram\`, \`update_diagram\`, and \`get_diagram\` tools.
+This gives you native \`create_diagram\`, \`update_diagram\`, \`get_diagram\`, \`create_board\`, \`add_diagram_to_board\`, and \`get_board\` tools. Boards are the primary workspace; for multiple related diagrams, create a board first and keep adding diagrams to it.
 
 ## Option B: Skill File
 
@@ -190,6 +190,26 @@ Also accepts plain text with Authorization header.
 | \`versions\` | array | All versions: \`[{ version, content, createdAt }]\` |
 | \`skill\` | string | Per-diagram skill URL |
 
+### POST /api/b/:id — Add or create a board card
+
+Use this for related diagrams so everything lands in one shared workspace.
+
+**Create directly on the board:**
+\`\`\`bash
+curl -X POST ${baseUrl}/api/b/:id \\
+  -H "Content-Type: application/json" \\
+  -d '{"editId": "BOARD_EDIT_ID", "title": "My Diagram", "content": "graph TD; A-->B"}'
+\`\`\`
+
+**Add an existing diagram:**
+\`\`\`bash
+curl -X POST ${baseUrl}/api/b/:id \\
+  -H "Content-Type: application/json" \\
+  -d '{"editId": "BOARD_EDIT_ID", "diagramId": "DIAGRAM_ID"}'
+\`\`\`
+
+Cards are placed in the nearest open slot by default. Pass \`pageId\`, \`pageName\`, \`x\`, \`y\`, \`width\`, or \`height\` when you need more control.
+
 ## Supported Diagram Types
 
 flowchart, sequence, class, state, entity-relationship, gantt, pie, quadrant, requirement, gitgraph, mindmap, timeline, sankey, block, packet, kanban, architecture
@@ -199,9 +219,10 @@ flowchart, sequence, class, state, entity-relationship, gantt, pie, quadrant, re
 1. Save the \`secret\` from create — it's returned only once and is required for updates.
 2. Content must be valid Mermaid syntax.
 3. Each update creates a new version — previous content is never lost.
-4. Always share the diagram URL (\`${baseUrl}/d/:id\`) with the user.
+4. Always share the returned \`url\` field with the user. It is the board URL when a board is available.
 5. The \`skill\` URL in responses points to a per-diagram SKILL.md you can share with other agents.
-6. Diagrams are free and public — anyone with the URL can view them.
+6. For related diagrams, keep adding or creating cards on the same board instead of creating isolated one-off pages.
+7. Diagrams are free and public — anyone with the URL can view them.
 
 EXECUTE NOW: Complete the above TODO list to achieve: merm.sh is installed and ready to create diagrams.
 `;

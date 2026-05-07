@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowUp, ArrowUpRight, Loader2 } from "lucide-react";
+import { ArrowUp, ArrowUpRight, Loader2, Workflow } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Kbd } from "@/components/ui/kbd";
 import { useModifierKeyLabel } from "@/lib/use-modifier-key-label";
@@ -185,105 +185,77 @@ export function CreateChat() {
   }, []);
 
   return (
-    <div className="w-full space-y-4">
-      <div
-        className="relative w-full cursor-text"
+    <div className="w-full">
+      <form
+        className="diagram-chatbar-frame cursor-text p-3"
         onClick={() => textareaRef.current?.focus()}
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleSubmit();
+        }}
       >
-        <div className="absolute inset-[-0.5px] rounded-[11px] bg-gradient-to-b from-border to-border/40 pointer-events-none" />
-
-        <div
+        <textarea
+          ref={textareaRef}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Describe a diagram..."
+          rows={2}
+          disabled={loading}
           className={cn(
-            "relative flex rounded-[10px] bg-card overflow-hidden",
-            "shadow-[0_4px_4px_-1px_rgba(0,0,0,0.04),0_1px_1px_rgba(0,0,0,0.08)]",
-            "dark:shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_2px_8px_rgba(0,0,0,0.4)]"
+            "diagram-chatbar-textarea",
+            loading && "cursor-not-allowed opacity-50"
           )}
-        >
-          <div className="flex flex-col flex-1 gap-2 p-3">
-            <div className="flex flex-1 w-full px-1.5 py-0.5 min-h-[48px] max-h-[288px] overflow-y-auto">
-              <textarea
-                ref={textareaRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Describe a diagram..."
-                rows={1}
-                disabled={loading}
-                className={cn(
-                  "w-full resize-none bg-transparent border-none",
-                  "text-[15px] font-[450] leading-6 tracking-[-0.1px]",
-                  "text-foreground/90 placeholder:text-muted-foreground/40 dark:placeholder:text-muted-foreground/60",
-                  "focus:outline-none disabled:opacity-50"
-                )}
-                style={{ minHeight: "24px", maxHeight: "200px" }}
-              />
-            </div>
+          style={{ minHeight: "48px", maxHeight: "200px" }}
+        />
 
-            {error && (
-              <p className="px-0.5 text-[11px] text-destructive" role="alert">
-                {error}
-              </p>
-            )}
-
-            <div className="flex items-end justify-between w-full">
-              <span className="flex items-center gap-1 select-none px-0.5 leading-6">
-                <span className="flex items-center gap-0.5">
-                  <Kbd>{modifierKeyLabel}</Kbd>
-                  <Kbd>↵</Kbd>
-                </span>
-                <span className="text-[11px] text-muted-foreground">to send</span>
-              </span>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={!input.trim() || loading}
-                  aria-label="Create diagram"
-                  className={cn(
-                    "size-6 flex items-center justify-center rounded-full shrink-0 relative",
-                    "border border-border/50",
-                    "transition-all duration-150",
-                    input.trim() && !loading
-                      ? "bg-muted text-foreground/90 cursor-pointer hover:bg-muted/80 shadow-[0_0_0_0.5px_rgba(255,255,255,0.14),0_4px_4px_-1px_rgba(0,0,0,0.04),0_1px_1px_rgba(0,0,0,0.08)] dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/80"
-                      : "bg-muted/30 text-muted-foreground pointer-events-none opacity-40"
-                  )}
-                >
-                  {loading ? (
-                    <Loader2 className="size-3 animate-spin" />
-                  ) : (
-                    <ArrowUp className="size-3.5" strokeWidth={2.5} />
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <section className="rounded-xl border border-border/70 bg-card/45">
-        <div className="border-b border-border/60 px-4 py-2.5">
-          <p className="text-xs font-medium text-muted-foreground">
-            Example prompts
+        {error && (
+          <p className="mt-2 px-1 text-[11px] text-destructive" role="alert">
+            {error}
           </p>
-        </div>
+        )}
 
-        <div className="p-1.5">
-          {PROMPT_EXAMPLES.map((example) => (
-            <button
-              key={example.title}
-              type="button"
-              onClick={() => handleExampleClick(example.prompt)}
-              className="group flex w-full items-center justify-between gap-3 rounded-md px-2.5 py-2 text-left transition-colors hover:bg-muted/40"
-            >
-              <span className="truncate text-sm text-foreground/80">
-                {example.title}
-              </span>
-              <ArrowUpRight className="size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-            </button>
-          ))}
+        <div className="flex items-end justify-between gap-2 pt-2">
+          <div className="flex min-w-0 items-center gap-1.5">
+            <span className="diagram-chatbar-pill shrink-0">
+              <Workflow className="size-3.5" />
+              Mermaid
+            </span>
+            <span className="diagram-chatbar-pill hidden select-none sm:inline-flex">
+              <Kbd>{modifierKeyLabel}</Kbd>
+              <Kbd>↵</Kbd>
+            </span>
+          </div>
+
+          <button
+            type="submit"
+            disabled={!input.trim() || loading}
+            aria-label="Create diagram"
+            className="diagram-chatbar-send shrink-0"
+            data-active={input.trim() && !loading ? "true" : "false"}
+          >
+            {loading ? (
+              <Loader2 className="size-3 animate-spin" />
+            ) : (
+              <ArrowUp className="size-3.5" strokeWidth={2.5} />
+            )}
+          </button>
         </div>
-      </section>
+      </form>
+
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+        {PROMPT_EXAMPLES.map((example) => (
+          <button
+            key={example.title}
+            type="button"
+            onClick={() => handleExampleClick(example.prompt)}
+            className="diagram-chatbar-chip group"
+          >
+            <span>{example.title}</span>
+            <ArrowUpRight className="size-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

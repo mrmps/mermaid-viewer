@@ -11,13 +11,13 @@ export const metadata: Metadata = {
 
 export default function ChatPage() {
   return (
-    <div className="flex items-center justify-center min-h-screen px-6">
-      <div className="flex flex-col items-center gap-4 w-full max-w-[712px]">
-        <div className="flex flex-col items-center gap-2 pb-2">
-          <h1 className="text-xl font-medium text-foreground">
+    <div className="min-h-screen bg-[var(--diagram-chat-page-bg)] px-4 py-8 text-foreground">
+      <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-[712px] flex-col justify-center gap-4">
+        <div className="flex flex-col items-center gap-2 pb-1 text-center">
+          <h1 className="text-[22px] font-medium text-foreground">
             Create a diagram
           </h1>
-          <p className="text-sm text-muted-foreground text-center">
+          <p className="max-w-md text-sm leading-6 text-muted-foreground">
             Describe what you need and AI will generate a Mermaid diagram.
           </p>
         </div>
@@ -28,7 +28,7 @@ export default function ChatPage() {
 
         <Link
           href="/"
-          className="text-xs text-muted-foreground hover:text-foreground transition-colors duration-150"
+          className="self-center text-xs text-muted-foreground transition-colors duration-150 hover:text-foreground"
         >
           Back to home
         </Link>

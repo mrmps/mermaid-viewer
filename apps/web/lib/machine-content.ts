@@ -164,7 +164,7 @@ POST has no URL length cap. Save the \`secret\` from the response for future upd
 
 ### You are MCP-connected
 
-Add \`${baseUrlOverride}/mcp\` to your MCP servers. Tools: \`create_diagram\`, \`update_diagram\`, \`get_diagram\`.
+Add \`${baseUrlOverride}/mcp\` to your MCP servers. Tools: \`create_diagram\`, \`update_diagram\`, \`get_diagram\`, \`create_board\`, \`add_diagram_to_board\`, \`get_board\`.
 
 ---
 
@@ -344,7 +344,7 @@ Send \`Accept: text/markdown\` (or no \`Accept\` header, or anything that isn't 
 { "mcpServers": { "mermaid-viewer": { "type": "http", "url": "${baseUrlOverride}/mcp" } } }
 \`\`\`
 
-Tools: \`create_diagram\`, \`update_diagram\`, \`get_diagram\`. Same backing store; use whichever transport (URL, REST, MCP) suits your agent.
+Tools: \`create_diagram\`, \`update_diagram\`, \`get_diagram\`, \`create_board\`, \`add_diagram_to_board\`, \`get_board\`. Boards are the primary workspace; use whichever transport (URL, REST, MCP) suits your agent.
 
 ---
 
@@ -353,7 +353,7 @@ Tools: \`create_diagram\`, \`update_diagram\`, \`get_diagram\`. Same backing sto
 1. Save the \`secret\` from create — returned once, required for REST updates.
 2. Content must be valid Mermaid syntax.
 3. Each update creates a new version. Nothing is ever overwritten.
-4. Return the \`url\` field (\`${baseUrlOverride}/d/<id>\`) to the user. Never return the endpoint URL you called.
+4. Return the \`url\` field to the user. It is the board URL when available. Never return the endpoint URL you called.
 5. Diagrams are free, public, and permanent. Anyone with the URL can view.
 `;
 }

@@ -19,17 +19,17 @@ export function ThemePicker(props: {
       : THEMES;
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex shrink-0 items-center gap-1.5">
       {themes.map((t) => (
         <button
           key={t.id}
           onClick={() => onSelectTheme(t.id)}
           aria-label={t.label}
           aria-pressed={current === t.id}
-          className={`w-7 h-7 rounded-full border-2 cursor-pointer transition-[border-color,transform] duration-150 active:scale-[0.96] ${
+          className={`size-6 shrink-0 cursor-pointer rounded-full border border-background ring-1 active:scale-[0.96] sm:size-7 ${
             current === t.id
-              ? "border-white scale-110"
-              : "border-neutral-600 hover:border-neutral-400 hover:scale-105"
+              ? "scale-105 ring-foreground"
+              : "ring-border hover:ring-foreground/40"
           }`}
           style={{ backgroundColor: t.dot }}
         />

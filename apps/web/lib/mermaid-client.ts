@@ -72,6 +72,10 @@ type ThemeConfig = {
   vars?: Record<string, string>;
 };
 
+type BeautifulMermaidModule = typeof import("beautiful-mermaid");
+type BeautifulMermaidGraph = ReturnType<BeautifulMermaidModule["parseMermaid"]>;
+type BeautifulMermaidSubgraph = BeautifulMermaidGraph["subgraphs"][number];
+
 function getConfig(theme: MermaidTheme, uiMode: "dark" | "light"): ThemeConfig {
   switch (theme) {
     case "auto":
@@ -377,9 +381,13 @@ export function sanitizeSvg(svg: string): string {
   return svgEl.outerHTML;
 }
 
-async function initMermaid(theme: MermaidTheme, look: MermaidLook = "classic") {
+async function initMermaid(
+  theme: MermaidTheme,
+  look: MermaidLook = "classic",
+  forcedMode?: "dark" | "light",
+) {
   const mermaid = (await import("mermaid")).default;
-  const mode = getUIMode();
+  const mode = forcedMode ?? getUIMode();
   const key = `${theme}-${mode}-${look}`;
 
   if (currentKey !== key) {
@@ -410,8 +418,9 @@ export async function renderMermaid(
   content: string,
   theme: MermaidTheme = "auto",
   look: MermaidLook = "classic",
+  mode?: "dark" | "light",
 ): Promise<string> {
-  const mermaid = await initMermaid(theme, look);
+  const mermaid = await initMermaid(theme, look, mode);
   const id = `mermaid-${++counter}-${Date.now()}`;
   const diagram = prepareMermaidSource(content, { look });
 
@@ -462,6 +471,75 @@ export function getBeautifulModule() {
   return _bm;
 }
 
+function hasSubgraphDirectionOverride(subgraphs: BeautifulMermaidSubgraph[]): boolean {
+  return subgraphs.some(
+    (subgraph) =>
+      Boolean(subgraph.direction) ||
+      hasSubgraphDirectionOverride(subgraph.children),
+  );
+}
+
+function getNodeSubgraphPaths(subgraphs: BeautifulMermaidSubgraph[]) {
+  const paths = new Map<string, string>();
+
+  function visit(subgraph: BeautifulMermaidSubgraph, ancestors: string[]) {
+    const path = [...ancestors, subgraph.id].join("/");
+
+    for (const nodeId of subgraph.nodeIds) {
+      paths.set(nodeId, path);
+    }
+
+    for (const child of subgraph.children) {
+      visit(child, [...ancestors, subgraph.id]);
+    }
+  }
+
+  for (const subgraph of subgraphs) {
+    visit(subgraph, []);
+  }
+
+  return paths;
+}
+
+/**
+ * beautiful-mermaid 1.1.x uses a separate ELK hierarchy mode when a flowchart
+ * combines subgraph `direction` overrides with cross-subgraph edges. That mode
+ * can produce sparse, hard-to-read layouts with very long edge routes. Classic
+ * Mermaid handles those diagrams better, so let the existing fallback render it.
+ */
+export function shouldUseClassicForBeautiful(content: string): boolean {
+  const bm = _bm;
+  if (!bm) return false;
+  if (!/^\s*(?:graph|flowchart)\s+(?:TD|TB|LR|BT|RL)\b/im.test(content)) {
+    return false;
+  }
+
+  let graph: BeautifulMermaidGraph;
+  try {
+    graph = bm.parseMermaid(content);
+  } catch {
+    return false;
+  }
+
+  if (!hasSubgraphDirectionOverride(graph.subgraphs)) {
+    return false;
+  }
+
+  const nodeSubgraphPaths = getNodeSubgraphPaths(graph.subgraphs);
+  let crossSubgraphEdges = 0;
+
+  for (const edge of graph.edges) {
+    const sourcePath = nodeSubgraphPaths.get(edge.source);
+    const targetPath = nodeSubgraphPaths.get(edge.target);
+
+    if ((sourcePath || targetPath) && sourcePath !== targetPath) {
+      crossSubgraphEdges += 1;
+    }
+  }
+
+  return crossSubgraphEdges >= 2;
+}
+
 /**
  * Resolve a BeautifulTheme family + UI mode to a concrete theme key and colors.
  */
@@ -492,6 +570,7 @@ export function renderBeautifulSync(
 ): string | null {
   const bm = _bm;
   if (!bm) return null;
+  if (shouldUseClassicForBeautiful(content)) return null;
 
   const uiMode = mode ?? getUIMode();
   const resolved = resolveBeautifulTheme(theme, uiMode);
@@ -514,6 +593,5 @@ export async function renderBeautiful(
 ): Promise<string> {
   await loadBeautifulMermaid();
   const svg = renderBeautifulSync(content, theme);
-  if (!svg) throw new Error("beautiful-mermaid failed to load");
-  return svg;
+  return svg ?? renderMermaid(content, "auto", "classic");
 }

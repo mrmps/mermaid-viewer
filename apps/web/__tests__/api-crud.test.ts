@@ -7,6 +7,9 @@ const mockGetDiagram = vi.fn();
 const mockAddVersion = vi.fn();
 const mockUpdateTitle = vi.fn();
 const mockDeleteDiagram = vi.fn();
+const mockGetBoard = vi.fn();
+const mockUpdateBoard = vi.fn();
+const mockAddDiagramToBoard = vi.fn();
 const mockValidateMermaid = vi.fn();
 
 vi.mock("@mermaid-viewer/db", () => ({
@@ -15,6 +18,9 @@ vi.mock("@mermaid-viewer/db", () => ({
   addVersion: (...args: unknown[]) => mockAddVersion(...args),
   updateTitle: (...args: unknown[]) => mockUpdateTitle(...args),
   deleteDiagram: (...args: unknown[]) => mockDeleteDiagram(...args),
+  getBoard: (...args: unknown[]) => mockGetBoard(...args),
+  updateBoard: (...args: unknown[]) => mockUpdateBoard(...args),
+  addDiagramToBoard: (...args: unknown[]) => mockAddDiagramToBoard(...args),
 }));
 
 vi.mock("@/lib/mermaid-parse", () => ({
@@ -179,6 +185,41 @@ describe("GET /api/d/[id] — Fetch diagram", () => {
     const res = await GET(req, { params: Promise.resolve({ id: "abc" }) });
     expect(res.status).toBe(200);
     expect(mockGetDiagram).toHaveBeenCalledWith({ id: "abc", version: 1 });
+  });
+});
+
+describe("GET /api/b/[id] — Fetch board", () => {
+  let GET: (req: NextRequest, ctx: { params: Promise<{ id: string }> }) => Promise<Response>;
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    mockGetBoard.mockResolvedValue({
+      board: {
+        id: "board123",
+        editId: "private-edit-id",
+        title: "Workspace",
+        updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+      },
+      state: {
+        version: 1,
+        activePageId: "page1",
+        pages: [{ id: "page1", name: "Page 1", items: [] }],
+      },
+    });
+    const mod = await import("../app/api/b/[id]/route");
+    GET = mod.GET;
+  });
+
+  it("does not leak edit credentials in the public board response", async () => {
+    const req = makeRequest("/api/b/board123");
+    const res = await GET(req, { params: Promise.resolve({ id: "board123" }) });
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.id).toBe("board123");
+    expect(json.url).toBe("https://merm.sh/b/board123");
+    expect(json.editId).toBeUndefined();
+    expect(json.editUrl).toBeUndefined();
   });
 });
 

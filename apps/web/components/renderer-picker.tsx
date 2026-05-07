@@ -9,20 +9,21 @@ export function RendererPicker(props: {
   const { current, onSelectRenderer } = props;
 
   return (
-    <div className="flex items-center gap-0.5 rounded-lg bg-muted/50 p-0.5">
+    <div className="flex shrink-0 items-center gap-0.5 rounded-md bg-muted/60 p-0.5">
       {RENDERERS.map((r) => (
         <button
           key={r.id}
           onClick={() => onSelectRenderer(r.id)}
           aria-label={r.label}
           aria-pressed={current === r.id}
-          className={`flex items-center gap-1.5 px-2.5 h-7 rounded-md text-[11px] font-medium cursor-pointer transition-all duration-150 active:scale-[0.97] ${
+          className={`flex h-7 shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-[calc(var(--radius-md)-0.125rem)] px-2 text-xs font-medium active:scale-[0.97] min-[340px]:px-2.5 ${
             current === r.id
-              ? "bg-background text-foreground shadow-sm"
+              ? "bg-background text-foreground ring-1 ring-border"
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          {r.label}
+          <span className="hidden min-[340px]:inline">{r.label}</span>
+          <span className="min-[340px]:hidden">{r.label.slice(0, 1)}</span>
         </button>
       ))}
     </div>

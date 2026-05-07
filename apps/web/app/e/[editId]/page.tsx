@@ -1,5 +1,5 @@
-import { getDiagramByEditId } from "@mermaid-viewer/db";
-import { notFound } from "next/navigation";
+import { getBoard, getDiagramByEditId } from "@mermaid-viewer/db";
+import { notFound, redirect } from "next/navigation";
 import { DiagramPageShell } from "@/components/diagram-page-shell";
 import { SourceProvider, ChatProvider } from "@/components/diagram-layout";
 import { JsonLd } from "@/components/json-ld";
@@ -66,6 +66,12 @@ export default async function EditDiagramPage({
   if (!data) notFound();
 
   const { diagram, currentVersion, allVersions } = data;
+  if (!version && diagram.primaryBoardId) {
+    const board = await getBoard({ id: diagram.primaryBoardId });
+    if (board) {
+      redirect(`/be/${board.board.editId}?focus=${diagram.id}`);
+    }
+  }
 
   const versionsForPanel = allVersions.map((v) => ({
     version: v.version,

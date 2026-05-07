@@ -124,11 +124,15 @@ export async function POST(req: Request) {
     );
   }
 
-  if (!Array.isArray(rawMessages) || rawMessages.length > MAX_CHAT_MESSAGES) {
+  if (
+    !Array.isArray(rawMessages) ||
+    rawMessages.length === 0 ||
+    rawMessages.length > MAX_CHAT_MESSAGES
+  ) {
     return Response.json(
       {
         error: "bad_request",
-        message: `Messages must be an array with at most ${MAX_CHAT_MESSAGES} entries.`,
+        message: `Messages must be a non-empty array with at most ${MAX_CHAT_MESSAGES} entries.`,
       },
       { status: 400 }
     );
@@ -164,10 +168,18 @@ export async function POST(req: Request) {
       ? `\n\n## Version History${allVersions.length > versionHistory.length ? ` (showing last ${versionHistory.length} of ${allVersions.length})` : ""}\n\nThis diagram has ${allVersions.length} version(s). To restore a previous version, call update_diagram with that version's content.\n\n${versionHistory.map((v) => `### v${v.version} (${v.createdAt})\n\`\`\`mermaid\n${v.content}\n\`\`\``).join("\n\n")}`
       : "";
 
-  const validatedMessages = await validateUIMessages<ChatUIMessage>({
-    messages: rawMessages,
-    tools: validationTools,
-  });
+  let validatedMessages: ChatUIMessage[];
+  try {
+    validatedMessages = await validateUIMessages<ChatUIMessage>({
+      messages: rawMessages,
+      tools: validationTools,
+    });
+  } catch {
+    return Response.json(
+      { error: "bad_request", message: "Invalid chat message payload." },
+      { status: 400 }
+    );
+  }
 
   const messages = await convertToModelMessages(validatedMessages);
 

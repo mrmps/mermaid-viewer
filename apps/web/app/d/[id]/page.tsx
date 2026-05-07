@@ -1,5 +1,5 @@
 import { getDiagram } from "@mermaid-viewer/db";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { DiagramPageShell } from "@/components/diagram-page-shell";
 import { SourceProvider } from "@/components/diagram-layout";
 import { JsonLd } from "@/components/json-ld";
@@ -65,6 +65,9 @@ export default async function DiagramPage({
   if (!data) notFound();
 
   const { diagram, currentVersion, allVersions } = data;
+  if (!version && diagram.primaryBoardId) {
+    redirect(`/b/${diagram.primaryBoardId}?focus=${diagram.id}`);
+  }
 
   const versionsForPanel = allVersions.map((v) => ({
     version: v.version,

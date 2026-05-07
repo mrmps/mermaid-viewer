@@ -7,7 +7,7 @@ description: "Create, version, and share Mermaid diagrams. Use when asked to cre
 
 # merm.sh
 
-Create, version, and share Mermaid diagrams at ${baseUrl}. Every update creates a new version — nothing is overwritten.
+Create, version, and share Mermaid diagrams at ${baseUrl}. Boards are the primary workspace; a single diagram is represented as a one-card board. Every update creates a new version — nothing is overwritten.
 
 ## MCP Server (recommended)
 
@@ -24,7 +24,9 @@ For native tool integration, add to your MCP settings:
 }
 \`\`\`
 
-This gives you \`create_diagram\`, \`update_diagram\`, and \`get_diagram\` tools.
+This gives you \`create_diagram\`, \`update_diagram\`, \`get_diagram\`, \`create_board\`, \`add_diagram_to_board\`, and \`get_board\` tools.
+
+When a user asks for several related diagrams, create a board first. Pass the returned \`boardId\` and \`boardSecret\` into \`create_diagram\`, or call \`add_diagram_to_board\` after creating each diagram. Send the board URL so the user can see the full workspace.
 
 ## REST API
 
@@ -33,6 +35,9 @@ This gives you \`create_diagram\`, \`update_diagram\`, and \`get_diagram\` tools
 | Create a diagram | POST | \`${baseUrl}/api/d\` |
 | Update a diagram | PUT | \`${baseUrl}/api/d/:id\` |
 | Get diagram JSON | GET | \`${baseUrl}/api/d/:id\` |
+| Create a board | POST | \`${baseUrl}/api/b\` |
+| Get board JSON | GET | \`${baseUrl}/api/b/:id\` |
+| Add/create board card | POST | \`${baseUrl}/api/b/:id\` |
 | View rendered | GET | \`${baseUrl}/d/:id\` |
 
 ### Create
@@ -43,7 +48,17 @@ curl -X POST ${baseUrl}/api/d \\
   -d '{"content": "graph TD; A-->B", "title": "My Diagram"}'
 \`\`\`
 
-Returns \`{ id, url, editUrl, secret, version, skill }\`. **Save the secret** — you need it to push updates.
+Returns \`{ id, url, editUrl, diagramUrl, boardUrl, secret, version, skill }\`. Share \`url\`; it points at the board when one is available. **Save the secret** — you need it to push updates.
+
+### Create directly on a board
+
+\`\`\`bash
+curl -X POST ${baseUrl}/api/b/:id \\
+  -H "Content-Type: application/json" \\
+  -d '{"editId": "BOARD_EDIT_ID", "title": "My Diagram", "content": "graph TD; A-->B"}'
+\`\`\`
+
+You can also pass \`diagramId\` instead of \`content\` to add an existing diagram. Cards are placed in the nearest open slot by default.
 
 ### Update
 
@@ -68,7 +83,8 @@ Returns \`{ id, title, version, content, versions }\`. Use \`?v=N\` for a specif
 - Content must be valid Mermaid syntax.
 - Each update creates a new version; previous content is never lost.
 - The \`skill\` URL in create/update responses points to a per-diagram skill file you can share with other agents.
-- Send the diagram URL (\`${baseUrl}/d/:id\`) to the user so they can view it.
+- Send the \`url\` field to the user. It is the board URL when a board is available.
+- For related diagrams, create or add cards on the same board and send the board URL (\`${baseUrl}/b/:id\`).
 `;
 
 export async function GET() {

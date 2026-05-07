@@ -16,6 +16,7 @@ import { ModeToggle } from "@/components/mode-toggle";
 import { SourcePanel, SourceToggle } from "@/components/source-panel";
 import { ChatPanel, ChatToggle } from "@/components/chat-panel";
 import { LookPicker } from "@/components/look-picker";
+import { BoardButton } from "@/components/board-button";
 import {
   LOOKS,
   THEMES,
@@ -224,6 +225,10 @@ export function DiagramPageShell({
             <div className="w-px h-5 bg-border" />
           </div>
           <ModeToggle />
+          <BoardButton
+            diagramId={diagramId}
+            title={currentTitle}
+          />
           <div className="hidden md:flex items-center gap-2">
             <div className="w-px h-5 bg-border" />
             <SourceToggle />
