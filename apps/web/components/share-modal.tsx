@@ -55,7 +55,7 @@ export function ShareButton({
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const viewUrl = `${origin}/d/${diagramId}`;
-  const editUrl = editId ? `${origin}/e/${editId}` : null;
+  const editUrl = null;
   const apiUrl = `${origin}/api/d/${diagramId}`;
 
   const contentEl = (

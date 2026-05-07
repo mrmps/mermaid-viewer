@@ -61,6 +61,9 @@ describe("GET /c/<mermaid> — URL-only create", () => {
       editId: "edt",
       secret: "sec",
       version: 1,
+      boardId: "brd",
+      boardEditId: "bedt",
+      boardSecret: "bsec",
     });
     ({ GET } = await import("@/app/c/[...content]/route"));
   });
@@ -74,10 +77,10 @@ describe("GET /c/<mermaid> — URL-only create", () => {
     const body = await res.text();
     // Headline: share URL leads, not a field in a list
     expect(body).toMatch(/SHARE THIS URL WITH YOUR USER/);
-    expect(body).toMatch(/https:\/\/merm\.sh\/d\/abc/);
+    expect(body).toMatch(/https:\/\/merm\.sh\/b\/brd/);
     // Key fields block
-    expect(body).toMatch(/url\s+https:\/\/merm\.sh\/d\/abc/);
-    expect(body).toMatch(/editUrl\s+https:\/\/merm\.sh\/e\/edt/);
+    expect(body).toMatch(/url\s+https:\/\/merm\.sh\/b\/brd/);
+    expect(body).toMatch(/editUrl\s+https:\/\/merm\.sh\/be\/bedt/);
     expect(body).toMatch(/editId\s+edt/);
     expect(body).toMatch(/secret\s+sec/);
     expect(body).toMatch(/version\s+1/);
@@ -97,6 +100,7 @@ describe("GET /c/<mermaid> — URL-only create", () => {
       secret: string;
       url: string;
       editUrl: string;
+      boardUrl: string;
       version: number;
     };
     expect(res.status).toBe(201);
@@ -105,8 +109,9 @@ describe("GET /c/<mermaid> — URL-only create", () => {
       editId: "edt",
       secret: "sec",
       version: 1,
-      url: "https://merm.sh/d/abc",
-      editUrl: "https://merm.sh/e/edt",
+      url: "https://merm.sh/b/brd",
+      boardUrl: "https://merm.sh/b/brd",
+      editUrl: "https://merm.sh/be/bedt",
     });
   });
 

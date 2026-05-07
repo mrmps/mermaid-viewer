@@ -68,6 +68,20 @@ function createDefaultBoardState(): StoredBoardState {
   };
 }
 
+function parseLegacyDiagramEditId(value: unknown) {
+  if (typeof value !== "string") return undefined;
+  const read = (pathname: string) => {
+    const [, route, editId] = pathname.split("/");
+    return route === "e" && editId ? decodeURIComponent(editId) : undefined;
+  };
+  try {
+    const url = new URL(value, "https://merm.sh");
+    return read(url.pathname);
+  } catch {
+    return read(value.split(/[?#]/, 1)[0]);
+  }
+}
+
 function normalizeBoardState(value: unknown): StoredBoardState {
   if (!value || typeof value !== "object") {
     return createDefaultBoardState();
@@ -94,6 +108,10 @@ function normalizeBoardState(value: unknown): StoredBoardState {
               id: typeof item.id === "string" && item.id ? item.id : nanoid(10),
               kind: "diagram",
               diagramId,
+              diagramEditId:
+                typeof item.diagramEditId === "string" && item.diagramEditId
+                  ? item.diagramEditId
+                  : parseLegacyDiagramEditId(item.editHref),
               title:
                 typeof item.title === "string" && item.title.trim()
                   ? item.title
@@ -250,7 +268,10 @@ function getBoardDiagramIds(state: StoredBoardState) {
   return [...new Set(state.pages.flatMap((page) => page.items.map((item) => item.diagramId)))];
 }
 
-async function enrichBoardState(state: StoredBoardState): Promise<EnrichedBoardState> {
+async function enrichBoardState(
+  state: StoredBoardState,
+  opts: { boardEditId?: string } = {}
+): Promise<EnrichedBoardState> {
   const diagramIds = getBoardDiagramIds(state);
 
   const rows =
@@ -284,8 +305,18 @@ async function enrichBoardState(state: StoredBoardState): Promise<EnrichedBoardS
       items: page.items.map((item) => {
         const diagram = diagramsById.get(item.diagramId);
         const version = item.version ?? diagram?.version ?? 1;
+        const diagramEditId =
+          item.diagramEditId ??
+          parseLegacyDiagramEditId(item.editHref) ??
+          diagram?.editId;
+        const editHref = opts.boardEditId
+          ? `/be/${opts.boardEditId}?focus=${encodeURIComponent(item.diagramId)}`
+          : item.editHref && parseLegacyDiagramEditId(item.editHref) === undefined
+            ? item.editHref
+            : item.href ?? `/d/${item.diagramId}`;
         return {
           ...item,
+          diagramEditId,
           title: item.title || diagram?.title || "Untitled",
           content: item.content || diagram?.content || "",
           href:
@@ -293,11 +324,7 @@ async function enrichBoardState(state: StoredBoardState): Promise<EnrichedBoardS
             (diagram
               ? `/d/${item.diagramId}?v=${version}`
               : `/d/${item.diagramId}`),
-          editHref:
-            item.editHref ??
-            (diagram
-              ? `/e/${diagram.editId}?v=${version}`
-              : `/d/${item.diagramId}`),
+          editHref,
           version,
           updatedAt: item.updatedAt ?? diagram?.updatedAt?.toISOString(),
         };
@@ -366,10 +393,11 @@ export async function createDiagram(opts: {
                 id: itemId,
                 kind: "diagram",
                 diagramId: id,
+                diagramEditId: editId,
                 title,
                 content: opts.content,
                 href: `/d/${id}?v=1`,
-                editHref: `/e/${editId}?v=1`,
+                editHref: `/be/${boardEditId}?focus=${id}`,
                 version: 1,
                 x: 0,
                 y: 0,
@@ -573,14 +601,16 @@ export async function createBoard(opts: {
     if (diagram) {
       const content = await getDiagramCurrentContent(diagram);
       const page = state.pages[0];
+      const itemId = nanoid(10);
       page.items.push({
-        id: nanoid(10),
+        id: itemId,
         kind: "diagram",
         diagramId: diagram.id,
+        diagramEditId: diagram.editId,
         title: diagram.title,
         content,
         href: `/d/${diagram.id}?v=${diagram.currentVersion}`,
-        editHref: `/e/${diagram.editId}?v=${diagram.currentVersion}`,
+        editHref: `/be/${editId}?focus=${diagram.id}`,
         version: diagram.currentVersion,
         x: 0,
         y: 0,
@@ -626,7 +656,9 @@ export async function getBoard(opts: { id: string }) {
   if (!board) return null;
 
   const state = normalizeBoardState(board.state);
-  const enrichedState = await enrichBoardState(state);
+  const enrichedState = await enrichBoardState(state, {
+    boardEditId: board.editId,
+  });
 
   return { board, state: enrichedState };
 }
@@ -639,7 +671,9 @@ export async function getBoardByEditId(opts: { editId: string }) {
   if (!board) return null;
 
   const state = normalizeBoardState(board.state);
-  const enrichedState = await enrichBoardState(state);
+  const enrichedState = await enrichBoardState(state, {
+    boardEditId: board.editId,
+  });
 
   return { board, state: enrichedState };
 }
@@ -673,7 +707,7 @@ export async function addDiagramToBoard(opts: {
   if (!diagram) return { error: "diagram_not_found" as const };
   const content = await getDiagramCurrentContent(diagram);
   const href = `/d/${diagram.id}?v=${diagram.currentVersion}`;
-  const editHref = `/e/${diagram.editId}?v=${diagram.currentVersion}`;
+  const editHref = `/be/${board.editId}?focus=${diagram.id}`;
   const updatedAt = diagram.updatedAt.toISOString();
 
   const state = normalizeBoardState(board.state);
@@ -707,6 +741,7 @@ export async function addDiagramToBoard(opts: {
     existing.content = content;
     existing.href = href;
     existing.editHref = editHref;
+    existing.diagramEditId = diagram.editId;
     existing.version = diagram.currentVersion;
     existing.updatedAt = updatedAt;
   } else {
@@ -720,6 +755,7 @@ export async function addDiagramToBoard(opts: {
       id: itemId,
       kind: "diagram",
       diagramId: diagram.id,
+      diagramEditId: diagram.editId,
       title: opts.title ?? diagram.title,
       content,
       href,

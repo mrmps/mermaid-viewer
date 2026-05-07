@@ -5,6 +5,7 @@ export type BoardItem = {
   id: string;
   kind?: "diagram";
   diagramId: string;
+  diagramEditId?: string;
   title: string;
   content: string;
   href: string;
@@ -34,6 +35,7 @@ export type BoardDocument = {
 
 export type BoardDiagramInput = {
   diagramId: string;
+  diagramEditId?: string;
   title?: string;
   content: string;
   href?: string;
@@ -86,6 +88,10 @@ function normalizeString(value: unknown, fallback: string) {
   return typeof value === "string" && value.trim() ? value : fallback;
 }
 
+function normalizeOptionalString(value: unknown) {
+  return typeof value === "string" && value.trim() ? value : undefined;
+}
+
 function normalizeNumber(value: unknown, fallback: number) {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
 }
@@ -102,6 +108,7 @@ function normalizeItem(value: unknown): BoardItem | null {
     id: normalizeString(item.id, createId("item")),
     kind: "diagram",
     diagramId,
+    diagramEditId: normalizeOptionalString(item.diagramEditId),
     title: normalizeString(item.title, "Untitled"),
     content,
     href: normalizeString(item.href, `/d/${diagramId}`),
@@ -267,6 +274,7 @@ export function addDiagramToBoardDocument(
           item.id === existing.id
             ? {
                 ...item,
+                diagramEditId: input.diagramEditId ?? item.diagramEditId,
                 title,
                 content: input.content,
                 href: input.href ?? item.href,
@@ -292,6 +300,7 @@ export function addDiagramToBoardDocument(
       id: createId("item"),
       kind: "diagram",
       diagramId: input.diagramId,
+      diagramEditId: input.diagramEditId,
       title,
       content: input.content,
       href: input.href ?? `/d/${input.diagramId}`,
@@ -379,6 +388,7 @@ export function updateBoardItem(
       | "content"
       | "href"
       | "editHref"
+      | "diagramEditId"
       | "version"
       | "updatedAt"
       | "renderer"

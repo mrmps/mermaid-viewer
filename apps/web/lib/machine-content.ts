@@ -195,7 +195,7 @@ You get back (JSON):
   "id": "abc123",
   "editId": "xyz789",
   "url":     "${baseUrlOverride}/d/abc123",
-  "editUrl": "${baseUrlOverride}/e/xyz789",
+  "editUrl": "${baseUrlOverride}/be/xyz789",
   "secret":  "s3cr3t…",
   "version": 1,
   "instructions": { "share_with_user": "${baseUrlOverride}/d/abc123", ... }
@@ -258,7 +258,7 @@ Returns \`201 Created\`:
   "id": "abc123",
   "editId": "xyz789",
   "url": "${baseUrlOverride}/d/abc123",
-  "editUrl": "${baseUrlOverride}/e/xyz789",
+  "editUrl": "${baseUrlOverride}/be/xyz789",
   "secret": "s3cr3t…",
   "version": 1,
   "instructions": {

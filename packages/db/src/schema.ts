@@ -4,6 +4,7 @@ export type StoredBoardItem = {
   id: string;
   kind?: "diagram";
   diagramId: string;
+  diagramEditId?: string;
   title?: string;
   content?: string;
   href?: string;

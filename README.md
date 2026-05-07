@@ -6,12 +6,12 @@ Live at [mermaidsh.com](https://mermaidsh.com).
 
 ## How it works
 
-Every diagram gets two URLs:
+Every diagram is placed on a board with two URLs:
 
 | URL | Access |
 |---|---|
-| `/d/{id}` | View only — safe to share publicly |
-| `/e/{editId}` | Edit access — can modify the diagram |
+| `/b/{id}` | View only — safe to share publicly |
+| `/be/{editId}` | Edit access — can modify the board |
 
 Updates create new versions. Nothing is ever overwritten.
 
@@ -62,14 +62,14 @@ Returns:
 {
   "id": "abc123",
   "editId": "xyz789",
-  "url": "https://mermaidsh.com/d/abc123",
-  "editUrl": "https://mermaidsh.com/e/xyz789",
+  "url": "https://mermaidsh.com/b/abc123",
+  "editUrl": "https://mermaidsh.com/be/xyz789",
   "secret": "...",
   "version": 1
 }
 ```
 
-Save the `secret` — you need it for API updates. The `editUrl` is for browser-based editing.
+Save the `secret` — you need it for API updates. The `editUrl` opens the editable board workspace.
 
 **Update a diagram:**
 
@@ -135,6 +135,6 @@ packages/db/       Database schema and queries (Drizzle ORM + Neon)
 ```
 
 - **Database**: Two tables — `diagrams` (metadata + edit credentials) and `versions` (immutable content history)
-- **Auth**: No user accounts. Each diagram has a `secret` for API auth and an `editId` for browser edit links
+- **Auth**: No user accounts. Each diagram has a `secret` for API auth and an `editId` for URL-based updates
 - **MCP**: Streamable HTTP server at `/mcp` with create/update/get tools
 - **Rendering**: Client-side Mermaid.js with theme support

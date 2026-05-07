@@ -16,6 +16,7 @@ const boardItemSchema = z.object({
   id: z.string(),
   kind: z.literal("diagram").optional(),
   diagramId: z.string(),
+  diagramEditId: z.string().optional(),
   title: z.string().optional(),
   content: z.string().optional(),
   href: z.string().optional(),

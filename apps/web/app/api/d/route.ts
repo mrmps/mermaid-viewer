@@ -114,7 +114,6 @@ export async function POST(request: NextRequest) {
 
   const result = await createDiagram({ content: prepared, title });
   const diagramUrl = `${baseUrl}/d/${result.id}`;
-  const diagramEditUrl = `${baseUrl}/e/${result.editId}`;
   const boardUrl = result.boardId ? `${baseUrl}/b/${result.boardId}` : null;
   const boardEditUrl =
     result.boardEditId ? `${baseUrl}/be/${result.boardEditId}` : null;
@@ -129,8 +128,7 @@ export async function POST(request: NextRequest) {
       boardSecret: result.boardSecret,
       url: boardUrl ?? diagramUrl,
       diagramUrl,
-      editUrl: boardEditUrl ?? diagramEditUrl,
-      diagramEditUrl,
+      editUrl: boardEditUrl,
       secret: result.secret,
       version: result.version,
       skill: `${baseUrl}/api/d/${result.id}/skill?secret=${result.secret}`,

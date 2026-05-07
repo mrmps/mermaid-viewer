@@ -51,6 +51,7 @@ describe("GET /go/<mermaid> — create-and-redirect for hand-off agents", () => 
       editId: "edt",
       secret: "sec",
       version: 1,
+      boardEditId: "bedt",
     });
     ({ GET } = await import("@/app/go/[...content]/route"));
   });
@@ -75,7 +76,7 @@ describe("GET /go/<mermaid> — create-and-redirect for hand-off agents", () => 
     expect(res.headers.get("x-diagram-id")).toBe("abc");
     expect(res.headers.get("x-diagram-url")).toBe("https://merm.sh/d/abc");
     expect(res.headers.get("x-edit-id")).toBe("edt");
-    expect(res.headers.get("x-edit-url")).toBe("https://merm.sh/e/edt");
+    expect(res.headers.get("x-edit-url")).toBe("https://merm.sh/be/bedt");
     expect(res.headers.get("x-diagram-secret")).toBe("sec");
   });
 

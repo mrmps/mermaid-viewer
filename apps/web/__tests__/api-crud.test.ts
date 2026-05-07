@@ -48,6 +48,9 @@ describe("POST /api/d — Create diagram", () => {
       editId: "edit456",
       secret: "secret789",
       version: 1,
+      boardId: "board123",
+      boardEditId: "board-edit",
+      boardSecret: "board-secret",
     });
     const mod = await import("../app/api/d/route");
     POST = mod.POST;
@@ -67,8 +70,8 @@ describe("POST /api/d — Create diagram", () => {
     expect(json.editId).toBe("edit456");
     expect(json.secret).toBe("secret789");
     expect(json.version).toBe(1);
-    expect(json.url).toBe("https://merm.sh/d/abc123");
-    expect(json.editUrl).toBe("https://merm.sh/e/edit456");
+    expect(json.url).toBe("https://merm.sh/b/board123");
+    expect(json.editUrl).toBe("https://merm.sh/be/board-edit");
   });
 
   it("creates a diagram with plain text body", async () => {

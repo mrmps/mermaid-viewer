@@ -91,12 +91,11 @@ export function urlCreateResponse({
   validationSkippedReason,
 }: UrlCreateResponseOptions) {
   const viewUrl = `${baseUrl}/d/${result.id}`;
-  const diagramEditUrl = `${baseUrl}/e/${result.editId}`;
   const boardUrl = result.boardId ? `${baseUrl}/b/${result.boardId}` : null;
   const boardEditUrl =
     result.boardEditId ? `${baseUrl}/be/${result.boardEditId}` : null;
   const shareUrl = boardUrl ?? viewUrl;
-  const editUrl = boardEditUrl ?? diagramEditUrl;
+  const editUrl = boardEditUrl;
 
   const cleanReason = validationSkippedReason
     ? cleanValidationReason(validationSkippedReason)
@@ -111,7 +110,7 @@ export function urlCreateResponse({
     "x-edit-id": result.editId,
     "x-diagram-url": viewUrl,
     "x-share-url": shareUrl,
-    "x-edit-url": editUrl,
+    ...(editUrl ? { "x-edit-url": editUrl } : {}),
     "x-diagram-secret": result.secret,
     ...(result.boardId
       ? {
@@ -147,7 +146,6 @@ export function urlCreateResponse({
         url: shareUrl,
         diagramUrl: viewUrl,
         editUrl,
-        diagramEditUrl,
         boardId: result.boardId ?? null,
         boardUrl,
         boardEditId: result.boardEditId ?? null,
@@ -217,8 +215,10 @@ export function urlCreateResponse({
     `▶ KEY FIELDS\n` +
     `  url        ${shareUrl}\n` +
     `             (public board when available; share with humans)\n` +
-    `  editUrl    ${editUrl}\n` +
-    `             (browser editor or editable board)\n` +
+    (editUrl
+      ? `  editUrl    ${editUrl}\n` +
+        `             (editable board workspace)\n`
+      : "") +
     (boardUrl
       ? `  boardUrl   ${boardUrl}\n` +
         `             (canonical workspace for this diagram)\n`

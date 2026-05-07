@@ -142,10 +142,13 @@ export function CreateChat() {
         const body = await res.json().catch(() => null);
         throw new Error(body?.message ?? `Request failed (${res.status})`);
       }
-      const data = await res.json();
+      const data = (await res.json()) as { editUrl?: string; url?: string };
 
       sessionStorage.setItem(INITIAL_CHAT_KEY, message);
-      router.push(`/e/${data.editId}?chat=true`);
+      const targetUrl = data.editUrl ?? data.url ?? "/";
+      router.push(
+        `${targetUrl}${targetUrl.includes("?") ? "&" : "?"}chat=true`
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to create diagram");
       setLoading(false);

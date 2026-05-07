@@ -15,6 +15,7 @@ const CONFIG_FILE = join(CONFIG_DIR, "config.json");
 interface DiagramEntry {
   id: string;
   editId: string;
+  editUrl?: string;
   secret: string;
   title?: string;
   createdAt: string;
@@ -152,6 +153,7 @@ async function cmdCreate(args: string[]) {
   saveSecret(data.id, {
     id: data.id,
     editId: data.editId,
+    editUrl: data.editUrl,
     secret: data.secret,
     title: values.title,
     createdAt: new Date().toISOString(),
@@ -276,10 +278,15 @@ async function cmdOpen(args: string[]) {
     const entry = config.diagrams[id];
     if (!entry?.editId) {
       die(
-        `No edit URL found for ${id}. You can only open edit URLs for diagrams you created.`
+        `No edit metadata found for ${id}. You can only open edit URLs for diagrams you created.`
       );
     }
-    openBrowser(`${BASE_URL}/e/${entry.editId}`);
+    if (!entry.editUrl) {
+      die(
+        `No board edit URL found for ${id}. Re-create or update the local entry with a current merm.sh response.`
+      );
+    }
+    openBrowser(entry.editUrl);
     console.log(`${c.dim}Opened edit URL in browser${c.reset}`);
   } else {
     openBrowser(`${BASE_URL}/d/${id}`);

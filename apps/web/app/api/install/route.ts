@@ -116,7 +116,7 @@ You should receive a JSON response like:
   "id": "abc123",
   "editId": "xyz789",
   "url": "${baseUrl}/d/abc123",
-  "editUrl": "${baseUrl}/e/xyz789",
+  "editUrl": "${baseUrl}/be/xyz789",
   "secret": "...",
   "version": 1,
   "skill": "${baseUrl}/api/d/abc123/skill?secret=..."
@@ -143,9 +143,9 @@ Also accepts plain text (\`Content-Type: text/plain\`) where the body is the Mer
 | Field | Type | Description |
 |-------|------|-------------|
 | \`id\` | string | Diagram ID for viewing |
-| \`editId\` | string | Edit ID for browser-based editing |
+| \`editId\` | string | Edit ID for URL-based updates |
 | \`url\` | string | Public view URL (\`/d/:id\`) |
-| \`editUrl\` | string | Browser edit URL (\`/e/:editId\`) |
+| \`editUrl\` | string | Editable board URL (\`/be/:editId\`) |
 | \`secret\` | string | API auth token — save this |
 | \`version\` | number | Always 1 for new diagrams |
 | \`skill\` | string | Per-diagram skill URL for sharing |

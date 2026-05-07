@@ -13,7 +13,7 @@ import { NextRequest } from "next/server";
  *
  *   GET /u/<editId>/<url-encoded-mermaid>?title=...&format=json
  *
- * The editId is the URL-based write credential (same one used by /e/<editId>).
+ * The editId is the URL-based write credential returned by create responses.
  * Agents that created a diagram via /c or /g receive the editId in the
  * response and can use it here to append a new version. Each call creates a
  * new version — nothing is ever overwritten.

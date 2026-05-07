@@ -13,7 +13,6 @@ describe("Branding consistency", () => {
     "app/layout.tsx",
     "app/page.tsx",
     "app/d/[id]/page.tsx",
-    "app/e/[editId]/page.tsx",
     "app/diagrams/page.tsx",
     "app/docs/route.ts",
     "app/opengraph-image.tsx",
@@ -55,12 +54,6 @@ describe("Branding consistency", () => {
 });
 
 describe("Secret not leaked to client", () => {
-  it("edit page does not pass secret prop to DiagramPageShell", () => {
-    const editPage = readSource("app/e/[editId]/page.tsx");
-    // Should NOT pass secret={diagram.secret} to the client component
-    expect(editPage).not.toMatch(/secret=\{diagram\.secret\}/);
-  });
-
   it("DiagramPageShell does not accept secret prop", () => {
     const shell = readSource("components/diagram-page-shell.tsx");
     // The type should not include secret

@@ -54,7 +54,9 @@ export async function GET(
   });
 
   const viewUrl = `${baseUrl}/d/${result.id}`;
-  const editUrl = `${baseUrl}/e/${result.editId}`;
+  const editUrl = result.boardEditId
+    ? `${baseUrl}/be/${result.boardEditId}`
+    : null;
 
   return new Response(null, {
     status: 302,
@@ -63,7 +65,7 @@ export async function GET(
       "x-diagram-id": result.id,
       "x-diagram-url": viewUrl,
       "x-edit-id": result.editId,
-      "x-edit-url": editUrl,
+      ...(editUrl ? { "x-edit-url": editUrl } : {}),
       "x-diagram-secret": result.secret,
       "cache-control": "no-store",
     },

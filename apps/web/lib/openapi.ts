@@ -36,7 +36,7 @@ const CreateResponse: SchemaObject = {
     id: { type: "string", example: "abc123" },
     editId: { type: "string", example: "edit_xyz" },
     url: { type: "string", format: "uri", example: `${baseUrl}/d/abc123` },
-    editUrl: { type: "string", format: "uri", example: `${baseUrl}/e/edit_xyz` },
+    editUrl: { type: "string", format: "uri", example: `${baseUrl}/be/edit_xyz` },
     secret: { type: "string", example: "sk_..." },
     version: { type: "integer", example: 1 },
     skill: { type: "string", format: "uri" },

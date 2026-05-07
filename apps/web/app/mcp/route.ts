@@ -97,9 +97,8 @@ function createMcpServer(baseUrl: string) {
           .describe("Shareable board URL when available, otherwise diagram URL"),
         editUrl: z
           .string()
-          .describe("Editable board URL when available, otherwise diagram edit URL"),
+          .describe("Editable board URL when available, otherwise diagram URL"),
         diagramUrl: z.string().describe("Focused diagram URL"),
-        diagramEditUrl: z.string().describe("Focused diagram edit URL"),
         secret: z
           .string()
           .describe(
@@ -180,13 +179,11 @@ function createMcpServer(baseUrl: string) {
           createDiagram({ content, title, primaryBoard: !targetBoard }),
         );
         const diagramUrl = `${baseUrl}/d/${result.id}`;
-        const diagramEditUrl = `${baseUrl}/e/${result.editId}`;
         const data: {
           id: string;
           url: string;
           editUrl: string;
           diagramUrl: string;
-          diagramEditUrl: string;
           secret: string;
           version: number;
           boardId?: string;
@@ -201,9 +198,8 @@ function createMcpServer(baseUrl: string) {
           url: result.boardId ? `${baseUrl}/b/${result.boardId}` : diagramUrl,
           editUrl: result.boardEditId
             ? `${baseUrl}/be/${result.boardEditId}`
-            : diagramEditUrl,
+            : diagramUrl,
           diagramUrl,
-          diagramEditUrl,
           secret: result.secret,
           version: result.version,
         };

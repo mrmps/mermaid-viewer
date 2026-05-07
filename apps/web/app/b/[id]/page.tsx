@@ -17,6 +17,7 @@ function toBoardDocument(state: EnrichedBoardState): BoardDocument {
           id: item.id,
           kind: "diagram",
           diagramId: item.diagramId,
+          diagramEditId: item.diagramEditId,
           title: item.title,
           content: item.content,
           href: item.href,

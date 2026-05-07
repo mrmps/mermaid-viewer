@@ -75,10 +75,10 @@ function SourcePanelInner({
 
       const data = await res.json();
 
-      // Navigate to the new version on the edit URL
+      // Navigate to the new version on the public diagram URL.
       const params = new URLSearchParams(searchParams.toString());
       params.set("v", String(data.version));
-      router.push(`/e/${editId}?${params.toString()}`);
+      router.push(`/d/${diagramId}?${params.toString()}`);
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to save");

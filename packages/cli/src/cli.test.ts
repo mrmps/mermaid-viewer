@@ -50,7 +50,7 @@ function handleRequest(req: IncomingMessage, res: ServerResponse) {
           id,
           editId,
           url: `http://localhost/d/${id}`,
-          editUrl: `http://localhost/e/${editId}`,
+          editUrl: `http://localhost/be/${editId}`,
           secret,
           version: 1,
           skill: `http://localhost/api/d/${id}/skill`,

@@ -169,15 +169,21 @@ function parseDiagramId(value: string) {
 
 function parseEditIdFromHref(value: string | undefined) {
   if (!value) return null;
+  const read = (pathname: string) => {
+    const [, route, editId] = pathname.split("/");
+    return route === "e" && editId ? decodeURIComponent(editId) : null;
+  };
 
   try {
     const url = new URL(value, "http://merm.local");
-    const match = url.pathname.match(/^\/e\/([^/?#]+)/);
-    return match ? decodeURIComponent(match[1]) : null;
+    return read(url.pathname);
   } catch {
-    const match = value.match(/(?:^|\/)e\/([^/?#]+)/);
-    return match ? decodeURIComponent(match[1]) : null;
+    return read(value.split(/[?#]/, 1)[0]);
   }
+}
+
+function getDiagramEditId(item: BoardItem | null | undefined) {
+  return item?.diagramEditId ?? parseEditIdFromHref(item?.editHref);
 }
 
 function BoardBetaBadge() {
@@ -211,6 +217,7 @@ function serializeBoardState(board: BoardDocument) {
         id: item.id,
         kind: "diagram" as const,
         diagramId: item.diagramId,
+        diagramEditId: item.diagramEditId,
         title: item.title,
         content: item.content,
         href: item.href,
@@ -335,8 +342,8 @@ export function BoardWorkspace({
     [activePage, selectedItemId]
   );
   const selectedDiagramEditId = useMemo(
-    () => parseEditIdFromHref(selectedItem?.editHref),
-    [selectedItem?.editHref]
+    () => getDiagramEditId(selectedItem),
+    [selectedItem]
   );
   const sidebarQuery = sidebarSearch.trim().toLowerCase();
   const sidebarPages = useMemo(
@@ -853,7 +860,7 @@ export function BoardWorkspace({
       const trimmed = content.trim();
       if (!trimmed) throw new Error("Mermaid source is required");
 
-      const itemEditId = parseEditIdFromHref(item.editHref);
+      const itemEditId = getDiagramEditId(item);
       let version = item.version;
 
       setSaveState("saving");
@@ -884,9 +891,7 @@ export function BoardWorkspace({
         updateBoardItem(current, item.id, {
           content: trimmed,
           href: `/d/${item.diagramId}?v=${version ?? 1}`,
-          editHref: itemEditId
-            ? `/e/${itemEditId}?v=${version ?? 1}`
-            : item.editHref,
+          diagramEditId: itemEditId ?? item.diagramEditId,
           version,
           updatedAt: new Date().toISOString(),
         })
@@ -918,9 +923,7 @@ export function BoardWorkspace({
         (current) =>
           updateBoardItem(current, item.id, {
             href: `/d/${item.diagramId}?v=${result.version}`,
-            editHref: itemEditId
-              ? `/e/${itemEditId}?v=${result.version}`
-              : item.editHref,
+            diagramEditId: itemEditId ?? item.diagramEditId,
             title: result.title?.trim() || item.title,
             version: result.version,
             updatedAt: new Date().toISOString(),
