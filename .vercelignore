@@ -2,3 +2,11 @@ node_modules
 .next
 .turbo
 dist
+.DS_Store
+.codex
+.env*
+**/.env*
+.agents/skills/skill
+video
+!.env.example
+!**/.env.example
