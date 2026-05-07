@@ -1,4 +1,4 @@
-import { addVersion, getDiagramByEditId } from "@mermaid-viewer/db";
+import { addVersion, getBoard, getDiagramByEditId } from "@mermaid-viewer/db";
 import { validateMermaid } from "@/lib/mermaid-parse";
 import { prepareMermaidSource } from "@/lib/mermaid-source";
 import {
@@ -89,12 +89,19 @@ export async function GET(
   // Re-use the create response shape so agents see the same fields.
   // `secret` is the diagram-level secret; return it here too so the agent can
   // move to API-based updates later if needed.
+  const boardData = diagramData.diagram.primaryBoardId
+    ? await getBoard({ id: diagramData.diagram.primaryBoardId })
+    : null;
+
   return urlCreateResponse({
     result: {
       id: diagramData.diagram.id,
       editId,
       secret: diagramData.diagram.secret,
       version: result.version,
+      boardId: diagramData.diagram.primaryBoardId,
+      boardEditId: boardData?.board.editId,
+      boardSecret: boardData?.board.secret,
     },
     format,
     origin: "u",

@@ -11,6 +11,7 @@ import { Streamdown } from "streamdown";
 import { code } from "@streamdown/code";
 import {
   ArrowUp,
+  ChevronDown,
   Square,
   Trash2,
   X,
@@ -27,21 +28,36 @@ import {
 } from "@/lib/chat-limits";
 import { useModifierKeyLabel } from "@/lib/use-modifier-key-label";
 
-function Logo({ className }: { className?: string }) {
+function Logo({
+  className,
+  neutral = false,
+}: {
+  className?: string;
+  neutral?: boolean;
+}) {
+  if (neutral) {
+    return (
+      <svg viewBox="0 0 32 32" fill="none" className={className}>
+        <path d="M16 3L29 16L16 29L3 16Z" fill="currentColor" />
+        <path
+          d="M16 3L29 16L16 29L3 16Z"
+          stroke="currentColor"
+          strokeOpacity="0.2"
+          strokeWidth="1"
+        />
+      </svg>
+    );
+  }
+
   return (
-    <svg
-      viewBox="0 0 32 32"
-      fill="none"
-      className={className}
-    >
-      <defs>
-        <linearGradient id="logo-g" x1="16" y1="4" x2="16" y2="28" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#f472b6"/>
-          <stop offset="1" stopColor="#c026d3"/>
-        </linearGradient>
-      </defs>
-      <path d="M16 3L29 16L16 29L3 16Z" fill="url(#logo-g)"/>
-      <path d="M16 3L29 16L16 29L3 16Z" stroke="rgba(255,255,255,0.2)" strokeWidth="1"/>
+    <svg viewBox="0 0 32 32" fill="none" className={className}>
+      <path d="M16 3L29 16L16 29L3 16Z" fill="currentColor" />
+      <path
+        d="M16 3L29 16L16 29L3 16Z"
+        stroke="currentColor"
+        strokeOpacity="0.22"
+        strokeWidth="1"
+      />
     </svg>
   );
 }
@@ -73,12 +89,56 @@ function UnicodeSpinner({
   );
 }
 
-function ChatLoader() {
+function AssistantHeader({ neutralBrand = false }: { neutralBrand?: boolean }) {
   return (
-    <div className="flex items-center gap-2 py-1">
-      <UnicodeSpinner name="braille" className="text-sm text-primary" />
-      <span className="text-[11px] text-muted-foreground/70">Thinking...</span>
+    <div className="flex items-center gap-1.5 pb-1.5">
+      <Logo
+        className={cn(
+          "size-4",
+          neutralBrand ? "text-foreground" : "text-[var(--diagram-chat-primary)]"
+        )}
+        neutral={neutralBrand}
+      />
+      <span className="rounded-md py-1 text-[11px] font-medium uppercase text-muted-foreground">
+        merm.sh
+      </span>
     </div>
+  );
+}
+
+function PendingAssistant({
+  label = "Thinking",
+  neutralBrand = false,
+}: {
+  label?: string;
+  neutralBrand?: boolean;
+}) {
+  return (
+    <div className="flex w-full flex-col">
+      <AssistantHeader neutralBrand={neutralBrand} />
+      <div className="flex w-full">
+        <div
+          className="inline-flex items-center gap-1.5 pl-0.5 text-[14px] text-foreground/55"
+          aria-live="polite"
+        >
+          <span className="leading-none">{label}</span>
+          <span className="inline-flex items-center gap-1">
+            <TypingDot delay="0ms" />
+            <TypingDot delay="160ms" />
+            <TypingDot delay="320ms" />
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TypingDot({ delay }: { delay: string }) {
+  return (
+    <span
+      className="inline-block size-1.5 rounded-full bg-foreground/35 animate-pulse"
+      style={{ animationDelay: delay, animationDuration: "1.2s" }}
+    />
   );
 }
 
@@ -167,15 +227,49 @@ export function ChatPanel({
   editId: string;
 }) {
   const { open, close } = useChatPanel();
+  return (
+    <DiagramChatPanel
+      content={content}
+      diagramId={diagramId}
+      editId={editId}
+      onClose={close}
+      open={open}
+    />
+  );
+}
+
+export function DiagramChatPanel({
+  className,
+  content,
+  diagramId,
+  editId,
+  onClose,
+  onOptimisticUpdate,
+  onToolResult,
+  open,
+  neutralBrand = false,
+}: {
+  className?: string;
+  content: string;
+  diagramId: string;
+  editId: string;
+  onClose: () => void;
+  onOptimisticUpdate?: (updates: { content: string; title?: string }) => void;
+  onToolResult?: (result: { version: number; title?: string }) => void;
+  open: boolean;
+  neutralBrand?: boolean;
+}) {
   const router = useRouter();
   const modifierKeyLabel = useModifierKeyLabel();
   const initialMessageConsumedRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const appliedToolResultsRef = useRef(new Set<string>());
   const [input, setInput] = useState("");
   const [currentContent, setCurrentContent] = useState(content);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [scrolledUp, setScrolledUp] = useState(false);
 
   useEffect(() => {
     setCurrentContent(content);
@@ -238,9 +332,12 @@ export function ChatPanel({
           title?: string;
         };
         setCurrentContent(args.content);
-        setTimeout(() => {
-          router.refresh();
-        }, 500);
+        onOptimisticUpdate?.({ content: args.content, title: args.title });
+        if (!onOptimisticUpdate) {
+          setTimeout(() => {
+            router.refresh();
+          }, 500);
+        }
       }
     },
     onError: () => {
@@ -255,6 +352,34 @@ export function ChatPanel({
     (status === "error" ? "Something went wrong. Please try again." : undefined);
   const lastMessage = messages.at(-1);
   const showPendingLoader = isLoading && lastMessage?.role !== "assistant";
+
+  useEffect(() => {
+    if (!onToolResult) return;
+
+    for (const message of messages) {
+      for (const part of message.parts) {
+        if (!part.type.startsWith("tool-")) continue;
+        const toolPart = part as ToolPart;
+
+        if (
+          toolPart.state !== "output-available" ||
+          appliedToolResultsRef.current.has(toolPart.toolCallId)
+        ) {
+          continue;
+        }
+
+        const output = toolPart.output as {
+          success?: boolean;
+          version?: number;
+          title?: string;
+        };
+        if (!output.success || typeof output.version !== "number") continue;
+
+        appliedToolResultsRef.current.add(toolPart.toolCallId);
+        onToolResult({ version: output.version, title: output.title });
+      }
+    }
+  }, [messages, onToolResult]);
 
   const getRequestBody = useCallback(
     () => ({
@@ -321,6 +446,7 @@ export function ChatPanel({
     if (!container) return;
     const timer = setTimeout(() => {
       container.scrollTop = container.scrollHeight;
+      setScrolledUp(false);
     }, 50);
     return () => clearTimeout(timer);
   }, [messages]);
@@ -391,75 +517,107 @@ export function ChatPanel({
     adjustTextarea();
   }, [input, adjustTextarea]);
 
+  const handleScroll = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const distanceFromBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight;
+    setScrolledUp(distanceFromBottom > 96);
+  }, []);
+
+  const jumpToLatest = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
+    setScrolledUp(false);
+  }, []);
+
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-40 flex flex-col bg-background/95 backdrop-blur-xl animate-in slide-in-from-right-2 duration-200 md:static md:z-auto md:w-80 md:shrink-0 md:bg-background/80 md:border-l md:border-border/60">
+    <div className={className ?? "fixed inset-0 z-40 flex flex-col bg-[var(--diagram-chat-sidebar-bg)] backdrop-blur-xl animate-in slide-in-from-right-2 duration-200 md:static md:z-auto md:w-[400px] lg:w-[420px] md:shrink-0 md:border-l md:border-[var(--diagram-chat-frame-border)]"}>
       {/* Header */}
-      <div className="flex items-center justify-between px-3 h-11 shrink-0 border-b border-border/40">
+      <div className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--diagram-chat-frame-border)] bg-[var(--diagram-chat-sidebar-bg)] px-3">
         <div className="flex items-center gap-2">
-          <Logo className="size-3.5 text-primary" />
-          <span className="text-[11px] font-semibold text-foreground/80">
-            AI Assistant
+          <Logo
+            className={cn(
+              "size-4",
+              neutralBrand ? "text-foreground" : "text-[var(--diagram-chat-primary)]"
+            )}
+            neutral={neutralBrand}
+          />
+          <span className="text-[13px] font-semibold text-foreground/90">
+            Diagram assistant
           </span>
         </div>
         <div className="flex items-center gap-0.5">
           {messages.length > 0 && (
             <button
               onClick={clearChat}
-              className="size-7 flex items-center justify-center rounded-md transition-colors cursor-pointer text-muted-foreground/60 hover:text-foreground hover:bg-muted/60"
+              className="flex size-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground/60 transition-colors hover:bg-muted/60 hover:text-foreground"
               title="Clear chat"
             >
-              <Trash2 className="size-3" />
+              <Trash2 className="size-3.5" />
             </button>
           )}
           <button
-            onClick={close}
-            className="size-7 flex items-center justify-center rounded-md transition-colors cursor-pointer text-muted-foreground/60 hover:text-foreground hover:bg-muted/60"
+            onClick={onClose}
+            className="flex size-8 cursor-pointer items-center justify-center rounded-md text-muted-foreground/60 transition-colors hover:bg-muted/60 hover:text-foreground"
             title="Close"
           >
-            <X className="size-3" />
+            <X className="size-3.5" />
           </button>
         </div>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div className="relative min-h-0 flex-1 overflow-hidden">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 z-10 h-4 bg-gradient-to-b from-[var(--diagram-chat-sidebar-bg)] to-transparent"
+        />
         <div
           ref={scrollContainerRef}
+          onScroll={handleScroll}
           className="h-full overflow-y-auto overscroll-contain"
         >
           {messages.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center px-4 py-6 gap-6">
-              <div className="flex flex-col items-center gap-2 text-center">
-                <div className="size-9 rounded-xl bg-primary/10 dark:bg-primary/5 flex items-center justify-center">
-                  <Logo className="size-4 text-primary" />
+            <div className="mx-auto flex h-full max-w-[23rem] flex-col justify-center px-4 py-6">
+              <div className="mb-5 flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="flex size-8 items-center justify-center rounded-lg bg-[var(--diagram-chat-card-bg)] shadow-[inset_0_0_0_0.5px_var(--diagram-chat-frame-border)]">
+                    <Logo
+                      className={cn(
+                        "size-4",
+                        neutralBrand ? "text-foreground" : "text-[var(--diagram-chat-primary)]"
+                      )}
+                      neutral={neutralBrand}
+                    />
+                  </div>
+                  <h2 className="text-[15px] font-medium text-foreground">
+                    What should change?
+                  </h2>
                 </div>
-                <p className="text-[11px] text-muted-foreground/70 max-w-[200px] leading-relaxed">
-                  Ask me to modify your diagram — change styles, add nodes, or
-                  transform it entirely.
+                <p className="pl-10 text-[13px] leading-5 text-muted-foreground">
+                  Start with a focused edit, or ask for a full rewrite.
                 </p>
               </div>
               <div className="w-full space-y-1.5">
-                {SUGGESTIONS.map((s, i) => (
+                {SUGGESTIONS.map((s) => (
                   <button
-                    key={i}
+                    key={s.text}
                     type="button"
                     disabled={isLoading}
                     onClick={() => handleSuggestion(s.text)}
                     className={cn(
-                      "flex w-full items-center gap-2.5 text-left group/suggestion",
-                      "px-3 py-2.5 rounded-xl",
-                      "bg-muted/40 dark:bg-muted/20",
-                      "text-[12px] text-muted-foreground",
-                      "hover:bg-muted/70 dark:hover:bg-muted/40 hover:text-foreground",
-                      "active:scale-[0.98]",
-                      "transition-all duration-150 cursor-pointer",
-                      isLoading && "opacity-50 pointer-events-none"
+                      "group/suggestion flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-left",
+                      "text-[13px] text-muted-foreground",
+                      "transition-all duration-150 hover:bg-muted/60 hover:text-foreground active:scale-[0.99]",
+                      isLoading && "pointer-events-none opacity-50"
                     )}
                   >
-                    <div className="size-6 rounded-lg bg-background dark:bg-muted/40 border border-border/40 flex items-center justify-center shrink-0 group-hover/suggestion:border-border/60 transition-colors">
-                      <s.icon className="size-3 text-muted-foreground/50 group-hover/suggestion:text-foreground/70 transition-colors" />
+                    <div className="flex size-6 shrink-0 items-center justify-center rounded-md bg-[var(--diagram-chat-card-bg)] text-muted-foreground/70 shadow-[inset_0_0_0_0.5px_var(--diagram-chat-frame-border)] transition-colors group-hover/suggestion:text-foreground">
+                      <s.icon className="size-3.5" />
                     </div>
                     <span className="leading-snug">{s.text}</span>
                   </button>
@@ -467,17 +625,17 @@ export function ChatPanel({
               </div>
             </div>
           ) : (
-            <div className="px-3 py-4 space-y-4">
+            <div className="mx-auto flex w-full max-w-[42rem] flex-col gap-4 px-4 py-5">
               {messages.map((message, index) => {
                 const isLast = index === messages.length - 1;
 
                 return (
                   <div key={`${message.id}-${index}`}>
                     {message.role === "user" ? (
-                      <div className="flex justify-end">
-                        <div className="max-w-[85%]">
-                          <div className="bg-primary text-primary-foreground rounded-2xl rounded-br-md px-3.5 py-2">
-                            <p className="text-[12.5px] leading-relaxed whitespace-pre-wrap break-words">
+                      <div className="flex w-full justify-end">
+                        <div className="max-w-[78%] md:max-w-[72%]">
+                          <div className="rounded-md bg-secondary/80 px-2.5 py-2 text-secondary-foreground">
+                            <p className="whitespace-pre-wrap break-words text-[15px] leading-6">
                               {message.parts
                                 .filter(
                                   (
@@ -492,41 +650,46 @@ export function ChatPanel({
                         </div>
                       </div>
                     ) : (
-                      <div className="max-w-[92%]">
+                      <div className="flex w-full flex-col">
                         {!hasContent(message) && isLoading && isLast ? (
-                          <ChatLoader />
+                          <PendingAssistant neutralBrand={neutralBrand} />
                         ) : (
                           <>
-                            {message.parts.map((part, i) => {
-                              if (part.type === "text" && part.text) {
-                                const isStreamingText =
-                                  isLoading &&
-                                  isLast &&
-                                  part.state !== "done";
-                                return (
-                                  <Streamdown
-                                    key={i}
-                                    plugins={{ code }}
-                                    isAnimating={isStreamingText}
-                                    caret={
-                                      isStreamingText ? "block" : undefined
-                                    }
-                                    className="text-xs leading-relaxed text-foreground break-words [&_pre]:text-[11px] [&_p]:my-1"
-                                  >
-                                    {part.text}
-                                  </Streamdown>
-                                );
-                              }
-                              if (part.type.startsWith("tool-")) {
-                                return (
-                                  <ToolStatus
-                                    key={(part as ToolPart).toolCallId}
-                                    part={part as ToolPart}
-                                  />
-                                );
-                              }
-                              return null;
-                            })}
+                            <AssistantHeader neutralBrand={neutralBrand} />
+                            <div className="max-w-2xl flex-1 overflow-hidden pl-0.5">
+                              <div className="flex flex-col gap-2.5">
+                                {message.parts.map((part, i) => {
+                                  if (part.type === "text" && part.text) {
+                                    const isStreamingText =
+                                      isLoading &&
+                                      isLast &&
+                                      part.state !== "done";
+                                    return (
+                                      <Streamdown
+                                        key={i}
+                                        plugins={{ code }}
+                                        isAnimating={isStreamingText}
+                                        caret={
+                                          isStreamingText ? "block" : undefined
+                                        }
+                                        className="diagram-chat-md break-words"
+                                      >
+                                        {part.text}
+                                      </Streamdown>
+                                    );
+                                  }
+                                  if (part.type.startsWith("tool-")) {
+                                    return (
+                                      <ToolStatus
+                                        key={(part as ToolPart).toolCallId}
+                                        part={part as ToolPart}
+                                      />
+                                    );
+                                  }
+                                  return null;
+                                })}
+                              </div>
+                            </div>
                           </>
                         )}
                       </div>
@@ -535,20 +698,37 @@ export function ChatPanel({
                 );
               })}
               {showPendingLoader && (
-                <div className="px-0.5">
-                  <ChatLoader />
-                </div>
+                <PendingAssistant
+                  label="Reading diagram"
+                  neutralBrand={neutralBrand}
+                />
               )}
               <div ref={messagesEndRef} />
             </div>
           )}
         </div>
+        <button
+          type="button"
+          onClick={jumpToLatest}
+          aria-label="Jump to latest message"
+          aria-hidden={!scrolledUp}
+          tabIndex={scrolledUp ? 0 : -1}
+          className={cn(
+            "absolute bottom-24 left-1/2 z-20 inline-flex h-7 -translate-x-1/2 items-center gap-1 rounded-full border border-[var(--diagram-chat-frame-border)] bg-[var(--diagram-chat-sidebar-bg)] px-2.5 text-[12px] font-medium text-foreground shadow-[0_3px_6px_-2px_rgba(0,0,0,0.05),0_1px_1px_rgba(0,0,0,0.06)] transition-all",
+            scrolledUp
+              ? "pointer-events-auto translate-y-0 opacity-100"
+              : "pointer-events-none translate-y-1 opacity-0"
+          )}
+        >
+          <ChevronDown className="size-3.5 text-muted-foreground" />
+          Latest
+        </button>
       </div>
 
       {/* Input */}
-      <div className="shrink-0 p-3">
+      <div className="shrink-0 border-t border-[var(--diagram-chat-frame-border)] bg-[var(--diagram-chat-sidebar-bg)] p-3">
         {errorMessage && (
-          <div className="mb-2 flex items-start gap-2 rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2 text-destructive">
+          <div className="mb-2 flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-destructive">
             <AlertCircle className="mt-0.5 size-3 shrink-0" />
             <p className="text-[11px] leading-relaxed">{errorMessage}</p>
           </div>
@@ -558,68 +738,54 @@ export function ChatPanel({
             e.preventDefault();
             handleSubmit();
           }}
-          className={cn(
-            "relative rounded-xl overflow-hidden cursor-text",
-            "bg-muted/50 dark:bg-muted/30",
-            "border border-border/50",
-            "focus-within:border-border focus-within:bg-muted/70 dark:focus-within:bg-muted/40",
-            "transition-all duration-200",
-            "shadow-sm"
-          )}
+          className="diagram-chatbar-frame cursor-text p-3"
           onClick={() => textareaRef.current?.focus()}
         >
-          <div className="flex flex-col gap-1 p-2.5">
-            <textarea
-              ref={textareaRef}
-              value={input}
-              onChange={(e) => {
-                if (localError) {
-                  setLocalError(null);
-                }
-                setInput(e.target.value);
-              }}
-              onKeyDown={handleKeyDown}
-              placeholder={isLoading ? "Waiting for response..." : "Describe changes..."}
-              disabled={isLoading}
-              rows={1}
-              className={cn(
-                "w-full resize-none border-none bg-transparent px-1 py-0.5",
-                "text-[13px] leading-5",
-                "text-foreground placeholder:text-muted-foreground/40",
-                "focus:outline-none",
-                isLoading && "opacity-50 cursor-not-allowed"
-              )}
-              style={{ minHeight: "20px", maxHeight: "120px" }}
-            />
-            <div className="flex items-center justify-between px-0.5">
-              <span className="flex items-center gap-0.5 select-none">
-                <Kbd>{modifierKeyLabel}</Kbd>
-                <Kbd>↵</Kbd>
-              </span>
-              {isLoading ? (
-                <button
-                  type="button"
-                  onClick={stop}
-                  className="size-6 flex items-center justify-center rounded-lg bg-foreground text-background hover:bg-foreground/80 transition-colors cursor-pointer"
-                >
-                  <Square className="size-2.5" />
-                </button>
-              ) : (
-                <button
-                  type="submit"
-                  disabled={!input.trim()}
-                  className={cn(
-                    "size-6 flex items-center justify-center rounded-lg shrink-0",
-                    "transition-all duration-150 cursor-pointer",
-                    input.trim()
-                      ? "bg-foreground text-background hover:bg-foreground/80"
-                      : "bg-muted-foreground/10 text-muted-foreground/30 pointer-events-none"
-                  )}
-                >
-                  <ArrowUp className="size-3.5" strokeWidth={2.5} />
-                </button>
-              )}
-            </div>
+          <textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(e) => {
+              if (localError) {
+                setLocalError(null);
+              }
+              setInput(e.target.value);
+            }}
+            onKeyDown={handleKeyDown}
+            placeholder={isLoading ? "Waiting for response..." : "Describe changes..."}
+            disabled={isLoading}
+            rows={1}
+            className={cn(
+              "diagram-chatbar-textarea",
+              isLoading && "cursor-not-allowed opacity-50"
+            )}
+            style={{ minHeight: "24px", maxHeight: "120px" }}
+          />
+          <div className="flex items-end justify-between gap-2 pt-2">
+            <span className="diagram-chatbar-pill select-none">
+              <Kbd>{modifierKeyLabel}</Kbd>
+              <Kbd>↵</Kbd>
+            </span>
+            {isLoading ? (
+              <button
+                type="button"
+                onClick={stop}
+                className="diagram-chatbar-send"
+                data-active="true"
+                aria-label="Stop response"
+              >
+                <Square className="size-2.5" />
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={!input.trim()}
+                className="diagram-chatbar-send shrink-0"
+                data-active={input.trim() ? "true" : "false"}
+                aria-label="Send message"
+              >
+                <ArrowUp className="size-3.5" strokeWidth={2.5} />
+              </button>
+            )}
           </div>
         </form>
       </div>

@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useMediaQuery } from "@/lib/use-media-query";
-import { Share2, Check, ClipboardCopy } from "lucide-react";
+import { Bot, Check, ClipboardCopy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -71,15 +71,22 @@ export function ShareButton({
   if (isDesktop) {
     return (
       <Dialog open={open} onOpenChange={setOpen}>
-        <Button size="sm" className="gap-1.5" onClick={() => setOpen(true)}>
-          <Share2 className="size-3.5" />
-          Share
+        <Button
+          aria-label="Connect AI agent"
+          className="gap-1.5"
+          onClick={() => setOpen(true)}
+          size="sm"
+          title="Connect AI agent"
+        >
+          <Bot className="size-3.5" />
+          <span className="hidden sm:inline">Connect AI agent</span>
+          <span className="sm:hidden">Agent</span>
         </Button>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Share</DialogTitle>
+            <DialogTitle>Connect AI agent</DialogTitle>
             <DialogDescription>
-              Share this diagram or invite a collaborator.
+              Copy a diagram prompt for an AI agent or share direct links.
             </DialogDescription>
           </DialogHeader>
           {contentEl}
@@ -90,15 +97,22 @@ export function ShareButton({
 
   return (
     <Drawer open={open} onOpenChange={setOpen}>
-      <Button size="sm" className="gap-1.5" onClick={() => setOpen(true)}>
-        <Share2 className="size-3.5" />
-        Share
+      <Button
+        aria-label="Connect AI agent"
+        className="gap-1.5"
+        onClick={() => setOpen(true)}
+        size="sm"
+        title="Connect AI agent"
+      >
+        <Bot className="size-3.5" />
+        <span className="hidden sm:inline">Connect AI agent</span>
+        <span className="sm:hidden">Agent</span>
       </Button>
       <DrawerContent>
         <DrawerHeader>
-          <DrawerTitle>Share</DrawerTitle>
+          <DrawerTitle>Connect AI agent</DrawerTitle>
           <DrawerDescription>
-            Share this diagram or invite a collaborator.
+            Copy a diagram prompt for an AI agent or share direct links.
           </DrawerDescription>
         </DrawerHeader>
         <div className="px-4 pb-6">{contentEl}</div>

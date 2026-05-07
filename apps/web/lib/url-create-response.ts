@@ -5,6 +5,9 @@ type CreateResult = {
   editId: string;
   secret: string;
   version: number;
+  boardId?: string | null;
+  boardEditId?: string | null;
+  boardSecret?: string | null;
 };
 
 export type ResponseFormat = "text" | "json";
@@ -88,7 +91,12 @@ export function urlCreateResponse({
   validationSkippedReason,
 }: UrlCreateResponseOptions) {
   const viewUrl = `${baseUrl}/d/${result.id}`;
-  const editUrl = `${baseUrl}/e/${result.editId}`;
+  const diagramEditUrl = `${baseUrl}/e/${result.editId}`;
+  const boardUrl = result.boardId ? `${baseUrl}/b/${result.boardId}` : null;
+  const boardEditUrl =
+    result.boardEditId ? `${baseUrl}/be/${result.boardEditId}` : null;
+  const shareUrl = boardUrl ?? viewUrl;
+  const editUrl = boardEditUrl ?? diagramEditUrl;
 
   const cleanReason = validationSkippedReason
     ? cleanValidationReason(validationSkippedReason)
@@ -102,8 +110,26 @@ export function urlCreateResponse({
     "x-diagram-id": result.id,
     "x-edit-id": result.editId,
     "x-diagram-url": viewUrl,
+    "x-share-url": shareUrl,
     "x-edit-url": editUrl,
     "x-diagram-secret": result.secret,
+    ...(result.boardId
+      ? {
+          "x-board-id": result.boardId,
+          "x-board-url": boardUrl ?? "",
+        }
+      : {}),
+    ...(result.boardEditId && boardEditUrl
+      ? {
+          "x-board-edit-id": result.boardEditId,
+          "x-board-edit-url": boardEditUrl,
+        }
+      : {}),
+    ...(result.boardSecret
+      ? {
+          "x-board-secret": result.boardSecret,
+        }
+      : {}),
     ...(cleanReason
       ? {
           "x-validation": "skipped",
@@ -118,16 +144,25 @@ export function urlCreateResponse({
       JSON.stringify({
         id: result.id,
         editId: result.editId,
-        url: viewUrl,
+        url: shareUrl,
+        diagramUrl: viewUrl,
         editUrl,
+        diagramEditUrl,
+        boardId: result.boardId ?? null,
+        boardUrl,
+        boardEditId: result.boardEditId ?? null,
+        boardEditUrl,
+        boardSecret: result.boardSecret ?? null,
         secret: result.secret,
         version: result.version,
         instructions: {
-          summary: `Diagram ${verb}. The \`url\` field is the shareable rendered-diagram URL — that is what you should hand back to the user.`,
-          share_with_user: viewUrl,
+          summary: `Diagram ${verb}. The \`url\` field is the shareable board URL when a board is available — that is what you should hand back to the user.`,
+          share_with_user: shareUrl,
           update_url_only: `${baseUrl}/u/${result.editId}/<url-encoded-new-mermaid>`,
           update_rest: `PUT ${baseUrl}/api/d/${result.id} with Authorization: Bearer <secret>`,
           mental_model: {
+            "/b/<id>": "public board URL — primary human workspace",
+            "/be/<editId>": "editable board URL — use for arranging diagrams",
             "/d/<id>": "public share URL — humans open this",
             "/c/<mermaid>": "create endpoint — each call makes a new diagram",
             "/u/<editId>/<mermaid>":
@@ -167,22 +202,29 @@ export function urlCreateResponse({
     `=== Diagram ${verb.toLowerCase()} on merm.sh ===\n` +
     `\n` +
     `▶ SHARE THIS URL WITH YOUR USER\n` +
-    `  ${viewUrl}\n` +
-    `  (This is the rendered-diagram page. Humans open it in a browser.)\n` +
+    `  ${shareUrl}\n` +
+    `  (This is the board workspace when available. Humans open it in a browser.)\n` +
     `\n` +
     `▶ WHAT JUST HAPPENED\n` +
     `  You called a write endpoint: ${endpointKind}...\n` +
-    `  merm.sh ${verb.toLowerCase()} a diagram and the URL above is where\n` +
-    `  it lives. The ${endpointKind} URL you fetched is the endpoint —\n` +
+    `  merm.sh ${verb.toLowerCase()} a diagram and put it on a board.\n` +
+    `  The URL above is the workspace to share. The ${endpointKind} URL\n` +
+    `  you fetched is the endpoint —\n` +
     `  calling it again creates another diagram / version, it is not a\n` +
     `  share link.\n` +
     warningBlock +
     `\n` +
     `▶ KEY FIELDS\n` +
-    `  url        ${viewUrl}\n` +
-    `             (public; share with humans)\n` +
+    `  url        ${shareUrl}\n` +
+    `             (public board when available; share with humans)\n` +
     `  editUrl    ${editUrl}\n` +
-    `             (browser editor; share with anyone who should edit)\n` +
+    `             (browser editor or editable board)\n` +
+    (boardUrl
+      ? `  boardUrl   ${boardUrl}\n` +
+        `             (canonical workspace for this diagram)\n`
+      : "") +
+    `  diagramUrl ${viewUrl}\n` +
+    `             (focused diagram route; redirects to board for latest view)\n` +
     `  editId     ${result.editId}\n` +
     `             (use in URL-only update path; no auth needed)\n` +
     `  secret     ${result.secret}\n` +
@@ -208,6 +250,8 @@ export function urlCreateResponse({
     `\n` +
     `▶ MENTAL MODEL (5 seconds)\n` +
     `  /d/<id>          public share URL — humans open this\n` +
+    `  /b/<id>          public board URL — primary workspace\n` +
+    `  /be/<edit>       editable board URL — arrange diagrams here\n` +
     `  /c/<mermaid>     create endpoint — each call makes a NEW diagram\n` +
     `  /u/<edit>/<m>    update endpoint — adds a version to one diagram\n` +
     `  Nothing is overwritten. Every update is a new version you can\n` +

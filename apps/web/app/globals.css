@@ -86,6 +86,26 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --board-canvas: rgb(250 250 250);
+  --board-dot: rgb(39 39 42 / 0.10);
+  --board-floating: rgb(255 255 255 / 0.96);
+  --board-floating-border: rgb(24 24 27 / 0.10);
+  --board-floating-shadow: rgb(24 24 27 / 0.13);
+  --board-card-ring: rgb(24 24 27 / 0.10);
+  --board-card-shadow: rgb(24 24 27 / 0.12);
+  --board-purple: rgb(100 48 212);
+  --board-purple-soft: rgb(114 62 224 / 0.08);
+  --board-purple-line: rgb(100 48 212 / 0.55);
+  --board-purple-shadow: rgb(75 34 170 / 0.24);
+  --diagram-chat-sidebar-bg: rgb(255 255 255);
+  --diagram-chat-page-bg: rgb(243 243 244);
+  --diagram-chat-card-bg: rgb(247 247 248);
+  --diagram-chat-frame-border: rgb(24 24 27 / 0.1);
+  --diagram-chat-primary: rgb(22 163 74);
+  --diagram-chat-primary-hover: rgb(21 145 63);
+  --diagram-chat-primary-active: rgb(17 122 53);
+  --diagram-chat-primary-fg: rgb(255 255 255);
+  --diagram-chat-primary-ring: rgb(22 163 74 / 0.32);
 }
 
 /* ── Dark mode ── */
@@ -123,6 +143,106 @@
   --sidebar-accent-foreground: oklch(0.93 0.006 265);
   --sidebar-border: oklch(0.27 0.01 265);
   --sidebar-ring: oklch(0.55 0.12 265);
+  --board-canvas: rgb(18 18 19);
+  --board-dot: rgb(244 244 245 / 0.11);
+  --board-floating: rgb(28 28 30 / 0.95);
+  --board-floating-border: rgb(244 244 245 / 0.12);
+  --board-floating-shadow: rgb(0 0 0 / 0.34);
+  --board-card-ring: rgb(244 244 245 / 0.12);
+  --board-card-shadow: rgb(0 0 0 / 0.32);
+  --board-purple: rgb(138 91 255);
+  --board-purple-soft: rgb(138 91 255 / 0.10);
+  --board-purple-line: rgb(158 121 255 / 0.62);
+  --board-purple-shadow: rgb(118 75 255 / 0.28);
+  --diagram-chat-sidebar-bg: rgb(28 28 30 / 0.98);
+  --diagram-chat-page-bg: rgb(18 18 19);
+  --diagram-chat-card-bg: rgb(38 38 42);
+  --diagram-chat-frame-border: rgb(244 244 245 / 0.12);
+  --diagram-chat-primary: rgb(34 197 94);
+  --diagram-chat-primary-hover: rgb(22 163 74);
+  --diagram-chat-primary-active: rgb(21 128 61);
+  --diagram-chat-primary-fg: rgb(255 255 255);
+  --diagram-chat-primary-ring: rgb(34 197 94 / 0.3);
+}
+
+@supports (color: color(display-p3 1 1 1)) {
+  :root {
+    --background: color(display-p3 0.99 0.99 0.995);
+    --foreground: color(display-p3 0.075 0.07 0.12);
+    --card: color(display-p3 1 1 1);
+    --card-foreground: color(display-p3 0.075 0.07 0.12);
+    --popover: color(display-p3 1 1 1);
+    --popover-foreground: color(display-p3 0.075 0.07 0.12);
+    --primary: color(display-p3 0.12 0.11 0.16);
+    --primary-foreground: color(display-p3 0.985 0.985 0.99);
+    --secondary: color(display-p3 0.948 0.946 0.962);
+    --secondary-foreground: color(display-p3 0.12 0.11 0.16);
+    --muted: color(display-p3 0.948 0.946 0.962);
+    --muted-foreground: color(display-p3 0.42 0.405 0.49);
+    --accent: color(display-p3 0.93 0.925 0.952);
+    --accent-foreground: color(display-p3 0.12 0.11 0.16);
+    --border: color(display-p3 0.86 0.852 0.895);
+    --input: color(display-p3 0.86 0.852 0.895);
+    --ring: color(display-p3 0.42 0.19 0.88);
+    --board-canvas: color(display-p3 0.982 0.982 0.986);
+    --board-dot: color(display-p3 0.12 0.12 0.14 / 0.10);
+    --board-floating: color(display-p3 0.998 0.997 1 / 0.96);
+    --board-floating-border: color(display-p3 0.12 0.12 0.14 / 0.10);
+    --board-floating-shadow: color(display-p3 0.08 0.08 0.09 / 0.13);
+    --board-card-ring: color(display-p3 0.12 0.12 0.14 / 0.10);
+    --board-card-shadow: color(display-p3 0.08 0.08 0.09 / 0.12);
+    --board-purple: color(display-p3 0.38 0.13 0.86);
+    --board-purple-soft: color(display-p3 0.45 0.18 0.92 / 0.085);
+    --board-purple-line: color(display-p3 0.38 0.13 0.86 / 0.58);
+    --board-purple-shadow: color(display-p3 0.25 0.08 0.72 / 0.26);
+    --diagram-chat-sidebar-bg: color(display-p3 1 1 1);
+    --diagram-chat-page-bg: color(display-p3 0.953 0.953 0.957);
+    --diagram-chat-card-bg: color(display-p3 0.972 0.972 0.978);
+    --diagram-chat-frame-border: color(display-p3 0.08 0.08 0.1 / 0.1);
+    --diagram-chat-primary: color(display-p3 0.11 0.62 0.29);
+    --diagram-chat-primary-hover: color(display-p3 0.10 0.55 0.25);
+    --diagram-chat-primary-active: color(display-p3 0.08 0.46 0.21);
+    --diagram-chat-primary-ring: color(display-p3 0.11 0.62 0.29 / 0.32);
+  }
+
+  .dark {
+    --background: color(display-p3 0.082 0.076 0.105);
+    --foreground: color(display-p3 0.92 0.92 0.95);
+    --card: color(display-p3 0.112 0.104 0.138);
+    --card-foreground: color(display-p3 0.92 0.92 0.95);
+    --popover: color(display-p3 0.112 0.104 0.138);
+    --popover-foreground: color(display-p3 0.92 0.92 0.95);
+    --primary: color(display-p3 0.50 0.24 0.96);
+    --primary-foreground: color(display-p3 0.99 0.99 1);
+    --secondary: color(display-p3 0.14 0.13 0.17);
+    --secondary-foreground: color(display-p3 0.79 0.78 0.84);
+    --muted: color(display-p3 0.16 0.148 0.19);
+    --muted-foreground: color(display-p3 0.61 0.59 0.68);
+    --accent: color(display-p3 0.18 0.16 0.23);
+    --accent-foreground: color(display-p3 0.92 0.92 0.95);
+    --border: color(display-p3 0.24 0.22 0.3);
+    --input: color(display-p3 0.20 0.18 0.25);
+    --ring: color(display-p3 0.52 0.28 0.98);
+    --board-canvas: color(display-p3 0.07 0.07 0.075);
+    --board-dot: color(display-p3 0.92 0.92 0.95 / 0.11);
+    --board-floating: color(display-p3 0.11 0.11 0.122 / 0.95);
+    --board-floating-border: color(display-p3 0.92 0.92 0.95 / 0.12);
+    --board-floating-shadow: color(display-p3 0 0 0 / 0.34);
+    --board-card-ring: color(display-p3 0.92 0.92 0.95 / 0.12);
+    --board-card-shadow: color(display-p3 0 0 0 / 0.32);
+    --board-purple: color(display-p3 0.50 0.27 1);
+    --board-purple-soft: color(display-p3 0.50 0.27 1 / 0.12);
+    --board-purple-line: color(display-p3 0.60 0.42 1 / 0.66);
+    --board-purple-shadow: color(display-p3 0.43 0.22 1 / 0.3);
+    --diagram-chat-sidebar-bg: color(display-p3 0.11 0.11 0.122 / 0.98);
+    --diagram-chat-page-bg: color(display-p3 0.07 0.07 0.075);
+    --diagram-chat-card-bg: color(display-p3 0.15 0.15 0.165);
+    --diagram-chat-frame-border: color(display-p3 0.92 0.92 0.95 / 0.12);
+    --diagram-chat-primary: color(display-p3 0.16 0.76 0.36);
+    --diagram-chat-primary-hover: color(display-p3 0.11 0.62 0.29);
+    --diagram-chat-primary-active: color(display-p3 0.10 0.49 0.23);
+    --diagram-chat-primary-ring: color(display-p3 0.16 0.76 0.36 / 0.3);
+  }
 }
 
 @layer base {
@@ -148,3 +268,298 @@
   }
 }
 
+@layer components {
+  .board-canvas {
+    background-color: var(--board-canvas);
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      var(--board-dot) 1px,
+      transparent 0
+    );
+    background-size: 24px 24px;
+  }
+
+  .board-floating-surface {
+    background: var(--board-floating);
+    border-color: transparent;
+    box-shadow:
+      0 0 0 1px var(--board-floating-border),
+      0 14px 34px -26px var(--board-floating-shadow),
+      0 1px 2px rgb(0 0 0 / 0.08);
+  }
+
+  .board-mobile-scroll {
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .board-mobile-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  .board-notion-sidebar {
+    background: rgb(32 32 32 / 0.98);
+    color: rgb(244 244 243);
+    border-color: rgb(255 255 255 / 0.09);
+    box-shadow:
+      18px 0 48px -34px rgb(0 0 0 / 0.85),
+      inset -1px 0 0 rgb(255 255 255 / 0.035);
+  }
+
+  .board-notion-row {
+    color: rgb(191 191 187);
+  }
+
+  .board-notion-row:hover {
+    background: rgb(255 255 255 / 0.075);
+    color: rgb(244 244 243);
+  }
+
+  .board-notion-row-active {
+    background: rgb(255 255 255 / 0.105);
+    color: rgb(255 255 255);
+  }
+
+  .board-notion-section {
+    color: rgb(165 165 160);
+  }
+
+  .board-notion-muted {
+    color: rgb(170 170 166);
+  }
+
+  .board-notion-avatar {
+    background: rgb(255 255 255 / 0.095);
+    color: rgb(245 245 244);
+  }
+
+  .board-diagram-card {
+    box-shadow:
+      0 0 0 1px var(--board-card-ring),
+      0 12px 28px -24px var(--board-card-shadow),
+      0 1px 2px rgb(0 0 0 / 0.06);
+  }
+
+  .board-selected-card {
+    border-color: transparent;
+    box-shadow:
+      0 0 0 2px var(--board-purple-line),
+      0 14px 40px -30px var(--board-purple-shadow),
+      0 1px 2px rgb(0 0 0 / 0.08);
+  }
+
+  .board-selected-header {
+    background: rgb(255 255 255);
+    border-color: var(--board-purple-line);
+  }
+
+  .board-selected-body {
+    background: rgb(255 255 255);
+  }
+
+  .board-selected-text {
+    color: var(--board-purple);
+  }
+
+  .board-resize-handle {
+    background: rgb(255 255 255);
+    border: 2px solid var(--board-purple);
+    box-shadow:
+      0 0 0 2px rgb(255 255 255),
+      0 8px 18px -10px var(--board-purple-shadow);
+  }
+
+  .diagram-chatbar-frame {
+    position: relative;
+    background: var(--diagram-chat-sidebar-bg);
+    border-radius: 10px;
+    box-shadow:
+      0 3px 6px -2px rgb(0 0 0 / 0.02),
+      0 1px 1px 0 rgb(0 0 0 / 0.04);
+  }
+
+  .diagram-chatbar-frame::before {
+    content: "";
+    position: absolute;
+    inset: -0.5px;
+    border: 0.5px solid var(--diagram-chat-frame-border);
+    border-radius: 11px;
+    pointer-events: none;
+  }
+
+  .diagram-chatbar-frame:focus-within::before {
+    border-color: color-mix(in oklab, var(--foreground) 20%, transparent);
+  }
+
+  .diagram-chatbar-textarea {
+    width: 100%;
+    max-height: 240px;
+    resize: none;
+    overflow-y: auto;
+    border: 0;
+    background: transparent;
+    padding: 2px 6px;
+    color: color-mix(in oklab, var(--foreground) 92%, transparent);
+    font-size: 15px;
+    font-weight: 450;
+    line-height: 24px;
+    outline: none;
+  }
+
+  .diagram-chatbar-textarea::placeholder {
+    color: color-mix(in oklab, var(--muted-foreground) 62%, transparent);
+  }
+
+  .diagram-chatbar-pill {
+    display: inline-flex;
+    height: 24px;
+    align-items: center;
+    gap: 4px;
+    border: 0.5px solid var(--diagram-chat-frame-border);
+    border-radius: 9999px;
+    padding: 0 8px;
+    color: color-mix(in oklab, var(--foreground) 70%, transparent);
+    font-size: 12px;
+    font-weight: 500;
+    transition:
+      background-color 120ms cubic-bezier(0.23, 1, 0.32, 1),
+      color 120ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  .diagram-chatbar-pill:is(button):hover {
+    background: color-mix(in oklab, var(--foreground) 4%, transparent);
+    color: var(--foreground);
+  }
+
+  .diagram-chatbar-send {
+    position: relative;
+    display: inline-flex;
+    width: 24px;
+    height: 24px;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 12px;
+    background: var(--diagram-chat-sidebar-bg);
+    color: color-mix(in oklab, var(--foreground) 85%, transparent);
+    cursor: pointer;
+    transition:
+      transform 140ms cubic-bezier(0.23, 1, 0.32, 1),
+      background-color 120ms cubic-bezier(0.23, 1, 0.32, 1),
+      color 120ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  .diagram-chatbar-send::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    box-shadow:
+      inset 0 0 0 0.5px rgb(0 0 0 / 0.088),
+      0 3px 6px -2px rgb(0 0 0 / 0.02),
+      0 1px 1px 0 rgb(0 0 0 / 0.04);
+    pointer-events: none;
+  }
+
+  .dark .diagram-chatbar-send::after {
+    box-shadow:
+      inset 0 0 0 0.5px rgb(255 255 255 / 0.12),
+      0 5px 10px -7px rgb(0 0 0 / 0.8),
+      0 1px 1px 0 rgb(0 0 0 / 0.24);
+  }
+
+  .diagram-chatbar-send[data-active="true"] {
+    background: var(--diagram-chat-primary);
+    color: var(--diagram-chat-primary-fg);
+  }
+
+  .diagram-chatbar-send:hover:not(:disabled) {
+    transform: translateY(-0.5px);
+  }
+
+  .diagram-chatbar-send[data-active="true"]:hover:not(:disabled) {
+    background: var(--diagram-chat-primary-hover);
+  }
+
+  .diagram-chatbar-send:active:not(:disabled) {
+    transform: translateY(0.5px);
+  }
+
+  .diagram-chatbar-send:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  .diagram-chatbar-chip {
+    display: inline-flex;
+    height: 28px;
+    align-items: center;
+    gap: 6px;
+    border: 0.5px solid var(--diagram-chat-frame-border);
+    border-radius: 9999px;
+    background: var(--diagram-chat-sidebar-bg);
+    padding: 0 12px;
+    color: color-mix(in oklab, var(--foreground) 78%, transparent);
+    font-size: 12.5px;
+    font-weight: 450;
+    box-shadow: 0 1px 1px 0 rgb(0 0 0 / 0.02);
+    transition:
+      background-color 120ms cubic-bezier(0.23, 1, 0.32, 1),
+      transform 140ms cubic-bezier(0.23, 1, 0.32, 1),
+      color 120ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  .diagram-chatbar-chip:hover {
+    background: color-mix(in oklab, var(--foreground) 3%, var(--diagram-chat-sidebar-bg));
+    color: var(--foreground);
+    transform: translateY(-0.5px);
+  }
+
+  .diagram-chat-md,
+  .diagram-chat-md p,
+  .diagram-chat-md li,
+  .diagram-chat-md ul,
+  .diagram-chat-md ol {
+    color: color-mix(in oklab, var(--foreground) 86%, transparent);
+    font-size: 15px;
+    line-height: 24px;
+  }
+
+  .diagram-chat-md p {
+    margin: 0.35rem 0;
+  }
+
+  .diagram-chat-md :is(ul, ol) {
+    margin: 0.35rem 0;
+    padding-left: 1.15rem;
+  }
+
+  .diagram-chat-md strong,
+  .diagram-chat-md b {
+    color: var(--foreground);
+    font-weight: 600;
+  }
+
+  .diagram-chat-md :is(code, pre code) {
+    font-size: 0.86em;
+  }
+
+  .diagram-chat-md code {
+    border-radius: 4px;
+    background: color-mix(in oklab, var(--foreground) 7%, transparent);
+    padding: 0.1rem 0.28rem;
+  }
+
+  .diagram-chat-md pre {
+    margin: 0.55rem 0;
+    overflow-x: auto;
+    border: 0.5px solid var(--diagram-chat-frame-border);
+    border-radius: 8px;
+    background: color-mix(in oklab, var(--foreground) 5%, transparent);
+    padding: 0.65rem;
+  }
+
+  html[data-board-workspace="true"] [data-react-grab] {
+    display: none !important;
+  }
+}

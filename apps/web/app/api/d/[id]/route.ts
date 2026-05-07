@@ -47,6 +47,10 @@ export async function GET(
     version: data.currentVersion.version,
     content: data.currentVersion.content,
     createdAt: data.currentVersion.createdAt,
+    boardId: data.diagram.primaryBoardId,
+    boardUrl: data.diagram.primaryBoardId
+      ? `${baseUrl}/b/${data.diagram.primaryBoardId}`
+      : null,
     versions: data.allVersions.map((v) => ({
       version: v.version,
       content: v.content,
