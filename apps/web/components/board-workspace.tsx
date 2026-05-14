@@ -156,6 +156,7 @@ const MIN_ITEM_HEIGHT = 260;
 const MAX_ITEM_WIDTH = 1920;
 const MAX_ITEM_HEIGHT = 1600;
 const MAX_UNDO_STEPS = 50;
+const BOARD_DRAG_START_DISTANCE_SQUARED = 9;
 const BOARD_ARTIFACT_SHAPE_TYPE = "board-artifact" as const;
 const TLDRAW_LICENSE_KEY = process.env.NEXT_PUBLIC_TLDRAW_LICENSE_KEY;
 const BOARD_TLDRAW_COMPONENTS: TLComponents = {
@@ -315,11 +316,12 @@ function BoardTldrawArtifactShape({ shape }: { shape: BoardArtifactShape }) {
         itemPageHref={itemPageHref}
         onActivateContent={() => context.onActivateContent(item.id)}
         onCardPointerDown={(event) => {
+          const target = event.target as HTMLElement;
+
           if (event.button === 0) {
             context.onSelectItem(item.id);
           }
 
-          const target = event.target as HTMLElement;
           if (target.closest("[data-board-control]")) {
             editor.markEventAsHandled(event);
             return;
@@ -329,9 +331,103 @@ function BoardTldrawArtifactShape({ shape }: { shape: BoardArtifactShape }) {
             context.onActivateContent(null);
           }
 
-          if (context.canEdit) {
-            context.onCaptureUndoCheckpoint();
+          const currentShape = editor.getShape<BoardArtifactShape>(shape.id);
+          if (!context.canEdit || !currentShape || event.button !== 0) return;
+          const dragShape = currentShape;
+
+          editor.markEventAsHandled(event);
+          event.preventDefault();
+          event.stopPropagation();
+
+          editor.setCurrentTool("select");
+          editor.setSelectedShapes([shape.id]);
+
+          const cardElement = event.currentTarget;
+          const ownerDocument = cardElement.ownerDocument;
+          const ownerWindow = ownerDocument.defaultView ?? window;
+          const pointerId = event.pointerId;
+          const startScreenPoint = { x: event.clientX, y: event.clientY };
+          const startPagePoint = editor.screenToPage(startScreenPoint);
+          const startShapePoint = { x: dragShape.x, y: dragShape.y };
+          let didDrag = false;
+          let capturedUndo = false;
+
+          try {
+            cardElement.setPointerCapture(pointerId);
+          } catch {
+            // The document-level listeners below still cover this gesture.
           }
+
+          function cleanup(pointerEvent: PointerEvent) {
+            if (pointerEvent.pointerId !== pointerId) return;
+            editor.markEventAsHandled(pointerEvent);
+            ownerDocument.removeEventListener("pointermove", onPointerMove, {
+              capture: true,
+            });
+            ownerDocument.removeEventListener("pointerup", cleanup, {
+              capture: true,
+            });
+            ownerDocument.removeEventListener("pointercancel", cleanup, {
+              capture: true,
+            });
+
+            try {
+              cardElement.releasePointerCapture(pointerId);
+            } catch {
+              // The pointer may already be released after cancellation.
+            }
+
+            if (didDrag) {
+              cardElement.dataset.boardDragged = "true";
+              ownerWindow.setTimeout(() => {
+                if (cardElement.dataset.boardDragged === "true") {
+                  delete cardElement.dataset.boardDragged;
+                }
+              }, 160);
+            }
+          }
+
+          function onPointerMove(pointerEvent: PointerEvent) {
+            if (pointerEvent.pointerId !== pointerId) return;
+            editor.markEventAsHandled(pointerEvent);
+
+            const screenDx = pointerEvent.clientX - startScreenPoint.x;
+            const screenDy = pointerEvent.clientY - startScreenPoint.y;
+            const distanceSquared = screenDx * screenDx + screenDy * screenDy;
+            if (!didDrag && distanceSquared < BOARD_DRAG_START_DISTANCE_SQUARED) {
+              return;
+            }
+
+            if (!capturedUndo) {
+              context.onCaptureUndoCheckpoint();
+              context.onActivateContent(null);
+              capturedUndo = true;
+            }
+            didDrag = true;
+
+            const pagePoint = editor.screenToPage({
+              x: pointerEvent.clientX,
+              y: pointerEvent.clientY,
+            });
+            editor.updateShapes<BoardArtifactShape>([
+              {
+                id: dragShape.id,
+                type: dragShape.type,
+                x: startShapePoint.x + pagePoint.x - startPagePoint.x,
+                y: startShapePoint.y + pagePoint.y - startPagePoint.y,
+              },
+            ]);
+          }
+
+          ownerDocument.addEventListener("pointermove", onPointerMove, {
+            capture: true,
+          });
+          ownerDocument.addEventListener("pointerup", cleanup, {
+            capture: true,
+          });
+          ownerDocument.addEventListener("pointercancel", cleanup, {
+            capture: true,
+          });
         }}
         onContentChange={(content) => context.onContentChange(item.id, content)}
         onTitleChange={(title) => context.onTitleChange(item.id, title)}
@@ -1433,6 +1529,63 @@ export function BoardWorkspace({
   }, [tldrawEditor]);
 
   useEffect(() => {
+    const root = boardRootRef.current;
+    if (!root) return;
+    const boardRoot = root;
+
+    function isBoardControlTarget(target: EventTarget | null) {
+      return target instanceof Element && Boolean(target.closest("[data-board-control]"));
+    }
+
+    // tldraw and Excalidraw both keep zoom gestures on native non-passive
+    // listeners. Our floating board chrome is outside tldraw's canvas listener,
+    // so it needs the same browser-zoom shield.
+    function onWheel(event: WheelEvent) {
+      if (!(event.target instanceof Node) || !boardRoot.contains(event.target)) {
+        return;
+      }
+      if (!event.ctrlKey && !event.metaKey) return;
+
+      event.preventDefault();
+      if (isBoardControlTarget(event.target)) {
+        event.stopImmediatePropagation();
+      }
+    }
+
+    function onGesture(event: Event) {
+      if (!(event.target instanceof Node) || !boardRoot.contains(event.target)) {
+        return;
+      }
+
+      event.preventDefault();
+      if (isBoardControlTarget(event.target)) {
+        event.stopImmediatePropagation();
+      }
+    }
+
+    root.addEventListener("wheel", onWheel, { capture: true, passive: false });
+    document.addEventListener("gesturestart", onGesture, {
+      capture: true,
+      passive: false,
+    });
+    document.addEventListener("gesturechange", onGesture, {
+      capture: true,
+      passive: false,
+    });
+    document.addEventListener("gestureend", onGesture, {
+      capture: true,
+      passive: false,
+    });
+
+    return () => {
+      root.removeEventListener("wheel", onWheel, { capture: true });
+      document.removeEventListener("gesturestart", onGesture, { capture: true });
+      document.removeEventListener("gesturechange", onGesture, { capture: true });
+      document.removeEventListener("gestureend", onGesture, { capture: true });
+    };
+  }, []);
+
+  useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       const key = event.key.toLowerCase();
       if (key === "escape" && interactiveWebsiteItemId) {
@@ -2047,6 +2200,7 @@ export function BoardWorkspace({
         <div
           className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+16px)] z-30 hidden justify-center px-3 md:flex"
           data-board-control
+          data-board-floating="bottom-chat"
         >
           <BottomChatBar
             className="pointer-events-auto"
@@ -2110,6 +2264,7 @@ export function BoardWorkspace({
       <div
         className="pointer-events-none fixed left-4 top-[calc(env(safe-area-inset-top)+14px)] z-30"
         data-board-control
+        data-board-floating="sidebar-toggle"
       >
         <button
           aria-label={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
@@ -2125,7 +2280,11 @@ export function BoardWorkspace({
       </div>
 
       {selectedItem && canEdit ? (
-        <div className="pointer-events-none fixed inset-x-3 top-[calc(env(safe-area-inset-top)+68px)] z-20 flex justify-start md:inset-x-0 md:justify-center md:px-20">
+        <div
+          className="pointer-events-none fixed inset-x-3 top-[calc(env(safe-area-inset-top)+68px)] z-20 flex justify-start md:inset-x-0 md:justify-center md:px-20"
+          data-board-control
+          data-board-floating="style-controls"
+        >
           <BoardStyleControls
             activeToolPanel={toolPanel}
             canBringToFront={canBringSelectedToFront}
@@ -2186,6 +2345,7 @@ export function BoardWorkspace({
       <div
         className="pointer-events-none fixed right-4 top-[calc(env(safe-area-inset-top)+14px)] z-20 flex items-center gap-2"
         data-board-control
+        data-board-floating="top-actions"
       >
         <div className="board-floating-surface pointer-events-auto flex items-center gap-1 rounded-lg border p-1 backdrop-blur-md">
           {boardId ? (
@@ -2216,8 +2376,12 @@ export function BoardWorkspace({
       <div
         className="pointer-events-none fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+12px)] z-20 flex items-center justify-between gap-1 min-[360px]:gap-2 md:inset-x-auto md:left-4 md:bottom-[calc(env(safe-area-inset-bottom)+16px)] md:justify-start"
         data-board-control
+        data-board-floating="bottom-controls"
       >
-        <div className="board-floating-surface pointer-events-auto flex items-center gap-0.5 rounded-lg border p-1 backdrop-blur-md">
+        <div
+          className="board-floating-surface pointer-events-auto flex items-center gap-0.5 rounded-lg border p-1 backdrop-blur-md"
+          data-board-floating="zoom-controls"
+        >
           <Button
             aria-label="Zoom out"
             onClick={() => zoomBy(0.85)}
@@ -2695,6 +2859,7 @@ function PrimitiveDock({
     <div
       className="pointer-events-none fixed right-4 top-[calc(env(safe-area-inset-top)+68px)] z-20 hidden justify-end md:flex"
       data-board-control
+      data-board-floating="create-dock"
     >
       <div className="board-primitive-dock pointer-events-auto flex max-h-[calc(100dvh-9rem)] w-[7.5rem] max-w-full flex-col gap-1.5 overflow-y-auto rounded-xl border p-2 backdrop-blur-md">
         <div className="flex h-7 w-full items-center px-2 text-[0.62rem] font-semibold uppercase text-muted-foreground">
@@ -2813,6 +2978,7 @@ function BoardSelectionInspector({
     <div
       className="pointer-events-none fixed left-4 top-[calc(env(safe-area-inset-top)+66px)] z-20 hidden w-[19rem] md:block"
       data-board-control
+      data-board-floating="selection-inspector"
     >
       <div className="board-floating-surface pointer-events-auto rounded-xl border p-2 shadow-lg backdrop-blur-md">
         <div className="flex items-start gap-2 px-1.5 py-1.5">
@@ -3123,18 +3289,24 @@ function BoardToolPanel({
   if (activePanel === "chat") {
     if ((diagramEditId && item?.diagramId) || boardContext) {
       return (
-        <DiagramChatPanel
-          className="fixed inset-0 z-40 flex flex-col bg-[var(--diagram-chat-sidebar-bg)] backdrop-blur-xl animate-in slide-in-from-right-2 duration-200 md:inset-y-0 md:left-auto md:right-0 md:w-[400px] lg:w-[420px] md:shrink-0 md:border-l md:border-[var(--diagram-chat-frame-border)]"
-          boardContext={boardContext}
-          content={item?.content ?? ""}
-          diagramId={item?.diagramId}
-          editId={diagramEditId ?? undefined}
-          key={`${chatSessionKey}:${chatPanelNonce}`}
-          onClose={onClose}
-          onOptimisticUpdate={onChatUpdate}
-          onToolResult={onChatResult}
-          open
-        />
+        <div
+          className="contents"
+          data-board-control
+          data-board-floating="chat-panel"
+        >
+          <DiagramChatPanel
+            className="fixed inset-0 z-40 flex flex-col bg-[var(--diagram-chat-sidebar-bg)] backdrop-blur-xl animate-in slide-in-from-right-2 duration-200 md:inset-y-0 md:left-auto md:right-0 md:w-[400px] lg:w-[420px] md:shrink-0 md:border-l md:border-[var(--diagram-chat-frame-border)]"
+            boardContext={boardContext}
+            content={item?.content ?? ""}
+            diagramId={item?.diagramId}
+            editId={diagramEditId ?? undefined}
+            key={`${chatSessionKey}:${chatPanelNonce}`}
+            onClose={onClose}
+            onOptimisticUpdate={onChatUpdate}
+            onToolResult={onChatResult}
+            open
+          />
+        </div>
       );
     }
 
@@ -3142,6 +3314,7 @@ function BoardToolPanel({
       <aside
         className="fixed inset-0 z-40 flex flex-col bg-[var(--diagram-chat-sidebar-bg)] backdrop-blur-xl md:inset-y-0 md:left-auto md:right-0 md:w-[400px] lg:w-[420px] md:border-l md:border-[var(--diagram-chat-frame-border)]"
         data-board-control
+        data-board-floating="chat-unavailable-panel"
       >
         <div className="flex h-11 shrink-0 items-center justify-between border-b border-border/60 px-3">
           <div className="flex min-w-0 items-center gap-2">
@@ -3172,6 +3345,7 @@ function BoardToolPanel({
     <aside
       className="board-floating-surface pointer-events-auto fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+12px)] z-30 flex h-[min(72dvh,38rem)] flex-col overflow-hidden rounded-lg border backdrop-blur-md md:inset-x-auto md:bottom-auto md:right-4 md:top-[calc(env(safe-area-inset-top)+64px)] md:h-[calc(100dvh-92px)] md:w-[28rem]"
       data-board-control
+      data-board-floating="source-panel"
     >
       <BoardSourceEditor
         canEdit={canEdit}
@@ -3536,7 +3710,16 @@ function WebsitePreview({
               aria-label="Interact with website preview"
               className="absolute inset-0 cursor-grab active:cursor-grabbing"
               data-board-content-activator
-              onClick={() => onActivateContent()}
+              onClick={(event) => {
+                const card = event.currentTarget.closest("[data-board-item]");
+                if (
+                  card instanceof HTMLElement &&
+                  card.dataset.boardDragged === "true"
+                ) {
+                  return;
+                }
+                onActivateContent();
+              }}
               onKeyDown={(event) => {
                 if (event.key !== "Enter" && event.key !== " ") return;
                 event.preventDefault();
