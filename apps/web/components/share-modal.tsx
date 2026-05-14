@@ -2,21 +2,23 @@
 
 import { useState, useCallback } from "react";
 import { useMediaQuery } from "@/lib/use-media-query";
-import { Bot, Check, ClipboardCopy } from "lucide-react";
+import { Bot, Check, ClipboardCopy, Lock } from "@/components/icons/mingcute";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
+  DialogHeader,
+  DialogPanel,
+  DialogPopup,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import {
   Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
   DrawerDescription,
+  DrawerHeader,
+  DrawerPanel,
+  DrawerPopup,
+  DrawerTitle,
 } from "@/components/ui/drawer";
 
 function generateCollabPrompt({
@@ -82,15 +84,15 @@ export function ShareButton({
           <span className="hidden sm:inline">Connect AI agent</span>
           <span className="sm:hidden">Agent</span>
         </Button>
-        <DialogContent className="sm:max-w-md">
+        <DialogPopup className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Connect AI agent</DialogTitle>
             <DialogDescription>
               Copy a diagram prompt for an AI agent or share direct links.
             </DialogDescription>
           </DialogHeader>
-          {contentEl}
-        </DialogContent>
+          <DialogPanel>{contentEl}</DialogPanel>
+        </DialogPopup>
       </Dialog>
     );
   }
@@ -108,15 +110,15 @@ export function ShareButton({
         <span className="hidden sm:inline">Connect AI agent</span>
         <span className="sm:hidden">Agent</span>
       </Button>
-      <DrawerContent>
+      <DrawerPopup showBar>
         <DrawerHeader>
           <DrawerTitle>Connect AI agent</DrawerTitle>
           <DrawerDescription>
             Copy a diagram prompt for an AI agent or share direct links.
           </DrawerDescription>
         </DrawerHeader>
-        <div className="px-4 pb-6">{contentEl}</div>
-      </DrawerContent>
+        <DrawerPanel>{contentEl}</DrawerPanel>
+      </DrawerPopup>
     </Drawer>
   );
 }
@@ -164,18 +166,7 @@ function ShareContent({
       {/* View-only badge */}
       {!editUrl && (
         <div className="flex items-center gap-2 rounded-lg p-3 text-xs leading-relaxed text-muted-foreground bg-muted border border-border">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 16 16"
-            fill="currentColor"
-            className="size-3.5 shrink-0"
-          >
-            <path
-              fillRule="evenodd"
-              d="M8 1a3.5 3.5 0 0 0-3.5 3.5V7A1.5 1.5 0 0 0 3 8.5v5A1.5 1.5 0 0 0 4.5 15h7a1.5 1.5 0 0 0 1.5-1.5v-5A1.5 1.5 0 0 0 11.5 7V4.5A3.5 3.5 0 0 0 8 1Zm2 6V4.5a2 2 0 1 0-4 0V7h4Z"
-              clipRule="evenodd"
-            />
-          </svg>
+          <Lock className="size-3.5 shrink-0" />
           <span>
             View only. Ask the diagram owner for an edit link to contribute.
           </span>
@@ -266,9 +257,10 @@ function CopyInstructionsButton({ value }: { value: string }) {
   }, [value]);
 
   return (
-    <button
+    <Button
+      className="w-full"
+      variant="secondary"
       onClick={copy}
-      className="w-full flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium cursor-pointer border border-border bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-[background-color] duration-150"
     >
       {copied ? (
         <>
@@ -281,7 +273,7 @@ function CopyInstructionsButton({ value }: { value: string }) {
           Copy edit instructions
         </>
       )}
-    </button>
+    </Button>
   );
 }
 

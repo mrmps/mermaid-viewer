@@ -87,9 +87,13 @@ export function VersionThumb({
   return (
     <div
       ref={containerRef}
-      className="w-full aspect-[16/10] rounded-lg overflow-hidden flex items-center justify-center bg-background"
+      className="linear-preview-surface flex aspect-[16/10] w-full items-center justify-center overflow-hidden rounded-md border"
     >
-      <div className="w-3 h-3 rounded-full animate-spin border-2 border-border border-t-muted-foreground" role="status" aria-label="Loading preview" />
+      <div
+        aria-label="Loading preview"
+        className="size-3 animate-spin rounded-full border-2 border-border border-t-muted-foreground"
+        role="status"
+      />
     </div>
   );
 }

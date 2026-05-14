@@ -1,6 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import {
+  addArtifactToBoard,
   addDiagramToBoard,
   addVersion,
   createBoard,
@@ -368,6 +369,8 @@ function createMcpServer(baseUrl: string) {
         pageId: z.string().describe("Page ID where the diagram was placed"),
         url: z.string().describe("Shareable board URL"),
         editUrl: z.string().describe("Editable board URL"),
+        itemUrl: z.string().describe("Shareable page URL for this board item"),
+        editItemUrl: z.string().describe("Editable page URL for this board item"),
         placement: z
           .object({
             x: z.number(),
@@ -439,6 +442,8 @@ function createMcpServer(baseUrl: string) {
           pageId: result.pageId,
           url: `${baseUrl}/b/${board.board.id}`,
           editUrl: `${baseUrl}/be/${board.board.editId}`,
+          itemUrl: `${baseUrl}/b/${board.board.id}/i/${result.itemId}`,
+          editItemUrl: `${baseUrl}/be/${board.board.editId}/i/${result.itemId}`,
           placement: {
             x: result.x,
             y: result.y,
@@ -453,6 +458,178 @@ function createMcpServer(baseUrl: string) {
       } catch {
         return {
           content: [{ type: "text" as const, text: "Error: Failed to add diagram to board. Please try again." }],
+          isError: true,
+        };
+      }
+    },
+  );
+
+  server.registerTool(
+    "publish_artifact_to_board",
+    {
+      title: "Publish Artifact To Board",
+      description:
+        "Publish a non-Mermaid artifact onto the shared board canvas. Use this for websites, slide decks, markdown documents, images, and text notes when an agent needs to tell a richer story than a diagram alone.",
+      inputSchema: {
+        boardId: z.string().describe("Board ID from create_board"),
+        boardSecret: z.string().describe("Board secret from create_board"),
+        kind: z
+          .enum(["website", "slides", "markdown", "image", "text"])
+          .describe("Artifact type to place on the board"),
+        title: z.string().optional().describe("Artifact card title"),
+        content: z.string().optional().describe("Artifact text, markdown, or summary"),
+        ui: z
+          .string()
+          .optional()
+          .describe(
+            "Sanitized HTML/CSS UI payload for website artifacts. Scripts, event handlers, unsafe URLs, external frames, and network fetches are stripped or blocked.",
+          ),
+        url: z.string().optional().describe("Website or external artifact URL"),
+        imageUrl: z.string().optional().describe("Image URL for image artifacts"),
+        accent: z.string().optional().describe("Optional accent color, such as #2563eb"),
+        author: z.string().optional().describe("Optional human or agent author label"),
+        slides: z
+          .array(
+            z.object({
+              eyebrow: z.string().optional(),
+              title: z.string(),
+              body: z.string().optional(),
+              bullets: z.array(z.string()).optional(),
+              accent: z.string().optional(),
+            }),
+          )
+          .optional()
+          .describe("Slide content for slides artifacts"),
+        pageId: z.string().optional().describe("Optional page ID"),
+        pageName: z
+          .string()
+          .optional()
+          .describe("Optional page name. Created if it does not exist."),
+        x: z
+          .number()
+          .optional()
+          .describe(
+            "Optional preferred board x coordinate. If it overlaps an existing card, merm.sh moves it to the nearest open spot.",
+          ),
+        y: z
+          .number()
+          .optional()
+          .describe(
+            "Optional preferred board y coordinate. If it overlaps an existing card, merm.sh moves it to the nearest open spot.",
+          ),
+        width: z
+          .number()
+          .optional()
+          .describe("Optional board card width in pixels. Minimum 320."),
+        height: z
+          .number()
+          .optional()
+          .describe("Optional board card height in pixels. Minimum 260."),
+      },
+      outputSchema: {
+        boardId: z.string().describe("Board ID"),
+        itemId: z.string().describe("Board card item ID"),
+        pageId: z.string().describe("Page ID where the artifact was placed"),
+        url: z.string().describe("Shareable board URL"),
+        editUrl: z.string().describe("Editable board URL"),
+        itemUrl: z.string().describe("Shareable page URL for the new artifact"),
+        editItemUrl: z.string().describe("Editable page URL for the new artifact"),
+        placement: z
+          .object({
+            x: z.number(),
+            y: z.number(),
+            width: z.number(),
+            height: z.number(),
+          })
+          .describe("Actual board card bounds after non-overlap placement."),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: true,
+      },
+    },
+    async ({
+      boardId,
+      boardSecret,
+      kind,
+      title,
+      content,
+      ui,
+      url,
+      imageUrl,
+      accent,
+      author,
+      slides,
+      pageId,
+      pageName,
+      x,
+      y,
+      width,
+      height,
+    }) => {
+      try {
+        const result = await withRetry(() =>
+          addArtifactToBoard({
+            boardId,
+            secret: boardSecret,
+            kind,
+            title,
+            content: kind === "website" ? ui ?? content : content,
+            url,
+            imageUrl,
+            accent,
+            author,
+            slides,
+            pageId,
+            pageName,
+            x,
+            y,
+            width,
+            height,
+          }),
+        );
+
+        if ("error" in result) {
+          const message =
+            result.error === "not_found" ? "Board not found" : "Invalid board secret";
+          return {
+            content: [{ type: "text" as const, text: `Error: ${message}` }],
+            isError: true,
+          };
+        }
+
+        const board = await withRetry(() => getBoard({ id: boardId }));
+        if (!board) {
+          return {
+            content: [{ type: "text" as const, text: "Error: Board not found" }],
+            isError: true,
+          };
+        }
+
+        const data = {
+          boardId,
+          itemId: result.itemId,
+          pageId: result.pageId,
+          url: `${baseUrl}/b/${board.board.id}`,
+          editUrl: `${baseUrl}/be/${board.board.editId}`,
+          itemUrl: `${baseUrl}/b/${board.board.id}/i/${result.itemId}`,
+          editItemUrl: `${baseUrl}/be/${board.board.editId}/i/${result.itemId}`,
+          placement: {
+            x: result.x,
+            y: result.y,
+            width: result.width,
+            height: result.height,
+          },
+        };
+        return {
+          structuredContent: data,
+          content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
+        };
+      } catch {
+        return {
+          content: [{ type: "text" as const, text: "Error: Failed to publish artifact to board. Please try again." }],
           isError: true,
         };
       }
@@ -603,9 +780,9 @@ function createMcpServer(baseUrl: string) {
   server.registerTool(
     "get_board",
     {
-      title: "Get Mermaid Board",
+      title: "Get Board",
       description:
-        "Fetch a board's pages and diagrams. Use this before adding related diagrams when the user has already shared a board ID or URL.",
+        "Fetch a board's pages and artifacts. Use this before adding related diagrams, websites, slides, markdown documents, images, or text when the user has already shared a board ID or URL.",
       inputSchema: {
         id: z.string().describe("Board ID"),
       },
@@ -619,12 +796,14 @@ function createMcpServer(baseUrl: string) {
             z.object({
               id: z.string(),
               name: z.string(),
-              diagrams: z.array(
+              artifacts: z.array(
                 z.object({
                   itemId: z.string(),
-                  diagramId: z.string(),
+                  kind: z.string(),
+                  diagramId: z.string().optional(),
                   title: z.string(),
-                  url: z.string(),
+                  url: z.string().optional(),
+                  editUrl: z.string().optional(),
                   content: z.string(),
                   x: z.number(),
                   y: z.number(),
@@ -634,7 +813,7 @@ function createMcpServer(baseUrl: string) {
               ),
             }),
           )
-          .describe("Board pages and diagram cards"),
+          .describe("Board pages and artifact cards"),
       },
       annotations: {
         readOnlyHint: true,
@@ -661,11 +840,15 @@ function createMcpServer(baseUrl: string) {
           pages: board.state.pages.map((page) => ({
             id: page.id,
             name: page.name,
-            diagrams: page.items.map((item) => ({
+            artifacts: page.items.map((item) => ({
               itemId: item.id,
+              kind: item.kind ?? "diagram",
               diagramId: item.diagramId,
               title: item.title,
-              url: `${baseUrl}${item.href}`,
+              url: item.href
+                ? `${baseUrl}${item.href}`
+                : item.url,
+              editUrl: item.editHref ? `${baseUrl}${item.editHref}` : undefined,
               content: item.content,
               x: item.x,
               y: item.y,

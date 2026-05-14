@@ -3,6 +3,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { getDiagramCount, getRecentDiagramsWithContent } from "@mermaid-viewer/db";
 import { DiagramsList } from "./diagrams-list";
+import { ArrowLeft } from "@/components/icons/mingcute";
 
 export const metadata: Metadata = {
   title: "All Diagrams — merm.sh",
@@ -22,22 +23,12 @@ export default async function DiagramsPage() {
         href="/"
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors duration-150 mb-8"
       >
-        <svg
-          className="w-3.5 h-3.5"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M19 12H5M12 19l-7-7 7-7" />
-        </svg>
+        <ArrowLeft className="w-3.5 h-3.5" />
         Back
       </Link>
 
       <div className="flex items-baseline justify-between mb-6">
-        <h1 className="text-[28px] font-semibold leading-[1.15] tracking-[-0.02em] text-foreground">
+        <h1 className="text-[28px] font-semibold leading-[1.15] text-foreground">
           All diagrams
         </h1>
         <span className="text-sm text-muted-foreground tabular-nums">

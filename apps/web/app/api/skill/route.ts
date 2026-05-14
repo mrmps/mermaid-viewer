@@ -24,7 +24,7 @@ For native tool integration, add to your MCP settings:
 }
 \`\`\`
 
-This gives you \`create_diagram\`, \`update_diagram\`, \`get_diagram\`, \`create_board\`, \`add_diagram_to_board\`, and \`get_board\` tools.
+This gives you \`create_diagram\`, \`update_diagram\`, \`get_diagram\`, \`create_board\`, \`add_diagram_to_board\`, \`publish_artifact_to_board\`, and \`get_board\` tools.
 
 When a user asks for several related diagrams, create a board first. Pass the returned \`boardId\` and \`boardSecret\` into \`create_diagram\`, or call \`add_diagram_to_board\` after creating each diagram. Send the board URL so the user can see the full workspace.
 
@@ -59,6 +59,16 @@ curl -X POST ${baseUrl}/api/b/:id \\
 \`\`\`
 
 You can also pass \`diagramId\` instead of \`content\` to add an existing diagram. Cards are placed in the nearest open slot by default.
+
+### Publish websites and slide decks
+
+\`\`\`bash
+curl -X POST ${baseUrl}/api/b/:id \\
+  -H "Content-Type: application/json" \\
+  -d '{"editId": "BOARD_EDIT_ID", "kind": "website", "title": "Launch page", "ui": "<main><style>body{margin:0}</style><h1>Launch</h1></main>"}'
+\`\`\`
+
+Website \`ui\` is sanitized and rendered in a locked-down iframe: scripts, event handlers, unsafe URLs, external frames, form submissions, and network fetches are blocked. For presentations, publish \`kind: "slides"\` with a \`slides\` array; every board card returns an \`itemUrl\` and can be opened on its own page.
 
 ### Update
 

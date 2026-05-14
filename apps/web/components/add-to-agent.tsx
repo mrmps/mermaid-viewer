@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Check, ChevronDown, Copy } from "lucide-react";
+import { Check, ChevronDown, Copy } from "@/components/icons/mingcute";
 import { baseUrl } from "@/lib/env";
 
 function getPrompt() {

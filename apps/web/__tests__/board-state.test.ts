@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   addBoardPage,
+  addArtifactToBoardDocument,
   addDiagramToBoardDocument,
   createDefaultBoardDocument,
   deleteBoardPage,
   findOpenBoardPosition,
   getActiveBoardPage,
+  moveBoardItemLayer,
   normalizeBoardDocument,
   removeBoardItem,
   renameBoardPage,
@@ -44,6 +46,48 @@ describe("board-state", () => {
     expect(page.items[0].title).toBe("First Updated");
     expect(page.items[0].content).toBe("graph TD; A-->C");
     expect(page.items[1].x).toBeGreaterThan(page.items[0].x);
+  });
+
+  it("keeps website UI payloads and multi-slide decks as board artifacts", () => {
+    const board = createDefaultBoardDocument();
+    const website = addArtifactToBoardDocument(board, {
+      kind: "website",
+      title: "Launch page",
+      content: "<main><h1>Launch</h1></main>",
+    });
+    const slides = addArtifactToBoardDocument(website.document, {
+      kind: "slides",
+      title: "Pitch",
+      slides: [
+        { title: "Thesis", body: "One sharp point" },
+        { title: "Proof", bullets: ["Fast", "Safe"] },
+      ],
+    });
+
+    const page = getActiveBoardPage(slides.document);
+    expect(page.items[0]).toMatchObject({
+      kind: "website",
+      title: "Launch page",
+      content: "<main><h1>Launch</h1></main>",
+    });
+    expect(page.items[1].slides).toHaveLength(2);
+    expect(page.items[1].slides?.[1].bullets).toEqual(["Fast", "Safe"]);
+  });
+
+  it("keeps generated image artifact data URLs", () => {
+    const result = addArtifactToBoardDocument(createDefaultBoardDocument(), {
+      kind: "image",
+      title: "Generated board",
+      content: "A bright strategy board",
+      imageUrl: "data:image/png;base64,abc123",
+    });
+
+    expect(getActiveBoardPage(result.document).items[0]).toMatchObject({
+      kind: "image",
+      title: "Generated board",
+      content: "A bright strategy board",
+      imageUrl: "data:image/png;base64,abc123",
+    });
   });
 
   it("moves automatic placements away from occupied rectangles", () => {
@@ -189,5 +233,40 @@ describe("board-state", () => {
     });
     expect(getActiveBoardPage(removed).items).toHaveLength(0);
     expect(getActiveBoardPage(added.document).items[0].title).toBe("Original");
+  });
+
+  it("moves items to the front and back of the page stack", () => {
+    const first = addDiagramToBoardDocument(createDefaultBoardDocument(), {
+      diagramId: "a",
+      title: "A",
+      content: "flowchart TD\n  A",
+    });
+    const second = addDiagramToBoardDocument(first.document, {
+      diagramId: "b",
+      title: "B",
+      content: "flowchart TD\n  B",
+    });
+    const third = addDiagramToBoardDocument(second.document, {
+      diagramId: "c",
+      title: "C",
+      content: "flowchart TD\n  C",
+    });
+    const itemIds = getActiveBoardPage(third.document).items.map(
+      (item) => item.id
+    );
+
+    const movedFront = moveBoardItemLayer(third.document, itemIds[0], "front");
+    expect(getActiveBoardPage(movedFront).items.map((item) => item.id)).toEqual([
+      itemIds[1],
+      itemIds[2],
+      itemIds[0],
+    ]);
+
+    const movedBack = moveBoardItemLayer(movedFront, itemIds[2], "back");
+    expect(getActiveBoardPage(movedBack).items.map((item) => item.id)).toEqual([
+      itemIds[2],
+      itemIds[1],
+      itemIds[0],
+    ]);
   });
 });

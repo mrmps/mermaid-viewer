@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { type HistoryEntry, useHistoryEntries } from "./history-tracker";
 import { formatRelative } from "@/lib/utils";
+import { ArrowRight, ChevronRight } from "@/components/icons/mingcute";
 
 type DiagramEntry = {
   id: string;
@@ -41,59 +42,39 @@ export function RecentDiagrams({
           even if client-side merge briefly changes which entries appear */}
       <div className="min-h-[7.5rem]">
         {diagrams.length > 0 ? (
-          <div className="flex flex-col divide-y divide-border">
+          <div className="flex flex-col">
             {diagrams.map((entry) => (
               <Link
-                key={entry.id}
+                className="linear-item-row group flex min-h-10 items-center gap-3 border-b px-1.5 py-2.5 last:border-b-0"
                 href={entry.href}
-                className="group flex items-center gap-3 py-2.5 hover:opacity-80 transition-opacity duration-150"
+                key={entry.id}
               >
-                <span className="text-sm font-medium text-foreground truncate min-w-0 flex-1">
+                <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">
                   {entry.title}
                 </span>
                 <span
-                  className="text-xs text-muted-foreground tabular-nums shrink-0"
+                  className="shrink-0 text-xs tabular-nums text-muted-foreground"
                   suppressHydrationWarning
                 >
                   {formatRelative(entry.timestamp)}
                 </span>
-                <svg
-                  className="w-3.5 h-3.5 text-muted-foreground shrink-0"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M9 18l6-6-6-6" />
-                </svg>
+                <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" />
               </Link>
             ))}
           </div>
         ) : (
           <p className="text-sm text-muted-foreground pt-2">
-            No diagrams yet — create one via the API.
+            No diagrams yet. Create one via the API.
           </p>
         )}
       </div>
       {hasMore && (
         <Link
+          className="mt-3 inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors duration-150 hover:text-foreground"
           href="/diagrams"
-          className="inline-flex items-center gap-1 mt-3 text-sm text-muted-foreground hover:text-foreground transition-colors duration-150"
         >
           View all diagrams
-          <svg
-            className="w-3.5 h-3.5"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M5 12h14M12 5l7 7-7 7" />
-          </svg>
+          <ArrowRight className="size-3.5" />
         </Link>
       )}
     </section>
@@ -138,4 +119,3 @@ function mergeRecentDiagrams(
     (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
   );
 }
-

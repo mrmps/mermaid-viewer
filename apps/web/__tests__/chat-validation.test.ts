@@ -1,5 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+const mockAddArtifactToBoard = vi.fn();
+const mockAddDiagramToBoard = vi.fn();
+const mockAddVersion = vi.fn();
+const mockCreateDiagram = vi.fn();
+const mockGetBoard = vi.fn();
+const mockGetDiagram = vi.fn();
+const mockUpdateBoard = vi.fn();
+
 // Mock env
 vi.mock("@/lib/env", () => ({
   environment: {
@@ -10,12 +18,13 @@ vi.mock("@/lib/env", () => ({
 
 // Mock DB module
 vi.mock("@mermaid-viewer/db", () => ({
-  addVersion: vi.fn().mockResolvedValue({ version: 2 }),
-  getDiagram: vi.fn().mockResolvedValue({
-    diagram: { id: "test", title: "Test", currentVersion: 1 },
-    currentVersion: { version: 1, content: "graph TD; A-->B", createdAt: new Date() },
-    allVersions: [{ version: 1, content: "graph TD; A-->B", createdAt: new Date() }],
-  }),
+  addArtifactToBoard: (...args: unknown[]) => mockAddArtifactToBoard(...args),
+  addDiagramToBoard: (...args: unknown[]) => mockAddDiagramToBoard(...args),
+  addVersion: (...args: unknown[]) => mockAddVersion(...args),
+  createDiagram: (...args: unknown[]) => mockCreateDiagram(...args),
+  getBoard: (...args: unknown[]) => mockGetBoard(...args),
+  getDiagram: (...args: unknown[]) => mockGetDiagram(...args),
+  updateBoard: (...args: unknown[]) => mockUpdateBoard(...args),
 }));
 
 // Mock OpenRouter
@@ -42,6 +51,42 @@ describe("POST /api/chat", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     vi.resetModules();
+    mockAddVersion.mockResolvedValue({ version: 2 });
+    mockGetDiagram.mockResolvedValue({
+      diagram: { id: "test", title: "Test", currentVersion: 1 },
+      currentVersion: { version: 1, content: "graph TD; A-->B", createdAt: new Date() },
+      allVersions: [{ version: 1, content: "graph TD; A-->B", createdAt: new Date() }],
+    });
+    mockGetBoard.mockResolvedValue({
+      board: {
+        id: "board",
+        editId: "board-edit",
+        title: "Board",
+        updatedAt: new Date(),
+      },
+      state: {
+        version: 1,
+        activePageId: "page",
+        pages: [
+          {
+            id: "page",
+            name: "Page 1",
+            items: [
+              {
+                id: "item",
+                kind: "markdown",
+                title: "Note",
+                content: "Existing note",
+                x: 0,
+                y: 0,
+                width: 640,
+                height: 420,
+              },
+            ],
+          },
+        ],
+      },
+    });
     const mod = await import("../app/api/chat/route");
     POST = mod.POST;
   });
@@ -147,6 +192,32 @@ describe("POST /api/chat", () => {
 
     const res = await POST(req);
     expect(res.status).toBe(401);
+  });
+
+  it("accepts canvas chat with board edit credentials and no diagram credentials", async () => {
+    const req = new Request("http://localhost/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messages: [
+          {
+            id: "msg-1",
+            role: "user",
+            parts: [{ type: "text", text: "Summarize this card" }],
+          },
+        ],
+        boardId: "board",
+        boardEditId: "board-edit",
+        boardItemId: "item",
+        boardItemKind: "markdown",
+        currentContent: "Existing note",
+      }),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    expect(await res.text()).toBe("ok");
+    expect(mockGetBoard).toHaveBeenCalledWith({ id: "board" });
   });
 
   it("returns 503 when OPENROUTER_API_KEY is not set", async () => {

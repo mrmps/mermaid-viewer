@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { ChevronRight } from "@/components/icons/mingcute";
 import { renderBeautiful, renderMermaid } from "@/lib/mermaid-client";
 import { formatRelative } from "@/lib/utils";
 import type { DiagramEntry } from "./diagrams-list";
@@ -77,52 +78,45 @@ export function DiagramCard({ entry }: { entry: DiagramEntry }) {
     <Link
       ref={sentinelRef}
       href={entry.href}
-      className="group flex items-center justify-center overflow-hidden rounded-2xl p-1 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] hover:shadow-[inset_0_0_0_1px_rgba(0,0,0,0.14)] dark:hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.16)] transition-shadow duration-150"
+      className="linear-item-card group flex min-h-0 flex-col overflow-hidden rounded-lg border"
     >
-      <div className="flex flex-col w-full rounded-xl border border-border/60 bg-white dark:bg-[hsl(0_0%_1.2%)] overflow-hidden">
-        {/* Preview area */}
-        <div className="relative flex items-center justify-center h-40 overflow-hidden bg-muted/30">
-          {loading && !error && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-4 h-4 rounded-full animate-spin border-2 border-border border-t-muted-foreground" />
-            </div>
-          )}
-          {error && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-xs text-muted-foreground">Parse error</span>
-            </div>
-          )}
-          <div
-            ref={containerRef}
-            className={`w-full h-full flex items-center justify-center overflow-hidden transition-opacity duration-150 ${loading ? "opacity-0" : "opacity-100"}`}
-          />
-        </div>
+      <div className="linear-preview-surface relative flex h-40 items-center justify-center overflow-hidden border-b">
+        {loading && !error && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="size-4 animate-spin rounded-full border-2 border-border border-t-muted-foreground" />
+          </div>
+        )}
+        {error && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-xs font-medium text-muted-foreground">
+              Parse error
+            </span>
+          </div>
+        )}
+        <div
+          ref={containerRef}
+          className={`flex size-full items-center justify-center overflow-hidden transition-opacity duration-150 ${loading ? "opacity-0" : "opacity-100"}`}
+        />
+      </div>
 
-        {/* Footer */}
-        <div className="flex flex-col justify-center px-4 pb-4 pt-0">
-          <span className="flex items-center justify-between gap-1">
-            <span className="text-sm font-medium text-foreground truncate flex-1">
-              {entry.title}
-            </span>
-            <span className="text-muted-foreground/0 group-hover:text-muted-foreground shrink-0 transition-colors duration-150">
-              <svg
-                className="w-4 h-4"
-                viewBox="0 0 24 24"
-                fill="none"
-                aria-hidden="true"
-              >
-                <path
-                  d="M8.793 5.293a1 1 0 0 1 1.414 0l6 6a1 1 0 0 1 0 1.414l-6 6a1 1 0 0 1-1.414-1.414L14.086 12 8.793 6.707a1 1 0 0 1 0-1.414Z"
-                  fill="currentColor"
-                />
-              </svg>
-            </span>
+      <div className="flex min-h-[4.5rem] flex-col justify-between gap-2 px-3 py-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">
+            {entry.title}
+          </span>
+          <span className="shrink-0 text-muted-foreground/0 transition-colors duration-150 group-hover:text-muted-foreground">
+            <ChevronRight className="size-4" />
+          </span>
+        </div>
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="linear-item-chip inline-flex shrink-0 rounded-md border px-1.5 py-0.5 text-[0.7rem] font-medium">
+            {diagramType(entry.content)}
           </span>
           <span
-            className="text-sm text-muted-foreground truncate"
+            className="min-w-0 truncate text-xs tabular-nums text-muted-foreground"
             suppressHydrationWarning
           >
-            {diagramType(entry.content)} &middot; {formatRelative(entry.timestamp)}
+            {formatRelative(entry.timestamp)}
           </span>
         </div>
       </div>
@@ -156,4 +150,3 @@ function diagramType(content: string): string {
   };
   return types[first] ?? "Diagram";
 }
-

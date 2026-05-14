@@ -20,19 +20,19 @@ export function VersionPanel(props: {
   onSelectVersion: (version: number) => void;
 }) {
   const {
-  versions,
-  currentVersion,
-  diagramId,
-  renderer = "beautiful",
-  theme,
-  look = "classic",
-  onSelectVersion,
+    versions,
+    currentVersion,
+    diagramId,
+    renderer = "beautiful",
+    theme,
+    look = "classic",
+    onSelectVersion,
   } = props;
 
   return (
-    <div className="hidden md:flex w-52 shrink-0 flex-col overflow-y-auto bg-background border-r border-border">
-      <div className="sticky top-0 z-10 px-3 py-2.5 bg-background border-b border-border/50">
-        <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+    <div className="hidden w-56 shrink-0 flex-col overflow-y-auto border-r border-border bg-background md:flex">
+      <div className="sticky top-0 z-10 border-b border-border/60 bg-background px-3 py-2.5">
+        <span className="text-[10px] font-semibold uppercase text-muted-foreground">
           Versions
         </span>
       </div>
@@ -41,20 +41,31 @@ export function VersionPanel(props: {
           const active = v.version === currentVersion;
           return (
             <button
+              className={`linear-item-card group overflow-hidden rounded-lg border text-left ${
+                active ? "linear-item-row-active" : ""
+              }`}
               key={v.version}
               onClick={() => onSelectVersion(v.version)}
-              className={`group text-left rounded-xl overflow-hidden transition-[background-color,box-shadow] duration-150 cursor-pointer ${active ? "bg-accent ring-2 ring-accent" : "bg-secondary ring-1 ring-border/50"}`}
+              type="button"
             >
-              <div className="p-1.5">
-                <VersionThumb content={v.content} id={`${diagramId}-${v.version}`} renderer={renderer} theme={theme} look={look} />
+              <div className="p-1.5 pb-0">
+                <VersionThumb
+                  content={v.content}
+                  id={`${diagramId}-${v.version}`}
+                  look={look}
+                  renderer={renderer}
+                  theme={theme}
+                />
               </div>
-              <div className="px-2.5 pb-2 flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2 px-2.5 py-2">
                 <span
-                  className={`text-xs font-medium ${active ? "text-primary" : "text-secondary-foreground"}`}
+                  className={`text-xs font-semibold ${
+                    active ? "text-foreground" : "text-muted-foreground"
+                  }`}
                 >
                   v{v.version}
                 </span>
-                <span className="text-[10px] text-muted-foreground tabular-nums">
+                <span className="truncate text-[10px] tabular-nums text-muted-foreground">
                   {formatRelative(v.createdAt)}
                 </span>
               </div>
@@ -65,4 +76,3 @@ export function VersionPanel(props: {
     </div>
   );
 }
-

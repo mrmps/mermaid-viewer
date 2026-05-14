@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import * as Tooltip from "@radix-ui/react-tooltip";
-import { LayoutDashboard } from "lucide-react";
+import { LayoutDashboard } from "@/components/icons/mingcute";
 import { Button } from "@/components/ui/button";
 
 export function BoardButton({

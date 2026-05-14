@@ -1,9 +1,34 @@
-import { pgTable, text, integer, timestamp, serial, index, jsonb } from "drizzle-orm/pg-core";
+import {
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
+
+export type StoredBoardItemKind =
+  | "diagram"
+  | "website"
+  | "slides"
+  | "markdown"
+  | "image"
+  | "text"
+  | "drawing";
+
+export type StoredBoardSlide = {
+  eyebrow?: string;
+  title: string;
+  body?: string;
+  bullets?: string[];
+  accent?: string;
+};
 
 export type StoredBoardItem = {
   id: string;
-  kind?: "diagram";
-  diagramId: string;
+  kind?: StoredBoardItemKind;
+  diagramId?: string;
   diagramEditId?: string;
   title?: string;
   content?: string;
@@ -17,6 +42,11 @@ export type StoredBoardItem = {
   renderer?: "beautiful" | "mermaid";
   theme?: string;
   look?: "classic" | "handDrawn" | "neo";
+  url?: string;
+  imageUrl?: string;
+  accent?: string;
+  author?: string;
+  slides?: StoredBoardSlide[];
   updatedAt?: string;
 };
 

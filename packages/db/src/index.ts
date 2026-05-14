@@ -1,10 +1,17 @@
 export { db } from "./client";
 export { boards, diagrams, versions } from "./schema";
-export type { StoredBoardItem, StoredBoardPage, StoredBoardState } from "./schema";
+export type {
+  StoredBoardItem,
+  StoredBoardItemKind,
+  StoredBoardPage,
+  StoredBoardSlide,
+  StoredBoardState,
+} from "./schema";
 export {
   createDiagram,
   createBoard,
   addVersion,
+  addArtifactToBoard,
   addDiagramToBoard,
   updateTitle,
   updateBoard,

@@ -2,10 +2,9 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowUp, ArrowUpRight, Loader2, Workflow } from "lucide-react";
+import { ArrowUp, ArrowUpRight, Loader2, Workflow } from "@/components/icons/mingcute";
 import { cn } from "@/lib/utils";
-import { Kbd } from "@/components/ui/kbd";
-import { useModifierKeyLabel } from "@/lib/use-modifier-key-label";
+import { Kbd, KbdGroup } from "@/components/ui/kbd";
 
 export const INITIAL_CHAT_KEY = "mermaid-viewer-initial-chat";
 
@@ -114,7 +113,6 @@ Show a healthier path where defaults, meal prep, calendar blocks, and routines p
 ];
 
 export function CreateChat() {
-  const modifierKeyLabel = useModifierKeyLabel();
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -155,14 +153,38 @@ export function CreateChat() {
     }
   }, [input, loading, router]);
 
+  const insertLineBreak = useCallback(() => {
+    const textarea = textareaRef.current;
+    const start = textarea?.selectionStart ?? input.length;
+    const end = textarea?.selectionEnd ?? input.length;
+    const nextInput = `${input.slice(0, start)}\n${input.slice(end)}`;
+
+    setInput(nextInput);
+    requestAnimationFrame(() => {
+      const nextTextarea = textareaRef.current;
+      if (!nextTextarea) return;
+
+      const caret = start + 1;
+      nextTextarea.setSelectionRange(caret, caret);
+    });
+  }, [input]);
+
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+      if (e.key !== "Enter" || e.nativeEvent.isComposing) return;
+
+      if (e.metaKey || e.ctrlKey) {
         e.preventDefault();
-        handleSubmit();
+        insertLineBreak();
+        return;
       }
+
+      if (e.shiftKey || e.altKey) return;
+
+      e.preventDefault();
+      handleSubmit();
     },
-    [handleSubmit]
+    [handleSubmit, insertLineBreak]
   );
 
   useEffect(() => {
@@ -224,10 +246,12 @@ export function CreateChat() {
               <Workflow className="size-3.5" />
               Mermaid
             </span>
-            <span className="diagram-chatbar-pill hidden select-none sm:inline-flex">
-              <Kbd>{modifierKeyLabel}</Kbd>
+            <KbdGroup
+              aria-label="Enter to create diagram"
+              className="diagram-chatbar-pill hidden select-none sm:inline-flex"
+            >
               <Kbd>↵</Kbd>
-            </span>
+            </KbdGroup>
           </div>
 
           <button

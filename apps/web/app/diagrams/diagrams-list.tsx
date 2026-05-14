@@ -7,6 +7,7 @@ import {
   type HistoryEntry,
   useHistoryEntries,
 } from "@/components/history-tracker";
+import { ChevronRight, Search, X } from "@/components/icons/mingcute";
 import { formatRelative } from "@/lib/utils";
 import { DiagramCard } from "./diagram-card";
 
@@ -61,85 +62,65 @@ export function DiagramsList({
 
   return (
     <div>
-      {/* Search */}
       <div className="relative mb-5">
-        <svg
-          className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="11" cy="11" r="8" />
-          <path d="m21 21-4.3-4.3" />
-        </svg>
+        <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <input
-          type="text"
-          placeholder="Search diagrams..."
-          value={search}
+          className="h-10 w-full rounded-lg border border-border bg-background pl-10 pr-10 text-sm font-medium text-foreground outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-muted-foreground focus:border-ring/40 focus:ring-3 focus:ring-ring/15"
           onChange={(e) => setSearch(e.target.value || null)}
-          className="w-full h-12 pl-12 pr-4 rounded-xl border border-border bg-background text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-ring/40 transition-[border-color,box-shadow] duration-150"
+          placeholder="Search diagrams"
+          type="text"
+          value={search}
         />
         {search && (
           <button
-            onClick={() => setSearch(null)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
             aria-label="Clear search"
+            className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            onClick={() => setSearch(null)}
+            type="button"
           >
-            <svg
-              className="w-4 h-4"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M18 6 6 18M6 6l12 12" />
-            </svg>
+            <X className="size-4" />
           </button>
         )}
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 mb-6 p-1 rounded-lg bg-secondary/50 border border-border/50 w-fit">
+      <div className="mb-6 flex w-fit gap-1 rounded-lg border border-border/70 bg-muted/45 p-1">
         <button
-          onClick={() => setTab("viewer")}
-          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-150 cursor-pointer ${
+          className={`rounded-md px-3 py-1.5 text-sm font-medium transition-[background-color,color,box-shadow] duration-150 ${
             tab === "viewer"
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground"
           }`}
+          onClick={() => setTab("viewer")}
+          type="button"
         >
           Viewer
         </button>
         <button
-          onClick={() => setTab("list")}
-          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-150 cursor-pointer ${
+          className={`rounded-md px-3 py-1.5 text-sm font-medium transition-[background-color,color,box-shadow] duration-150 ${
             tab === "list"
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground"
           }`}
+          onClick={() => setTab("list")}
+          type="button"
         >
           List
         </button>
         <button
-          onClick={() => setTab("kanban")}
-          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-150 cursor-pointer ${
+          className={`rounded-md px-3 py-1.5 text-sm font-medium transition-[background-color,color,box-shadow] duration-150 ${
             tab === "kanban"
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground"
           }`}
+          onClick={() => setTab("kanban")}
+          type="button"
         >
           Kanban
         </button>
       </div>
 
-      {/* Result count when searching */}
       {search && (
-        <p className="text-xs text-muted-foreground mb-3">
+        <p className="mb-3 text-xs tabular-nums text-muted-foreground">
           {filtered.length} result{filtered.length !== 1 ? "s" : ""}
         </p>
       )}
@@ -161,33 +142,26 @@ export function DiagramsList({
 
 function ListView({ diagrams }: { diagrams: DiagramEntry[] }) {
   return (
-    <div className="flex flex-col divide-y divide-border">
+    <div className="flex flex-col">
       {diagrams.map((entry) => (
         <Link
-          key={entry.id}
+          className="linear-item-row group flex min-h-12 items-center gap-3 border-b px-2 py-2.5 last:border-b-0"
           href={entry.href}
-          className="group flex items-center gap-3 py-3 hover:opacity-80 transition-opacity duration-150"
+          key={entry.id}
         >
-          <span className="text-sm font-medium text-foreground truncate min-w-0 flex-1">
+          <span className="linear-item-chip hidden shrink-0 rounded-md border px-1.5 py-0.5 text-[0.7rem] font-medium sm:inline-flex">
+            {getDiagramType(entry.content)}
+          </span>
+          <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">
             {entry.title}
           </span>
           <span
-            className="text-xs text-muted-foreground tabular-nums shrink-0"
+            className="shrink-0 text-xs tabular-nums text-muted-foreground"
             suppressHydrationWarning
           >
             {formatRelative(entry.timestamp)}
           </span>
-          <svg
-            className="w-3.5 h-3.5 text-muted-foreground shrink-0"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M9 18l6-6-6-6" />
-          </svg>
+          <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" />
         </Link>
       ))}
     </div>
@@ -196,7 +170,7 @@ function ListView({ diagrams }: { diagrams: DiagramEntry[] }) {
 
 function ViewerGrid({ diagrams }: { diagrams: DiagramEntry[] }) {
   return (
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid gap-4 sm:grid-cols-2">
       {diagrams.map((entry) => (
         <DiagramCard key={entry.id} entry={entry} />
       ))}
@@ -245,32 +219,32 @@ function KanbanBoard({ diagrams }: { diagrams: DiagramEntry[] }) {
   }, [diagrams]);
 
   return (
-    <div className="flex gap-4 overflow-x-auto pb-4 -mx-6 px-6">
+    <div className="-mx-6 flex gap-4 overflow-x-auto px-6 pb-4">
       {columns.map(([type, items]) => (
         <div
+          className="flex w-64 shrink-0 flex-col rounded-lg border border-border bg-muted/25"
           key={type}
-          className="flex flex-col w-64 shrink-0 rounded-xl border border-border bg-muted/30"
         >
-          <div className="flex items-center justify-between px-3 py-2.5 border-b border-border/50">
-            <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          <div className="flex items-center justify-between border-b border-border/60 px-3 py-2.5">
+            <span className="text-xs font-semibold uppercase text-muted-foreground">
               {type}
             </span>
-            <span className="text-[10px] tabular-nums px-1.5 py-0.5 rounded-md bg-secondary text-secondary-foreground font-medium">
+            <span className="linear-item-chip rounded-md border px-1.5 py-0.5 text-[10px] font-medium tabular-nums">
               {items.length}
             </span>
           </div>
-          <div className="flex flex-col gap-2 p-2 overflow-y-auto max-h-[60vh]">
+          <div className="flex max-h-[60vh] flex-col gap-2 overflow-y-auto p-2">
             {items.map((entry) => (
               <Link
-                key={entry.id}
+                className="linear-item-row group flex flex-col gap-1.5 rounded-md border bg-background/70 p-3"
                 href={entry.href}
-                className="group flex flex-col gap-1.5 p-3 rounded-lg bg-background border border-border/60 hover:border-border hover:shadow-sm transition-all duration-150"
+                key={entry.id}
               >
-                <span className="text-sm font-medium text-foreground truncate">
+                <span className="truncate text-sm font-semibold text-foreground">
                   {entry.title}
                 </span>
                 <span
-                  className="text-[11px] text-muted-foreground"
+                  className="text-[11px] tabular-nums text-muted-foreground"
                   suppressHydrationWarning
                 >
                   {formatRelative(entry.timestamp)}
@@ -329,4 +303,3 @@ function mergeDiagrams(
     (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
   );
 }
-

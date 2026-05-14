@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "tldraw/tldraw.css";
 
 @source "../node_modules/streamdown/dist/*.js";
 @source "../node_modules/@streamdown/code/dist/*.js";
@@ -49,6 +50,7 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --color-destructive-foreground: var(--destructive-foreground);
 }
 
 /* ── Light mode ── */
@@ -72,7 +74,7 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.90 0.01 260);
   --input: oklch(0.90 0.01 260);
-  --ring: oklch(0.55 0.15 260);
+  --ring: oklch(0.58 0.10 230);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.714);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -93,10 +95,10 @@
   --board-floating-shadow: rgb(24 24 27 / 0.13);
   --board-card-ring: rgb(24 24 27 / 0.10);
   --board-card-shadow: rgb(24 24 27 / 0.12);
-  --board-purple: rgb(100 48 212);
-  --board-purple-soft: rgb(114 62 224 / 0.08);
-  --board-purple-line: rgb(100 48 212 / 0.55);
-  --board-purple-shadow: rgb(75 34 170 / 0.24);
+  --board-accent: rgb(31 99 151);
+  --board-accent-soft: rgb(31 99 151 / 0.08);
+  --board-accent-line: rgb(31 99 151 / 0.52);
+  --board-accent-shadow: rgb(15 73 118 / 0.20);
   --diagram-chat-sidebar-bg: rgb(255 255 255);
   --diagram-chat-page-bg: rgb(243 243 244);
   --diagram-chat-card-bg: rgb(247 247 248);
@@ -106,43 +108,44 @@
   --diagram-chat-primary-active: rgb(17 122 53);
   --diagram-chat-primary-fg: rgb(255 255 255);
   --diagram-chat-primary-ring: rgb(22 163 74 / 0.32);
+  --destructive-foreground: var(--color-red-700);
 }
 
 /* ── Dark mode ── */
-/* Cool-tinted dark palette (hue 265 · blue-violet) with proper elevation */
+/* Graphite dark palette with restrained blue accents and proper elevation */
 .dark {
   color-scheme: dark;
-  --background: oklch(0.14 0.005 265);
-  --foreground: oklch(0.93 0.006 265);
-  --card: oklch(0.18 0.006 265);
-  --card-foreground: oklch(0.93 0.006 265);
-  --popover: oklch(0.18 0.006 265);
-  --popover-foreground: oklch(0.93 0.006 265);
-  --primary: oklch(0.60 0.16 265);
-  --primary-foreground: oklch(0.98 0.005 265);
-  --secondary: oklch(0.20 0.007 265);
-  --secondary-foreground: oklch(0.80 0.01 265);
-  --muted: oklch(0.22 0.007 265);
-  --muted-foreground: oklch(0.64 0.012 265);
-  --accent: oklch(0.24 0.009 265);
-  --accent-foreground: oklch(0.93 0.006 265);
+  --background: oklch(0.14 0.004 245);
+  --foreground: oklch(0.93 0.005 245);
+  --card: oklch(0.18 0.005 245);
+  --card-foreground: oklch(0.93 0.005 245);
+  --popover: oklch(0.18 0.005 245);
+  --popover-foreground: oklch(0.93 0.005 245);
+  --primary: oklch(0.66 0.10 230);
+  --primary-foreground: oklch(0.98 0.005 245);
+  --secondary: oklch(0.20 0.006 245);
+  --secondary-foreground: oklch(0.80 0.01 245);
+  --muted: oklch(0.22 0.006 245);
+  --muted-foreground: oklch(0.64 0.010 245);
+  --accent: oklch(0.24 0.007 245);
+  --accent-foreground: oklch(0.93 0.005 245);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(0.27 0.01 265);
-  --input: oklch(0.24 0.007 265);
-  --ring: oklch(0.55 0.12 265);
+  --border: oklch(0.27 0.008 245);
+  --input: oklch(0.24 0.006 245);
+  --ring: oklch(0.62 0.10 230);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.16 0.005 265);
-  --sidebar-foreground: oklch(0.93 0.006 265);
-  --sidebar-primary: oklch(0.60 0.16 265);
-  --sidebar-primary-foreground: oklch(0.98 0.005 265);
-  --sidebar-accent: oklch(0.24 0.009 265);
-  --sidebar-accent-foreground: oklch(0.93 0.006 265);
-  --sidebar-border: oklch(0.27 0.01 265);
-  --sidebar-ring: oklch(0.55 0.12 265);
+  --sidebar: oklch(0.16 0.004 245);
+  --sidebar-foreground: oklch(0.93 0.005 245);
+  --sidebar-primary: oklch(0.66 0.10 230);
+  --sidebar-primary-foreground: oklch(0.98 0.005 245);
+  --sidebar-accent: oklch(0.24 0.007 245);
+  --sidebar-accent-foreground: oklch(0.93 0.005 245);
+  --sidebar-border: oklch(0.27 0.008 245);
+  --sidebar-ring: oklch(0.62 0.10 230);
   --board-canvas: rgb(18 18 19);
   --board-dot: rgb(244 244 245 / 0.11);
   --board-floating: rgb(28 28 30 / 0.95);
@@ -150,10 +153,10 @@
   --board-floating-shadow: rgb(0 0 0 / 0.34);
   --board-card-ring: rgb(244 244 245 / 0.12);
   --board-card-shadow: rgb(0 0 0 / 0.32);
-  --board-purple: rgb(138 91 255);
-  --board-purple-soft: rgb(138 91 255 / 0.10);
-  --board-purple-line: rgb(158 121 255 / 0.62);
-  --board-purple-shadow: rgb(118 75 255 / 0.28);
+  --board-accent: rgb(96 165 203);
+  --board-accent-soft: rgb(96 165 203 / 0.10);
+  --board-accent-line: rgb(96 165 203 / 0.58);
+  --board-accent-shadow: rgb(45 118 160 / 0.24);
   --diagram-chat-sidebar-bg: rgb(28 28 30 / 0.98);
   --diagram-chat-page-bg: rgb(18 18 19);
   --diagram-chat-card-bg: rgb(38 38 42);
@@ -163,6 +166,7 @@
   --diagram-chat-primary-active: rgb(21 128 61);
   --diagram-chat-primary-fg: rgb(255 255 255);
   --diagram-chat-primary-ring: rgb(34 197 94 / 0.3);
+  --destructive-foreground: var(--color-red-400);
 }
 
 @supports (color: color(display-p3 1 1 1)) {
@@ -183,7 +187,7 @@
     --accent-foreground: color(display-p3 0.12 0.11 0.16);
     --border: color(display-p3 0.86 0.852 0.895);
     --input: color(display-p3 0.86 0.852 0.895);
-    --ring: color(display-p3 0.42 0.19 0.88);
+    --ring: color(display-p3 0.12 0.38 0.58);
     --board-canvas: color(display-p3 0.982 0.982 0.986);
     --board-dot: color(display-p3 0.12 0.12 0.14 / 0.10);
     --board-floating: color(display-p3 0.998 0.997 1 / 0.96);
@@ -191,10 +195,10 @@
     --board-floating-shadow: color(display-p3 0.08 0.08 0.09 / 0.13);
     --board-card-ring: color(display-p3 0.12 0.12 0.14 / 0.10);
     --board-card-shadow: color(display-p3 0.08 0.08 0.09 / 0.12);
-    --board-purple: color(display-p3 0.38 0.13 0.86);
-    --board-purple-soft: color(display-p3 0.45 0.18 0.92 / 0.085);
-    --board-purple-line: color(display-p3 0.38 0.13 0.86 / 0.58);
-    --board-purple-shadow: color(display-p3 0.25 0.08 0.72 / 0.26);
+    --board-accent: color(display-p3 0.12 0.38 0.58);
+    --board-accent-soft: color(display-p3 0.12 0.38 0.58 / 0.085);
+    --board-accent-line: color(display-p3 0.12 0.38 0.58 / 0.54);
+    --board-accent-shadow: color(display-p3 0.08 0.28 0.46 / 0.22);
     --diagram-chat-sidebar-bg: color(display-p3 1 1 1);
     --diagram-chat-page-bg: color(display-p3 0.953 0.953 0.957);
     --diagram-chat-card-bg: color(display-p3 0.972 0.972 0.978);
@@ -206,23 +210,23 @@
   }
 
   .dark {
-    --background: color(display-p3 0.082 0.076 0.105);
+    --background: color(display-p3 0.078 0.078 0.084);
     --foreground: color(display-p3 0.92 0.92 0.95);
-    --card: color(display-p3 0.112 0.104 0.138);
+    --card: color(display-p3 0.108 0.108 0.116);
     --card-foreground: color(display-p3 0.92 0.92 0.95);
-    --popover: color(display-p3 0.112 0.104 0.138);
+    --popover: color(display-p3 0.108 0.108 0.116);
     --popover-foreground: color(display-p3 0.92 0.92 0.95);
-    --primary: color(display-p3 0.50 0.24 0.96);
+    --primary: color(display-p3 0.38 0.65 0.78);
     --primary-foreground: color(display-p3 0.99 0.99 1);
-    --secondary: color(display-p3 0.14 0.13 0.17);
+    --secondary: color(display-p3 0.135 0.135 0.146);
     --secondary-foreground: color(display-p3 0.79 0.78 0.84);
-    --muted: color(display-p3 0.16 0.148 0.19);
-    --muted-foreground: color(display-p3 0.61 0.59 0.68);
-    --accent: color(display-p3 0.18 0.16 0.23);
+    --muted: color(display-p3 0.154 0.154 0.166);
+    --muted-foreground: color(display-p3 0.62 0.62 0.65);
+    --accent: color(display-p3 0.18 0.18 0.192);
     --accent-foreground: color(display-p3 0.92 0.92 0.95);
-    --border: color(display-p3 0.24 0.22 0.3);
-    --input: color(display-p3 0.20 0.18 0.25);
-    --ring: color(display-p3 0.52 0.28 0.98);
+    --border: color(display-p3 0.235 0.235 0.255);
+    --input: color(display-p3 0.20 0.20 0.218);
+    --ring: color(display-p3 0.38 0.65 0.78);
     --board-canvas: color(display-p3 0.07 0.07 0.075);
     --board-dot: color(display-p3 0.92 0.92 0.95 / 0.11);
     --board-floating: color(display-p3 0.11 0.11 0.122 / 0.95);
@@ -230,10 +234,10 @@
     --board-floating-shadow: color(display-p3 0 0 0 / 0.34);
     --board-card-ring: color(display-p3 0.92 0.92 0.95 / 0.12);
     --board-card-shadow: color(display-p3 0 0 0 / 0.32);
-    --board-purple: color(display-p3 0.50 0.27 1);
-    --board-purple-soft: color(display-p3 0.50 0.27 1 / 0.12);
-    --board-purple-line: color(display-p3 0.60 0.42 1 / 0.66);
-    --board-purple-shadow: color(display-p3 0.43 0.22 1 / 0.3);
+    --board-accent: color(display-p3 0.38 0.65 0.78);
+    --board-accent-soft: color(display-p3 0.38 0.65 0.78 / 0.12);
+    --board-accent-line: color(display-p3 0.38 0.65 0.78 / 0.62);
+    --board-accent-shadow: color(display-p3 0.20 0.46 0.62 / 0.28);
     --diagram-chat-sidebar-bg: color(display-p3 0.11 0.11 0.122 / 0.98);
     --diagram-chat-page-bg: color(display-p3 0.07 0.07 0.075);
     --diagram-chat-card-bg: color(display-p3 0.15 0.15 0.165);
@@ -279,6 +283,25 @@
     background-size: 24px 24px;
   }
 
+  .board-tldraw-canvas,
+  .board-tldraw-canvas .tl-container,
+  .board-tldraw-canvas .tl-background {
+    background-color: var(--board-canvas);
+  }
+
+  .board-tldraw-canvas .tl-background {
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      var(--board-dot) 1px,
+      transparent 0
+    );
+    background-size: 24px 24px;
+  }
+
+  .board-tldraw-artifact {
+    overflow: visible;
+  }
+
   .board-floating-surface {
     background: var(--board-floating);
     border-color: transparent;
@@ -286,6 +309,75 @@
       0 0 0 1px var(--board-floating-border),
       0 14px 34px -26px var(--board-floating-shadow),
       0 1px 2px rgb(0 0 0 / 0.08);
+  }
+
+  .board-primitive-dock {
+    max-width: min(52rem, calc(100vw - 1.5rem));
+    background: var(--board-floating);
+    border-color: transparent;
+    box-shadow:
+      0 0 0 1px var(--board-floating-border),
+      0 18px 42px -30px var(--board-floating-shadow),
+      0 1px 2px rgb(0 0 0 / 0.08);
+    scrollbar-width: none;
+  }
+
+  .board-primitive-dock::-webkit-scrollbar {
+    display: none;
+  }
+
+  .board-primitive-button {
+    color: color-mix(in oklab, var(--foreground) 68%, transparent);
+    transition:
+      background-color 120ms ease-out,
+      color 120ms ease-out,
+      box-shadow 120ms ease-out,
+      transform 120ms ease-out;
+  }
+
+  .board-primitive-button:hover {
+    background: color-mix(in oklab, var(--foreground) 7%, transparent);
+    color: var(--foreground);
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--foreground) 8%, transparent);
+  }
+
+  .board-primitive-button:active {
+    transform: scale(0.97);
+  }
+
+  .board-primitive-mini,
+  .board-empty-primitive {
+    border-color: color-mix(in oklab, var(--foreground) 10%, transparent);
+    background: color-mix(in oklab, var(--background) 84%, transparent);
+    color: color-mix(in oklab, var(--foreground) 70%, transparent);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+    transition:
+      background-color 120ms ease-out,
+      border-color 120ms ease-out,
+      color 120ms ease-out,
+      box-shadow 120ms ease-out,
+      transform 120ms ease-out;
+  }
+
+  .board-primitive-mini:hover,
+  .board-empty-primitive:hover {
+    border-color: color-mix(in oklab, var(--board-accent) 30%, transparent);
+    background: color-mix(in oklab, var(--board-accent) 7%, var(--background));
+    color: var(--foreground);
+    box-shadow:
+      0 0 0 1px color-mix(in oklab, var(--board-accent) 14%, transparent),
+      0 14px 30px -26px var(--board-accent-shadow);
+  }
+
+  .board-primitive-mini:active,
+  .board-empty-primitive:active {
+    transform: scale(0.985);
+  }
+
+  .board-primitive-mini > span:first-child,
+  .board-empty-primitive > span:first-child {
+    background: color-mix(in oklab, var(--foreground) 6%, transparent);
+    color: color-mix(in oklab, var(--foreground) 72%, transparent);
   }
 
   .board-mobile-scroll {
@@ -298,6 +390,15 @@
   }
 
   .board-notion-sidebar {
+    background: rgb(255 255 255 / 0.98);
+    color: rgb(24 24 27);
+    border-color: rgb(24 24 27 / 0.10);
+    box-shadow:
+      18px 0 48px -34px rgb(24 24 27 / 0.24),
+      inset -1px 0 0 rgb(24 24 27 / 0.04);
+  }
+
+  .dark .board-notion-sidebar {
     background: rgb(32 32 32 / 0.98);
     color: rgb(244 244 243);
     border-color: rgb(255 255 255 / 0.09);
@@ -307,50 +408,257 @@
   }
 
   .board-notion-row {
-    color: rgb(191 191 187);
+    color: rgb(82 82 91);
+    transition:
+      background-color 120ms ease-out,
+      color 120ms ease-out,
+      box-shadow 120ms ease-out;
   }
 
   .board-notion-row:hover {
+    background: rgb(24 24 27 / 0.055);
+    color: rgb(24 24 27);
+  }
+
+  .board-notion-row-active {
+    background: rgb(24 24 27 / 0.072);
+    color: rgb(24 24 27);
+    box-shadow: inset 2px 0 0 var(--board-accent);
+  }
+
+  .board-notion-section {
+    color: rgb(113 113 122);
+  }
+
+  .board-notion-muted {
+    color: rgb(113 113 122);
+  }
+
+  .board-notion-title {
+    color: rgb(24 24 27);
+  }
+
+  .board-notion-title:hover {
+    color: rgb(63 63 70);
+  }
+
+  .board-notion-title-icon {
+    color: rgb(113 113 122);
+  }
+
+  .board-notion-input {
+    border-color: rgb(24 24 27 / 0.12);
+    background: rgb(24 24 27 / 0.045);
+    color: rgb(24 24 27);
+  }
+
+  .board-notion-input::placeholder {
+    color: rgb(113 113 122 / 0.72);
+  }
+
+  .board-notion-input:focus {
+    border-color: rgb(24 24 27 / 0.22);
+    box-shadow: 0 0 0 3px rgb(24 24 27 / 0.08);
+  }
+
+  .board-notion-close {
+    color: rgb(82 82 91);
+  }
+
+  .board-notion-close:hover {
+    background: rgb(24 24 27 / 0.06);
+    color: rgb(24 24 27);
+  }
+
+  .board-notion-card {
+    border-color: rgb(24 24 27 / 0.10);
+    background: rgb(24 24 27 / 0.035);
+  }
+
+  .board-notion-card-title {
+    color: rgb(24 24 27);
+  }
+
+  .board-notion-danger {
+    color: rgb(220 38 38);
+  }
+
+  .board-notion-danger:hover {
+    background: rgb(220 38 38 / 0.10);
+  }
+
+  .board-notion-error {
+    background: rgb(220 38 38 / 0.10);
+    color: rgb(185 28 28);
+  }
+
+  .board-notion-footer {
+    border-color: rgb(24 24 27 / 0.10);
+    background: rgb(255 255 255 / 0.95);
+  }
+
+  .board-notion-footer-card {
+    border-color: rgb(24 24 27 / 0.10);
+    background: rgb(24 24 27 / 0.035);
+  }
+
+  .board-notion-footer-title {
+    color: rgb(82 82 91);
+  }
+
+  .board-notion-footer-text {
+    color: rgb(113 113 122);
+  }
+
+  .dark .board-notion-row {
+    color: rgb(191 191 187);
+  }
+
+  .dark .board-notion-row:hover {
     background: rgb(255 255 255 / 0.075);
     color: rgb(244 244 243);
   }
 
-  .board-notion-row-active {
+  .dark .board-notion-row-active {
     background: rgb(255 255 255 / 0.105);
     color: rgb(255 255 255);
+    box-shadow: inset 2px 0 0 var(--board-accent);
   }
 
-  .board-notion-section {
+  .dark .board-notion-section {
     color: rgb(165 165 160);
   }
 
-  .board-notion-muted {
+  .dark .board-notion-muted {
     color: rgb(170 170 166);
   }
 
-  .board-notion-avatar {
-    background: rgb(255 255 255 / 0.095);
-    color: rgb(245 245 244);
+  .dark .board-notion-title {
+    color: rgb(255 255 255);
+  }
+
+  .dark .board-notion-title:hover {
+    color: rgb(255 255 255 / 0.85);
+  }
+
+  .dark .board-notion-title-icon {
+    color: rgb(255 255 255 / 0.45);
+  }
+
+  .dark .board-notion-input {
+    border-color: rgb(255 255 255 / 0.10);
+    background: rgb(255 255 255 / 0.10);
+    color: rgb(255 255 255);
+  }
+
+  .dark .board-notion-input::placeholder {
+    color: rgb(255 255 255 / 0.35);
+  }
+
+  .dark .board-notion-input:focus {
+    border-color: rgb(255 255 255 / 0.25);
+    box-shadow: 0 0 0 3px rgb(255 255 255 / 0.10);
+  }
+
+  .dark .board-notion-close {
+    color: rgb(255 255 255 / 0.55);
+  }
+
+  .dark .board-notion-close:hover {
+    background: rgb(255 255 255 / 0.10);
+    color: rgb(255 255 255);
+  }
+
+  .dark .board-notion-card {
+    border-color: rgb(255 255 255 / 0.10);
+    background: rgb(255 255 255 / 0.035);
+  }
+
+  .dark .board-notion-card-title {
+    color: rgb(255 255 255);
+  }
+
+  .dark .board-notion-danger {
+    color: rgb(255 138 128);
+  }
+
+  .dark .board-notion-danger:hover {
+    background: rgb(255 107 95 / 0.15);
+  }
+
+  .dark .board-notion-error {
+    background: rgb(255 107 95 / 0.10);
+    color: rgb(255 138 128);
+  }
+
+  .dark .board-notion-footer {
+    border-color: rgb(255 255 255 / 0.10);
+    background: rgb(32 32 32 / 0.95);
+  }
+
+  .dark .board-notion-footer-card {
+    border-color: rgb(255 255 255 / 0.10);
+    background: rgb(255 255 255 / 0.04);
+  }
+
+  .dark .board-notion-footer-title {
+    color: rgb(255 255 255 / 0.62);
+  }
+
+  .dark .board-notion-footer-text {
+    color: rgb(255 255 255 / 0.68);
   }
 
   .board-diagram-card {
+    background: rgb(255 255 255);
     box-shadow:
-      0 0 0 1px var(--board-card-ring),
+      0 0 0 1px rgb(24 24 27 / 0.095),
       0 12px 28px -24px var(--board-card-shadow),
-      0 1px 2px rgb(0 0 0 / 0.06);
+      0 1px 2px rgb(0 0 0 / 0.055);
+    transition:
+      box-shadow 120ms ease-out,
+      transform 120ms ease-out;
   }
 
   .board-selected-card {
     border-color: transparent;
     box-shadow:
-      0 0 0 2px var(--board-purple-line),
-      0 14px 40px -30px var(--board-purple-shadow),
+      0 0 0 2px var(--board-accent-line),
+      0 14px 40px -30px var(--board-accent-shadow),
       0 1px 2px rgb(0 0 0 / 0.08);
   }
 
-  .board-selected-header {
+  .board-artifact-frame {
     background: rgb(255 255 255);
-    border-color: var(--board-purple-line);
+    box-shadow: inset 0 0 0 1px rgb(24 24 27 / 0.035);
+  }
+
+  .board-artifact-header {
+    background: rgb(250 250 250);
+    border-color: rgb(24 24 27 / 0.085);
+  }
+
+  .board-artifact-title-input {
+    color: rgb(24 24 27);
+  }
+
+  .board-artifact-title-input::placeholder {
+    color: rgb(113 113 122 / 0.68);
+  }
+
+  .board-artifact-kind-chip {
+    background: rgb(244 244 245);
+    color: rgb(82 82 91);
+    box-shadow: inset 0 0 0 1px rgb(24 24 27 / 0.06);
+  }
+
+  .board-artifact-body {
+    background: rgb(255 255 255);
+  }
+
+  .board-selected-header {
+    background: rgb(249 250 251);
+    border-color: var(--board-accent-line);
   }
 
   .board-selected-body {
@@ -358,15 +666,251 @@
   }
 
   .board-selected-text {
-    color: var(--board-purple);
+    color: var(--board-accent);
   }
 
   .board-resize-handle {
     background: rgb(255 255 255);
-    border: 2px solid var(--board-purple);
+    border: 2px solid var(--board-accent);
     box-shadow:
       0 0 0 2px rgb(255 255 255),
-      0 8px 18px -10px var(--board-purple-shadow);
+      0 8px 18px -10px var(--board-accent-shadow);
+  }
+
+  .board-preview-browser {
+    border-color: rgb(24 24 27 / 0.10);
+    background: rgb(248 250 252);
+  }
+
+  .board-preview-browser-bar {
+    border-color: rgb(24 24 27 / 0.08);
+    background: rgb(255 255 255);
+  }
+
+  .board-preview-shell {
+    border-color: rgb(24 24 27 / 0.09);
+    background: rgb(250 250 250);
+  }
+
+  .linear-item-card {
+    border-color: color-mix(in oklab, var(--foreground) 9%, transparent);
+    background: color-mix(in oklab, var(--background) 96%, var(--foreground) 4%);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.045);
+    transition:
+      background-color 120ms ease-out,
+      border-color 120ms ease-out,
+      box-shadow 120ms ease-out,
+      transform 120ms ease-out;
+  }
+
+  .linear-item-card:hover {
+    border-color: color-mix(in oklab, var(--foreground) 18%, transparent);
+    background: color-mix(in oklab, var(--background) 91%, var(--foreground) 9%);
+    box-shadow:
+      0 0 0 1px color-mix(in oklab, var(--foreground) 6%, transparent),
+      0 12px 28px -24px rgb(0 0 0 / 0.28);
+  }
+
+  .linear-item-row {
+    border-color: color-mix(in oklab, var(--foreground) 8%, transparent);
+    color: color-mix(in oklab, var(--foreground) 88%, transparent);
+    transition:
+      background-color 120ms ease-out,
+      border-color 120ms ease-out,
+      color 120ms ease-out,
+      box-shadow 120ms ease-out;
+  }
+
+  .linear-item-row:hover {
+    border-color: color-mix(in oklab, var(--foreground) 14%, transparent);
+    background: color-mix(in oklab, var(--foreground) 4%, transparent);
+    color: var(--foreground);
+  }
+
+  .linear-item-row-active {
+    border-color: color-mix(in oklab, var(--board-accent) 38%, transparent);
+    background: color-mix(in oklab, var(--board-accent) 8%, transparent);
+    box-shadow: inset 2px 0 0 var(--board-accent);
+  }
+
+  .linear-item-chip {
+    border-color: color-mix(in oklab, var(--foreground) 8%, transparent);
+    background: color-mix(in oklab, var(--foreground) 4%, transparent);
+    color: color-mix(in oklab, var(--foreground) 58%, transparent);
+  }
+
+  .linear-preview-surface {
+    border-color: color-mix(in oklab, var(--foreground) 7%, transparent);
+    background: color-mix(in oklab, var(--background) 96%, var(--foreground) 4%);
+  }
+
+  .markdown-report-body {
+    color: rgb(42 37 32);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.18rem;
+    line-height: 1.62;
+    letter-spacing: 0;
+  }
+
+  .markdown-report-body :where(h1, h2, h3, h4) {
+    color: rgb(42 37 32);
+    font-weight: 650;
+    letter-spacing: 0;
+  }
+
+  .markdown-report-body :where(h1) {
+    margin: 0 0 1.1rem;
+    font-size: 2.25rem;
+    line-height: 1.1;
+  }
+
+  .markdown-report-body :where(h2) {
+    margin: 3rem 0 0.75rem;
+    padding-top: 2rem;
+    border-top: 1px solid rgb(42 37 32 / 0.10);
+    font-size: 1.85rem;
+    line-height: 1.2;
+  }
+
+  .markdown-report-body :where(h3) {
+    margin: 1.9rem 0 0.65rem;
+    font-size: 1.35rem;
+    line-height: 1.28;
+  }
+
+  .markdown-report-body :where(p) {
+    margin: 0 0 1rem;
+  }
+
+  .markdown-report-body :where(a) {
+    color: rgb(29 78 216);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.18em;
+  }
+
+  .markdown-report-body :where(ul, ol) {
+    margin: 0 0 1.15rem 1.4rem;
+    padding: 0;
+  }
+
+  .markdown-report-body :where(li) {
+    margin: 0.35rem 0;
+    padding-left: 0.15rem;
+  }
+
+  .markdown-report-body :where(blockquote) {
+    margin: 1.5rem 0;
+    border-left: 3px solid rgb(42 37 32 / 0.20);
+    padding: 0.1rem 0 0.1rem 1rem;
+    color: rgb(86 78 70);
+  }
+
+  .markdown-report-body :where(div:has(> table[data-streamdown="table"])) {
+    margin: 1.65rem 0 !important;
+    border-color: rgb(42 37 32 / 0.10) !important;
+    background: rgb(255 253 249) !important;
+    padding: 0 !important;
+  }
+
+  .markdown-report-body :where([data-streamdown="table-wrapper"]) {
+    margin: 1.65rem 0 !important;
+    gap: 0 !important;
+    border-color: transparent !important;
+    background: transparent !important;
+    padding: 0 !important;
+  }
+
+  .markdown-report-body .border-collapse {
+    border-color: rgb(42 37 32 / 0.10) !important;
+    background: rgb(255 253 249) !important;
+    padding: 0 !important;
+  }
+
+  .markdown-report-body :where(table) {
+    display: block;
+    width: 100%;
+    margin: 1.65rem 0;
+    overflow-x: auto;
+    border: 1px solid rgb(42 37 32 / 0.10);
+    border-radius: 8px;
+    border-spacing: 0;
+    background: rgb(255 253 249) !important;
+    color: rgb(42 37 32) !important;
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    line-height: 1.45;
+  }
+
+  .markdown-report-body :where(table[data-streamdown="table"]) {
+    margin: 0 !important;
+    border: 0;
+  }
+
+  .markdown-report-body :where(th, td) {
+    min-width: 9rem;
+    border-right: 1px solid rgb(42 37 32 / 0.08);
+    border-bottom: 1px solid rgb(42 37 32 / 0.08);
+    background: rgb(255 253 249) !important;
+    color: rgb(42 37 32) !important;
+    padding: 0.85rem 1rem;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .markdown-report-body :where(th) {
+    background: rgb(246 242 236) !important;
+    color: rgb(116 108 99) !important;
+    font-weight: 700;
+  }
+
+  .markdown-report-body :where(tr:last-child td) {
+    border-bottom: 0;
+  }
+
+  .markdown-report-body :where(th:last-child, td:last-child) {
+    border-right: 0;
+  }
+
+  .markdown-report-body :where(code) {
+    border-radius: 5px;
+    background: rgb(42 37 32 / 0.07);
+    padding: 0.1rem 0.28rem;
+    font-family: var(--font-mono);
+    font-size: 0.86em;
+  }
+
+  .markdown-report-body :where(pre) {
+    margin: 1.35rem 0;
+    overflow-x: auto;
+    border: 1px solid rgb(42 37 32 / 0.10);
+    border-radius: 8px;
+    background: rgb(24 24 27);
+    padding: 1rem;
+    color: rgb(244 244 245);
+  }
+
+  .markdown-report-body :where(pre code) {
+    background: transparent;
+    padding: 0;
+    color: inherit;
+  }
+
+  @media (max-width: 640px) {
+    .markdown-report-body {
+      font-size: 1rem;
+      line-height: 1.58;
+    }
+
+    .markdown-report-body :where(h1) {
+      font-size: 1.8rem;
+    }
+
+    .markdown-report-body :where(h2) {
+      margin-top: 2rem;
+      padding-top: 1.35rem;
+      font-size: 1.45rem;
+    }
   }
 
   .diagram-chatbar-frame {
@@ -513,6 +1057,109 @@
     background: color-mix(in oklab, var(--foreground) 3%, var(--diagram-chat-sidebar-bg));
     color: var(--foreground);
     transform: translateY(-0.5px);
+  }
+
+  .bottom-chatbar {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr) 36px;
+    grid-template-rows: 36px;
+    width: min(768px, calc(100vw - 24px));
+    height: 56px;
+    align-items: center;
+    overflow: clip;
+    border: 0 solid rgb(255 255 255 / 0.05);
+    border-radius: 28px;
+    background: rgb(48 48 48);
+    padding: 10px;
+    color: rgb(255 255 255);
+    font-family:
+      -apple-system-body, ui-sans-serif, -apple-system, "system-ui",
+      "Segoe UI", Helvetica, "Apple Color Emoji", Arial, "sans-serif",
+      "Segoe UI Emoji", "Segoe UI Symbol";
+    font-size: 16px;
+    line-height: 24px;
+    box-shadow:
+      0 0 0 0 rgb(0 0 0 / 0),
+      0 0 0 0 rgb(0 0 0 / 0),
+      0 0 0 0 rgb(0 0 0 / 0),
+      0 0 0 0 rgb(0 0 0 / 0),
+      0 3px 6px 0 rgb(0 0 0 / 0.06),
+      inset 0 0 1px 0 rgb(255 255 255 / 0.2);
+  }
+
+  .bottom-chatbar:focus-within {
+    box-shadow:
+      0 0 0 0 rgb(0 0 0 / 0),
+      0 0 0 0 rgb(0 0 0 / 0),
+      0 0 0 0 rgb(0 0 0 / 0),
+      0 0 0 0 rgb(0 0 0 / 0),
+      0 6px 16px 0 rgb(0 0 0 / 0.12),
+      inset 0 0 1px 0 rgb(255 255 255 / 0.28);
+  }
+
+  .bottom-chatbar-icon,
+  .bottom-chatbar-send {
+    position: relative;
+    z-index: 0;
+    display: flex;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    align-items: center;
+    justify-content: center;
+    border: 0 solid rgb(255 255 255 / 0.05);
+    border-radius: 999999px;
+    color: rgb(255 255 255);
+    cursor: pointer;
+    transition:
+      background-color 120ms cubic-bezier(0.23, 1, 0.32, 1),
+      color 120ms cubic-bezier(0.23, 1, 0.32, 1),
+      transform 140ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  .bottom-chatbar-icon {
+    background: transparent;
+  }
+
+  .bottom-chatbar-send {
+    background: rgb(66 66 66);
+  }
+
+  .bottom-chatbar-icon:hover:not(:disabled),
+  .bottom-chatbar-send:hover:not(:disabled) {
+    background: rgb(66 66 66);
+  }
+
+  .bottom-chatbar-send[data-active="true"] {
+    background: rgb(255 255 255);
+    color: rgb(24 24 27);
+  }
+
+  .bottom-chatbar-send:active:not(:disabled) {
+    transform: scale(0.96);
+  }
+
+  .bottom-chatbar-icon:disabled,
+  .bottom-chatbar-send:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  .bottom-chatbar-input {
+    width: 100%;
+    height: 56px;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    color: rgb(255 255 255);
+    font: inherit;
+    line-height: 24px;
+    outline: none;
+    padding: 0 12px;
+  }
+
+  .bottom-chatbar-input::placeholder {
+    color: rgb(175 175 175);
   }
 
   .diagram-chat-md,

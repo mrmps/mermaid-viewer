@@ -20,13 +20,12 @@ import {
   PieChart,
   Check,
   AlertCircle,
-} from "lucide-react";
+} from "@/components/icons/mingcute";
 import {
   createTextOnlyUserMessage,
   getChatErrorMessage,
   getChatRequestTooLargeError,
 } from "@/lib/chat-limits";
-import { useModifierKeyLabel } from "@/lib/use-modifier-key-label";
 
 function Logo({
   className,
@@ -62,7 +61,7 @@ function Logo({
   );
 }
 import { cn } from "@/lib/utils";
-import { Kbd } from "@/components/ui/kbd";
+import { Kbd, KbdGroup } from "@/components/ui/kbd";
 
 function UnicodeSpinner({
   name = "braille",
@@ -148,19 +147,56 @@ const SUGGESTIONS = [
   { text: "Turn this into a pie chart", icon: PieChart },
 ];
 
+const CANVAS_SUGGESTIONS = [
+  { text: "Improve this selected card", icon: Workflow },
+  { text: "Add a supporting diagram card", icon: GitBranch },
+  { text: "Publish a markdown summary card", icon: PieChart },
+];
+
 type ToolPart = Extract<UIMessage["parts"][number], { type: `tool-${string}` }>;
+type BoardChatContext = {
+  boardId: string;
+  editId: string;
+  itemId?: string;
+  itemKind?: string;
+  boardTitle?: string;
+  itemTitle?: string;
+};
+type ChatToolResult = {
+  version?: number;
+  title?: string;
+  itemId?: string;
+  boardUpdated?: boolean;
+  label?: string;
+  state?: unknown;
+  toolName?: string;
+};
+type ChatOptimisticUpdate = {
+  content: string;
+  title?: string;
+  itemId?: string;
+};
 
 function ToolStatus({ part }: { part: ToolPart }) {
   if (part.state === "output-available") {
-    const output = part.output as { success?: boolean; version?: number };
+    const output = part.output as {
+      success?: boolean;
+      version?: number;
+      label?: string;
+    };
     if (output.success) {
+      const label =
+        output.label ??
+        (typeof output.version === "number"
+          ? `Updated to v${output.version}`
+          : "Applied change");
       return (
         <div className="flex items-center gap-2 px-2.5 py-2 my-2 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/5 border border-emerald-500/20">
           <div className="size-4 rounded-full bg-emerald-500/20 flex items-center justify-center">
             <Check className="size-2.5 text-emerald-600 dark:text-emerald-400" />
           </div>
           <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
-            Updated to v{output.version}
+            {label}
           </span>
         </div>
       );
@@ -243,6 +279,7 @@ export function DiagramChatPanel({
   content,
   diagramId,
   editId,
+  boardContext,
   onClose,
   onOptimisticUpdate,
   onToolResult,
@@ -251,16 +288,43 @@ export function DiagramChatPanel({
 }: {
   className?: string;
   content: string;
-  diagramId: string;
-  editId: string;
+  diagramId?: string;
+  editId?: string;
+  boardContext?: BoardChatContext;
   onClose: () => void;
-  onOptimisticUpdate?: (updates: { content: string; title?: string }) => void;
-  onToolResult?: (result: { version: number; title?: string }) => void;
+  onOptimisticUpdate?: (updates: ChatOptimisticUpdate) => void;
+  onToolResult?: (result: ChatToolResult) => void;
   open: boolean;
   neutralBrand?: boolean;
 }) {
   const router = useRouter();
-  const modifierKeyLabel = useModifierKeyLabel();
+  const boardContextBoardId = boardContext?.boardId;
+  const boardContextEditId = boardContext?.editId;
+  const boardContextItemId = boardContext?.itemId;
+  const boardContextItemKind = boardContext?.itemKind;
+  const boardContextBoardTitle = boardContext?.boardTitle;
+  const boardContextItemTitle = boardContext?.itemTitle;
+  const boardChatBody = useMemo(
+    () =>
+      boardContextBoardId && boardContextEditId
+        ? {
+            boardId: boardContextBoardId,
+            boardEditId: boardContextEditId,
+            boardItemId: boardContextItemId,
+            boardItemKind: boardContextItemKind,
+            boardTitle: boardContextBoardTitle,
+            boardItemTitle: boardContextItemTitle,
+          }
+        : null,
+    [
+      boardContextBoardId,
+      boardContextEditId,
+      boardContextItemId,
+      boardContextItemKind,
+      boardContextBoardTitle,
+      boardContextItemTitle,
+    ]
+  );
   const initialMessageConsumedRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -275,10 +339,24 @@ export function DiagramChatPanel({
     setCurrentContent(content);
   }, [content]);
 
+  const getRequestBody = useCallback(
+    () => ({
+      diagramId,
+      editId,
+      currentContent,
+      ...(boardChatBody ?? {}),
+    }),
+    [boardChatBody, diagramId, editId, currentContent]
+  );
+  const lastSubmittedBodyRef = useRef<ReturnType<typeof getRequestBody> | null>(
+    null
+  );
+
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
         api: "/api/chat",
+        body: getRequestBody,
         prepareSendMessagesRequest: ({
           api,
           body,
@@ -310,7 +388,7 @@ export function DiagramChatPanel({
           };
         },
       }),
-    []
+    [getRequestBody]
   );
 
   const {
@@ -325,14 +403,21 @@ export function DiagramChatPanel({
   } = useChat({
     transport,
     onToolCall: ({ toolCall }) => {
-      if (toolCall.toolName === "update_diagram") {
+      if (
+        toolCall.toolName === "update_diagram" ||
+        toolCall.toolName === "update_selected_card"
+      ) {
         const args = toolCall.input as {
           content: string;
           summary: string;
           title?: string;
         };
         setCurrentContent(args.content);
-        onOptimisticUpdate?.({ content: args.content, title: args.title });
+        onOptimisticUpdate?.({
+          content: args.content,
+          title: args.title,
+          itemId: lastSubmittedBodyRef.current?.boardItemId,
+        });
         if (!onOptimisticUpdate) {
           setTimeout(() => {
             router.refresh();
@@ -352,6 +437,14 @@ export function DiagramChatPanel({
     (status === "error" ? "Something went wrong. Please try again." : undefined);
   const lastMessage = messages.at(-1);
   const showPendingLoader = isLoading && lastMessage?.role !== "assistant";
+  const isCanvasChat = Boolean(boardContext);
+  const suggestions = isCanvasChat ? CANVAS_SUGGESTIONS : SUGGESTIONS;
+  const assistantTitle = isCanvasChat ? "Canvas assistant" : "Diagram assistant";
+  const emptyTitle = isCanvasChat ? "What should change on the canvas?" : "What should change?";
+  const emptyDescription = isCanvasChat
+    ? "Edit the selected card, add a diagram, or publish an artifact."
+    : "Start with a focused edit, or ask for a full rewrite.";
+  const pendingLabel = isCanvasChat ? "Reading canvas" : "Reading diagram";
 
   useEffect(() => {
     if (!onToolResult) return;
@@ -372,23 +465,26 @@ export function DiagramChatPanel({
           success?: boolean;
           version?: number;
           title?: string;
+          itemId?: string;
+          boardUpdated?: boolean;
+          label?: string;
+          state?: unknown;
         };
-        if (!output.success || typeof output.version !== "number") continue;
+        if (!output.success) continue;
 
         appliedToolResultsRef.current.add(toolPart.toolCallId);
-        onToolResult({ version: output.version, title: output.title });
+        onToolResult({
+          version: output.version,
+          title: output.title,
+          itemId: output.itemId,
+          boardUpdated: output.boardUpdated,
+          label: output.label,
+          state: output.state,
+          toolName: toolPart.type.slice("tool-".length),
+        });
       }
     }
   }, [messages, onToolResult]);
-
-  const getRequestBody = useCallback(
-    () => ({
-      diagramId,
-      editId,
-      currentContent,
-    }),
-    [diagramId, editId, currentContent]
-  );
 
   const validateRequestSize = useCallback(
     (nextMessages: UIMessage[]) => {
@@ -423,10 +519,12 @@ export function DiagramChatPanel({
 
       clearError();
       setLocalError(null);
+      const requestBody = getRequestBody();
+      lastSubmittedBodyRef.current = requestBody;
       void sendMessage(
         { text: trimmed },
         {
-          body: getRequestBody(),
+          body: requestBody,
         }
       );
       return true;
@@ -485,14 +583,38 @@ export function DiagramChatPanel({
     }
   }, [input, sendTextMessage]);
 
+  const insertLineBreak = useCallback(() => {
+    const textarea = textareaRef.current;
+    const start = textarea?.selectionStart ?? input.length;
+    const end = textarea?.selectionEnd ?? input.length;
+    const nextInput = `${input.slice(0, start)}\n${input.slice(end)}`;
+
+    setInput(nextInput);
+    requestAnimationFrame(() => {
+      const nextTextarea = textareaRef.current;
+      if (!nextTextarea) return;
+
+      const caret = start + 1;
+      nextTextarea.setSelectionRange(caret, caret);
+    });
+  }, [input]);
+
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+      if (e.key !== "Enter" || e.nativeEvent.isComposing) return;
+
+      if (e.metaKey || e.ctrlKey) {
         e.preventDefault();
-        handleSubmit();
+        insertLineBreak();
+        return;
       }
+
+      if (e.shiftKey || e.altKey) return;
+
+      e.preventDefault();
+      handleSubmit();
     },
-    [handleSubmit]
+    [handleSubmit, insertLineBreak]
   );
 
   const handleSuggestion = useCallback(
@@ -547,7 +669,7 @@ export function DiagramChatPanel({
             neutral={neutralBrand}
           />
           <span className="text-[13px] font-semibold text-foreground/90">
-            Diagram assistant
+            {assistantTitle}
           </span>
         </div>
         <div className="flex items-center gap-0.5">
@@ -595,15 +717,15 @@ export function DiagramChatPanel({
                     />
                   </div>
                   <h2 className="text-[15px] font-medium text-foreground">
-                    What should change?
+                    {emptyTitle}
                   </h2>
                 </div>
                 <p className="pl-10 text-[13px] leading-5 text-muted-foreground">
-                  Start with a focused edit, or ask for a full rewrite.
+                  {emptyDescription}
                 </p>
               </div>
               <div className="w-full space-y-1.5">
-                {SUGGESTIONS.map((s) => (
+                {suggestions.map((s) => (
                   <button
                     key={s.text}
                     type="button"
@@ -699,7 +821,7 @@ export function DiagramChatPanel({
               })}
               {showPendingLoader && (
                 <PendingAssistant
-                  label="Reading diagram"
+                  label={pendingLabel}
                   neutralBrand={neutralBrand}
                 />
               )}
@@ -751,7 +873,13 @@ export function DiagramChatPanel({
               setInput(e.target.value);
             }}
             onKeyDown={handleKeyDown}
-            placeholder={isLoading ? "Waiting for response..." : "Describe changes..."}
+            placeholder={
+              isLoading
+                ? "Waiting for response..."
+                : isCanvasChat
+                  ? "Describe canvas changes..."
+                  : "Describe changes..."
+            }
             disabled={isLoading}
             rows={1}
             className={cn(
@@ -761,10 +889,12 @@ export function DiagramChatPanel({
             style={{ minHeight: "24px", maxHeight: "120px" }}
           />
           <div className="flex items-end justify-between gap-2 pt-2">
-            <span className="diagram-chatbar-pill select-none">
-              <Kbd>{modifierKeyLabel}</Kbd>
+            <KbdGroup
+              aria-label="Enter to send message"
+              className="diagram-chatbar-pill select-none"
+            >
               <Kbd>↵</Kbd>
-            </span>
+            </KbdGroup>
             {isLoading ? (
               <button
                 type="button"

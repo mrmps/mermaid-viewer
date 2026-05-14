@@ -10,21 +10,23 @@ import {
   type DiagramRenderer,
   type BeautifulTheme,
 } from "@/lib/mermaid-client";
-import { ImageIcon, Check, Loader2 } from "lucide-react";
+import { ImageIcon, Check, Loader2 } from "@/components/icons/mingcute";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
+  DialogHeader,
+  DialogPanel,
+  DialogPopup,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import {
   Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
   DrawerDescription,
+  DrawerHeader,
+  DrawerPanel,
+  DrawerPopup,
+  DrawerTitle,
 } from "@/components/ui/drawer";
 
 function svgToPngBlob(svg: string): Promise<Blob> {
@@ -265,15 +267,15 @@ export function CopyImageButton({
       <>
         {trigger}
         <Dialog open={open} onOpenChange={handleOpenChange}>
-          <DialogContent className="sm:max-w-lg">
+          <DialogPopup className="sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>Copy as image</DialogTitle>
               <DialogDescription>
                 Preview and copy the diagram as a PNG image.
               </DialogDescription>
             </DialogHeader>
-            {body}
-          </DialogContent>
+            <DialogPanel className="space-y-4">{body}</DialogPanel>
+          </DialogPopup>
         </Dialog>
       </>
     );
@@ -283,15 +285,15 @@ export function CopyImageButton({
     <>
       {trigger}
       <Drawer open={open} onOpenChange={handleOpenChange}>
-        <DrawerContent>
+        <DrawerPopup showBar>
           <DrawerHeader>
             <DrawerTitle>Copy as image</DrawerTitle>
             <DrawerDescription>
               Preview and copy the diagram as a PNG image.
             </DrawerDescription>
           </DrawerHeader>
-          <div className="px-4 pb-6 space-y-4">{body}</div>
-        </DrawerContent>
+          <DrawerPanel className="space-y-4">{body}</DrawerPanel>
+        </DrawerPopup>
       </Drawer>
     </>
   );

@@ -1,14 +1,30 @@
 export type BoardRenderer = "beautiful" | "mermaid";
 export type BoardLook = "classic" | "handDrawn" | "neo";
+export type BoardItemKind =
+  | "diagram"
+  | "website"
+  | "slides"
+  | "markdown"
+  | "image"
+  | "text"
+  | "drawing";
+
+export type BoardSlide = {
+  eyebrow?: string;
+  title: string;
+  body?: string;
+  bullets?: string[];
+  accent?: string;
+};
 
 export type BoardItem = {
   id: string;
-  kind?: "diagram";
-  diagramId: string;
+  kind?: BoardItemKind;
+  diagramId?: string;
   diagramEditId?: string;
   title: string;
   content: string;
-  href: string;
+  href?: string;
   editHref?: string;
   version?: number;
   x: number;
@@ -18,6 +34,11 @@ export type BoardItem = {
   renderer: BoardRenderer;
   theme: string;
   look: BoardLook;
+  url?: string;
+  imageUrl?: string;
+  accent?: string;
+  author?: string;
+  slides?: BoardSlide[];
   updatedAt?: string;
 };
 
@@ -48,6 +69,22 @@ export type BoardDiagramInput = {
   renderer?: BoardRenderer;
   theme?: string;
   look?: BoardLook;
+  updatedAt?: string;
+};
+
+export type BoardArtifactInput = {
+  kind: Exclude<BoardItemKind, "diagram">;
+  title?: string;
+  content?: string;
+  url?: string;
+  imageUrl?: string;
+  accent?: string;
+  author?: string;
+  slides?: BoardSlide[];
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
   updatedAt?: string;
 };
 
@@ -92,27 +129,118 @@ function normalizeOptionalString(value: unknown) {
   return typeof value === "string" && value.trim() ? value : undefined;
 }
 
+function parseLegacyDiagramEditId(value: unknown) {
+  if (typeof value !== "string") return undefined;
+  const read = (pathname: string) => {
+    const [, route, editId] = pathname.split("/");
+    return route === "e" && editId ? decodeURIComponent(editId) : undefined;
+  };
+  try {
+    const url = new URL(value, "https://merm.sh");
+    return read(url.pathname);
+  } catch {
+    return read(value.split(/[?#]/, 1)[0]);
+  }
+}
+
 function normalizeNumber(value: unknown, fallback: number) {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function normalizeKind(value: unknown): BoardItemKind {
+  return value === "website" ||
+    value === "slides" ||
+    value === "markdown" ||
+    value === "image" ||
+    value === "text" ||
+    value === "drawing"
+    ? value
+    : "diagram";
+}
+
+function getDefaultContent(kind: BoardItemKind) {
+  switch (kind) {
+    case "website":
+      return "Product story, interaction notes, and launch sections live here.";
+    case "slides":
+      return "Narrative deck";
+    case "markdown":
+      return "# Working notes\n\n- Add context\n- Capture decisions\n- Link supporting cards";
+    case "image":
+      return "Image reference";
+    case "text":
+      return "Write a note...";
+    case "drawing":
+      return "{\"version\":2,\"elements\":[]}";
+    case "diagram":
+      return "";
+  }
+}
+
+function normalizeSlides(value: unknown): BoardSlide[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+
+  const slides = value.flatMap((slideValue): BoardSlide[] => {
+      if (!slideValue || typeof slideValue !== "object") return [];
+      const slide = slideValue as Partial<BoardSlide>;
+      const title = normalizeOptionalString(slide.title);
+      if (!title) return [];
+
+      const normalized: BoardSlide = {
+        title,
+      };
+      const eyebrow = normalizeOptionalString(slide.eyebrow);
+      const body = normalizeOptionalString(slide.body);
+      const accent = normalizeOptionalString(slide.accent);
+      const bullets = Array.isArray(slide.bullets)
+        ? slide.bullets.filter(
+            (bullet): bullet is string =>
+              typeof bullet === "string" && Boolean(bullet.trim())
+          )
+        : undefined;
+      if (eyebrow) normalized.eyebrow = eyebrow;
+      if (body) normalized.body = body;
+      if (accent) normalized.accent = accent;
+      if (bullets?.length) normalized.bullets = bullets;
+
+      return [normalized];
+    });
+
+  return slides.length > 0 ? slides : undefined;
 }
 
 function normalizeItem(value: unknown): BoardItem | null {
   if (!value || typeof value !== "object") return null;
   const item = value as Partial<BoardItem>;
+  const kind = normalizeKind(item.kind);
   const diagramId = normalizeString(item.diagramId, "");
-  const content = normalizeString(item.content, "");
+  const content = normalizeString(item.content, getDefaultContent(kind));
 
-  if (!diagramId || !content) return null;
+  if (kind === "diagram" && (!diagramId || !content)) return null;
 
   return {
     id: normalizeString(item.id, createId("item")),
-    kind: "diagram",
-    diagramId,
-    diagramEditId: normalizeOptionalString(item.diagramEditId),
+    kind,
+    diagramId:
+      kind === "diagram" ? diagramId : normalizeOptionalString(item.diagramId),
+    diagramEditId:
+      kind === "diagram"
+        ? normalizeOptionalString(item.diagramEditId) ??
+          parseLegacyDiagramEditId(item.editHref)
+        : undefined,
     title: normalizeString(item.title, "Untitled"),
     content,
-    href: normalizeString(item.href, `/d/${diagramId}`),
-    editHref: normalizeString(item.editHref, normalizeString(item.href, `/d/${diagramId}`)),
+    href:
+      kind === "diagram"
+        ? normalizeString(item.href, `/d/${diagramId}`)
+        : normalizeOptionalString(item.href),
+    editHref:
+      kind === "diagram"
+        ? normalizeString(
+            item.editHref,
+            normalizeString(item.href, `/d/${diagramId}`)
+          )
+        : normalizeOptionalString(item.editHref),
     version: normalizeNumber(item.version, 1),
     x: normalizeNumber(item.x, 0),
     y: normalizeNumber(item.y, 0),
@@ -122,6 +250,11 @@ function normalizeItem(value: unknown): BoardItem | null {
     theme: normalizeString(item.theme, item.renderer === "mermaid" ? "auto" : "zinc"),
     look:
       item.look === "handDrawn" || item.look === "neo" ? item.look : "classic",
+    url: normalizeOptionalString(item.url),
+    imageUrl: normalizeOptionalString(item.imageUrl),
+    accent: normalizeOptionalString(item.accent),
+    author: normalizeOptionalString(item.author),
+    slides: normalizeSlides(item.slides),
     updatedAt: normalizeString(item.updatedAt, new Date().toISOString()),
   };
 }
@@ -261,7 +394,7 @@ export function addDiagramToBoardDocument(
   let itemId: string | null = null;
   let added = false;
 
-  const pages = document.pages.map((page) => {
+  const pages: BoardPage[] = document.pages.map((page) => {
     if (page.id !== targetPage.id) return page;
 
     const existing = page.items.find((item) => item.diagramId === input.diagramId);
@@ -274,6 +407,8 @@ export function addDiagramToBoardDocument(
           item.id === existing.id
             ? {
                 ...item,
+                kind: "diagram" as const,
+                diagramId: input.diagramId,
                 diagramEditId: input.diagramEditId ?? item.diagramEditId,
                 title,
                 content: input.content,
@@ -324,6 +459,81 @@ export function addDiagramToBoardDocument(
     itemId,
     added,
   };
+}
+
+export function addArtifactToBoardDocument(
+  document: BoardDocument,
+  input: BoardArtifactInput,
+  pageId = document.activePageId
+) {
+  const targetPage = document.pages.find((page) => page.id === pageId);
+  if (!targetPage) {
+    return { document, itemId: null, added: false };
+  }
+
+  const kind = input.kind;
+  const title = input.title?.trim() || artifactTitle(kind);
+  const updatedAt = input.updatedAt ?? new Date().toISOString();
+  let itemId: string | null = null;
+  const size = {
+    width: Math.max(320, normalizeNumber(input.width, DEFAULT_ITEM_WIDTH)),
+    height: Math.max(260, normalizeNumber(input.height, DEFAULT_ITEM_HEIGHT)),
+  };
+
+  const pages: BoardPage[] = document.pages.map((page) => {
+    if (page.id !== targetPage.id) return page;
+
+    const position = findOpenBoardPosition(page.items, size, {
+      x: input.x,
+      y: input.y,
+    });
+    const nextItem: BoardItem = {
+      id: createId("item"),
+      kind,
+      title,
+      content: input.content?.trim() || getDefaultContent(kind),
+      x: position.x,
+      y: position.y,
+      width: size.width,
+      height: size.height,
+      renderer: "beautiful",
+      theme: "zinc",
+      look: "classic",
+      url: input.url?.trim() || undefined,
+      imageUrl: input.imageUrl?.trim() || undefined,
+      accent: input.accent?.trim() || undefined,
+      author: input.author?.trim() || undefined,
+      slides: input.slides,
+      updatedAt,
+    };
+    itemId = nextItem.id;
+    return { ...page, items: [...page.items, nextItem] };
+  });
+
+  return {
+    document: { ...document, activePageId: targetPage.id, pages },
+    itemId,
+    added: true,
+  };
+}
+
+function artifactTitle(kind: BoardItemKind) {
+  switch (kind) {
+    case "website":
+      return "Website";
+    case "slides":
+      return "Slides";
+    case "markdown":
+      return "Markdown doc";
+    case "image":
+      return "Image";
+    case "text":
+      return "Text note";
+    case "drawing":
+      return "Drawing";
+    case "diagram":
+      return "Diagram";
+  }
 }
 
 export function addBoardPage(document: BoardDocument) {
@@ -394,6 +604,11 @@ export function updateBoardItem(
       | "renderer"
       | "theme"
       | "look"
+      | "url"
+      | "imageUrl"
+      | "accent"
+      | "author"
+      | "slides"
     >
   >
 ) {
@@ -406,6 +621,35 @@ export function updateBoardItem(
       ),
     })),
   };
+}
+
+export function moveBoardItemLayer(
+  document: BoardDocument,
+  itemId: string,
+  placement: "front" | "back"
+) {
+  let changed = false;
+  const pages = document.pages.map((page) => {
+    const index = page.items.findIndex((item) => item.id === itemId);
+    if (index === -1) return page;
+    if (placement === "front" && index === page.items.length - 1) return page;
+    if (placement === "back" && index === 0) return page;
+
+    const items = [...page.items];
+    const [item] = items.splice(index, 1);
+    if (!item) return page;
+
+    changed = true;
+    if (placement === "front") {
+      items.push(item);
+    } else {
+      items.unshift(item);
+    }
+
+    return { ...page, items };
+  });
+
+  return changed ? { ...document, pages } : document;
 }
 
 export function removeBoardItem(document: BoardDocument, itemId: string) {

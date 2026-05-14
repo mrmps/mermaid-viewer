@@ -1,20 +1,22 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { Bot, Check, ClipboardCopy } from "lucide-react";
+import { Bot, Check, ClipboardCopy } from "@/components/icons/mingcute";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogContent,
   DialogDescription,
   DialogHeader,
+  DialogPanel,
+  DialogPopup,
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
   Drawer,
-  DrawerContent,
   DrawerDescription,
   DrawerHeader,
+  DrawerPanel,
+  DrawerPopup,
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { useMediaQuery } from "@/lib/use-media-query";
@@ -40,14 +42,19 @@ Read workspace: GET ${apiUrl}`;
 
   return `"${title}" — ${viewUrl}
 
-This is the shared Mermaid workspace. Keep related diagrams on this board.
+This is the shared agent canvas. Keep related artifacts on this board.
 
 Read workspace: GET ${apiUrl}
 Add existing diagram: POST ${apiUrl} -H "Content-Type: application/json" -d '{"diagramId": "<diagram id>", "editId": "${editId}"}'
 Create diagram on board: POST ${apiUrl} -H "Content-Type: application/json" -d '{"editId": "${editId}", "title": "Diagram name", "content": "flowchart TD\\n  A-->B"}'
+Publish artifact: POST ${apiUrl} -H "Content-Type: application/json" -d '{"editId": "${editId}", "kind": "markdown", "title": "Decision log", "content": "# Decision log\\n\\n- Ship the mixed artifact canvas"}'
+Publish website UI: POST ${apiUrl} -H "Content-Type: application/json" -d '{"editId": "${editId}", "kind": "website", "title": "Launch page", "ui": "<main><style>body{margin:0}</style><h1>Launch</h1></main>"}'
+Publish slide deck: POST ${apiUrl} -H "Content-Type: application/json" -d '{"editId": "${editId}", "kind": "slides", "title": "Plan", "slides": [{"title": "Thesis", "body": "One sharp point"}, {"title": "Next", "bullets": ["A", "B"]}]}'
 Update layout/style: PATCH ${apiUrl} -H "Content-Type: application/json" -d '{"editId": "${editId}", "state": <board state>}'
 Edit in browser: ${editUrl}
 
+Supported artifact kinds: diagram, website, slides, markdown, image, text.
+Website cards accept sanitized HTML/CSS in \`ui\`; scripts, event handlers, unsafe URLs, external frames, and network fetches are blocked. Every card also gets its own item page URL.
 Cards are placed without overlap by default. Only overlap cards when the user deliberately drags them there.`;
 }
 
@@ -90,15 +97,15 @@ export function BoardShareButton({
           <span className="hidden sm:inline">Connect AI agent</span>
           <span className="hidden min-[340px]:inline sm:hidden">Agent</span>
         </Button>
-        <DialogContent className="sm:max-w-md">
+        <DialogPopup className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Connect AI agent</DialogTitle>
             <DialogDescription>
               Copy a workspace prompt for an AI agent or share direct links.
             </DialogDescription>
           </DialogHeader>
-          {content}
-        </DialogContent>
+          <DialogPanel>{content}</DialogPanel>
+        </DialogPopup>
       </Dialog>
     );
   }
@@ -116,15 +123,15 @@ export function BoardShareButton({
         <span className="hidden sm:inline">Connect AI agent</span>
         <span className="hidden min-[340px]:inline sm:hidden">Agent</span>
       </Button>
-      <DrawerContent>
+      <DrawerPopup showBar>
         <DrawerHeader>
           <DrawerTitle>Connect AI agent</DrawerTitle>
           <DrawerDescription>
             Copy a workspace prompt for an AI agent or share direct links.
           </DrawerDescription>
         </DrawerHeader>
-        <div className="px-4 pb-6">{content}</div>
-      </DrawerContent>
+        <DrawerPanel>{content}</DrawerPanel>
+      </DrawerPopup>
     </Drawer>
   );
 }
@@ -175,7 +182,7 @@ function BoardShareContent({
           Raw API access
         </summary>
         <div className="mt-3 space-y-3">
-          <Block desc="Returns pages and diagram card state." label="Read">
+          <Block desc="Returns pages and artifact card state." label="Read">
             <CopyRow value={`curl ${apiUrl}`} />
           </Block>
           {editId ? (
@@ -189,6 +196,27 @@ function BoardShareContent({
             <Block desc="Creates a new Mermaid card on the board." label="Create">
               <CopyBlock
                 value={`curl -X POST ${apiUrl} \\\n  -H "Content-Type: application/json" \\\n  -d '{"editId": "${editId}", "title": "Diagram name", "content": "flowchart TD\\\\n  A-->B"}'`}
+              />
+            </Block>
+          ) : null}
+          {editId ? (
+            <Block desc="Publishes a non-diagram artifact to the board." label="Publish artifact">
+              <CopyBlock
+                value={`curl -X POST ${apiUrl} \\\n  -H "Content-Type: application/json" \\\n  -d '{"editId": "${editId}", "kind": "markdown", "title": "Decision log", "content": "# Decision log\\\\n\\\\n- Mixed artifact canvas"}'`}
+              />
+            </Block>
+          ) : null}
+          {editId ? (
+            <Block desc="Publishes sanitized HTML/CSS in a sandboxed website card." label="Publish website UI">
+              <CopyBlock
+                value={`curl -X POST ${apiUrl} \\\n  -H "Content-Type: application/json" \\\n  -d '{"editId": "${editId}", "kind": "website", "title": "Launch page", "ui": "<main><style>body{margin:0}</style><h1>Launch</h1></main>"}'`}
+              />
+            </Block>
+          ) : null}
+          {editId ? (
+            <Block desc="Publishes a multi-slide presentation card." label="Publish slide deck">
+              <CopyBlock
+                value={`curl -X POST ${apiUrl} \\\n  -H "Content-Type: application/json" \\\n  -d '{"editId": "${editId}", "kind": "slides", "title": "Plan", "slides": [{"title": "Thesis", "body": "One sharp point"}, {"title": "Next", "bullets": ["A", "B"]}]}'`}
               />
             </Block>
           ) : null}
@@ -271,10 +299,9 @@ function CopyInstructionsButton({ value }: { value: string }) {
           </p>
         </div>
       </div>
-      <button
-        className="flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-md bg-foreground px-3 text-sm font-semibold text-background ring-1 ring-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground/40 active:scale-[0.98]"
+      <Button
+        className="w-full"
         onClick={copy}
-        type="button"
       >
         {copied ? (
           <>
@@ -287,7 +314,7 @@ function CopyInstructionsButton({ value }: { value: string }) {
             Copy agent prompt
           </>
         )}
-      </button>
+      </Button>
     </section>
   );
 }

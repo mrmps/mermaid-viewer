@@ -4,7 +4,7 @@ import { useState, useCallback, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSourcePanel } from "./diagram-layout";
 import { Button } from "@/components/ui/button";
-import { Code, Copy, Check, Save, X } from "lucide-react";
+import { Code, Copy, Check, Save, X } from "@/components/icons/mingcute";
 
 export function SourceToggle() {
   const { toggle } = useSourcePanel();

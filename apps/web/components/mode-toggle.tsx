@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { useTheme } from "@/components/theme-provider";
+import { Moon, Sun } from "@/components/icons/mingcute";
 
 const subscribe = () => () => {};
 
@@ -24,29 +25,17 @@ export function ModeToggle() {
       aria-disabled={disabled}
       disabled={disabled}
     >
-      <svg
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-        className={mounted ? "opacity-100" : "opacity-0"}
-      >
-        <path d="M12 3v3" />
-        <path d="M12 18v3" />
-        <path d="M4.93 4.93l2.12 2.12" />
-        <path d="M16.95 16.95l2.12 2.12" />
-        <path d="M3 12h3" />
-        <path d="M18 12h3" />
-        <path d="M4.93 19.07l2.12-2.12" />
-        <path d="M16.95 7.05l2.12-2.12" />
-        <path d="M12 8a4 4 0 1 0 0 8" />
-        <path d="M12 8a4 4 0 0 1 0 8" />
-      </svg>
+      {isDark ? (
+        <Sun
+          aria-hidden="true"
+          className={mounted ? "size-4 opacity-100" : "size-4 opacity-0"}
+        />
+      ) : (
+        <Moon
+          aria-hidden="true"
+          className={mounted ? "size-4 opacity-100" : "size-4 opacity-0"}
+        />
+      )}
     </button>
   );
 }

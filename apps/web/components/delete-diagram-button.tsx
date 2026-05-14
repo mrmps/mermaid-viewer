@@ -2,23 +2,25 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2 } from "lucide-react";
+import { Trash2 } from "@/components/icons/mingcute";
 import { removeHistoryEntry } from "@/components/history-tracker";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
+  DialogPanel,
+  DialogPopup,
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
   Drawer,
-  DrawerContent,
   DrawerDescription,
   DrawerFooter,
   DrawerHeader,
+  DrawerPanel,
+  DrawerPopup,
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { useMediaQuery } from "@/lib/use-media-query";
@@ -69,29 +71,29 @@ export function DeleteDiagramButton({
     }
   }
 
-  const content = (
-    <>
-      <div className="space-y-3 px-4 pb-4">
-        <p className="text-sm text-muted-foreground">
-          Delete <span className="font-medium text-foreground">{title}</span> and
-          all of its saved versions. This cannot be undone.
-        </p>
-        {error && (
-          <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-            {error}
-          </div>
-        )}
-      </div>
-      <DeleteActions
-        deleting={deleting}
-        onCancel={() => {
-          if (deleting) return;
-          setOpen(false);
-          setError(null);
-        }}
-        onDelete={onDelete}
-      />
-    </>
+  const body = (
+    <div className="space-y-3">
+      <p className="text-sm text-muted-foreground">
+        Delete <span className="font-medium text-foreground">{title}</span> and
+        all of its saved versions. This cannot be undone.
+      </p>
+      {error && (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+          {error}
+        </div>
+      )}
+    </div>
+  );
+  const actions = (
+    <DeleteActionButtons
+      deleting={deleting}
+      onCancel={() => {
+        if (deleting) return;
+        setOpen(false);
+        setError(null);
+      }}
+      onDelete={onDelete}
+    />
   );
 
   const trigger = (
@@ -113,15 +115,16 @@ export function DeleteDiagramButton({
     return (
       <Dialog open={open} onOpenChange={setOpen}>
         {trigger}
-        <DialogContent className="sm:max-w-md">
+        <DialogPopup className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Delete diagram?</DialogTitle>
             <DialogDescription>
               This permanently removes the chart and its version history.
             </DialogDescription>
           </DialogHeader>
-          {content}
-        </DialogContent>
+          <DialogPanel>{body}</DialogPanel>
+          <DialogFooter>{actions}</DialogFooter>
+        </DialogPopup>
       </Dialog>
     );
   }
@@ -129,20 +132,21 @@ export function DeleteDiagramButton({
   return (
     <Drawer open={open} onOpenChange={setOpen}>
       {trigger}
-      <DrawerContent>
+      <DrawerPopup showBar>
         <DrawerHeader>
           <DrawerTitle>Delete diagram?</DrawerTitle>
           <DrawerDescription>
             This permanently removes the chart and its version history.
           </DrawerDescription>
         </DrawerHeader>
-        {content}
-      </DrawerContent>
+        <DrawerPanel>{body}</DrawerPanel>
+        <DrawerFooter>{actions}</DrawerFooter>
+      </DrawerPopup>
     </Drawer>
   );
 }
 
-function DeleteActions({
+function DeleteActionButtons({
   deleting,
   onCancel,
   onDelete,
@@ -153,22 +157,12 @@ function DeleteActions({
 }) {
   return (
     <>
-      <DialogFooter className="hidden sm:flex">
-        <Button variant="outline" onClick={onCancel} disabled={deleting}>
-          Cancel
-        </Button>
-        <Button variant="destructive" onClick={onDelete} disabled={deleting}>
-          {deleting ? "Deleting..." : "Delete diagram"}
-        </Button>
-      </DialogFooter>
-      <DrawerFooter className="sm:hidden">
-        <Button variant="destructive" onClick={onDelete} disabled={deleting}>
-          {deleting ? "Deleting..." : "Delete diagram"}
-        </Button>
-        <Button variant="outline" onClick={onCancel} disabled={deleting}>
-          Cancel
-        </Button>
-      </DrawerFooter>
+      <Button variant="ghost" onClick={onCancel} disabled={deleting}>
+        Cancel
+      </Button>
+      <Button variant="destructive" onClick={onDelete} loading={deleting}>
+        Delete diagram
+      </Button>
     </>
   );
 }

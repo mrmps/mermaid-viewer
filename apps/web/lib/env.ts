@@ -13,6 +13,7 @@ export const environment = createEnv({
   },
   client: {
     NEXT_PUBLIC_BASE_URL: z.url().default("https://merm.sh"),
+    NEXT_PUBLIC_TLDRAW_LICENSE_KEY: z.string().min(1).optional(),
   },
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
@@ -21,6 +22,7 @@ export const environment = createEnv({
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
     NODE_ENV: process.env.NODE_ENV,
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
+    NEXT_PUBLIC_TLDRAW_LICENSE_KEY: process.env.NEXT_PUBLIC_TLDRAW_LICENSE_KEY,
   },
 });
 

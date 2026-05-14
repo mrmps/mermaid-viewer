@@ -1,4 +1,5 @@
 import {
+  addArtifactToBoard,
   addDiagramToBoard,
   createDiagram,
   getBoard,
@@ -14,8 +15,10 @@ import { z } from "zod";
 
 const boardItemSchema = z.object({
   id: z.string(),
-  kind: z.literal("diagram").optional(),
-  diagramId: z.string(),
+  kind: z
+    .enum(["diagram", "website", "slides", "markdown", "image", "text", "drawing"])
+    .optional(),
+  diagramId: z.string().optional(),
   diagramEditId: z.string().optional(),
   title: z.string().optional(),
   content: z.string().optional(),
@@ -29,6 +32,21 @@ const boardItemSchema = z.object({
   renderer: z.enum(["beautiful", "mermaid"]).optional(),
   theme: z.string().optional(),
   look: z.enum(["classic", "handDrawn", "neo"]).optional(),
+  url: z.string().optional(),
+  imageUrl: z.string().optional(),
+  accent: z.string().optional(),
+  author: z.string().optional(),
+  slides: z
+    .array(
+      z.object({
+        eyebrow: z.string().optional(),
+        title: z.string(),
+        body: z.string().optional(),
+        bullets: z.array(z.string()).optional(),
+        accent: z.string().optional(),
+      })
+    )
+    .optional(),
   updatedAt: z.string().optional(),
 });
 
@@ -54,8 +72,27 @@ const patchBoardSchema = z.object({
 const addItemSchema = z.object({
   secret: z.string().optional(),
   editId: z.string().optional(),
+  kind: z
+    .enum(["diagram", "website", "slides", "markdown", "image", "text"])
+    .optional(),
   diagramId: z.string().optional(),
   content: z.string().optional(),
+  ui: z.string().optional(),
+  url: z.string().optional(),
+  imageUrl: z.string().optional(),
+  accent: z.string().optional(),
+  author: z.string().optional(),
+  slides: z
+    .array(
+      z.object({
+        eyebrow: z.string().optional(),
+        title: z.string(),
+        body: z.string().optional(),
+        bullets: z.array(z.string()).optional(),
+        accent: z.string().optional(),
+      })
+    )
+    .optional(),
   pageId: z.string().optional(),
   pageName: z.string().optional(),
   title: z.string().optional(),
@@ -64,6 +101,7 @@ const addItemSchema = z.object({
   width: z.number().optional(),
   height: z.number().optional(),
 }).superRefine((value, context) => {
+  if (value.kind && value.kind !== "diagram") return;
   if (value.diagramId?.trim() || value.content?.trim()) return;
 
   context.addIssue({
@@ -215,6 +253,70 @@ export async function POST(
     ? authHeader.slice(7)
     : parsed.data.secret;
 
+  const kind = parsed.data.kind ?? "diagram";
+
+  if (kind !== "diagram") {
+    const artifactContent =
+      kind === "website"
+        ? parsed.data.ui ?? parsed.data.content
+        : parsed.data.content;
+    const result = await addArtifactToBoard({
+      boardId: id,
+      secret,
+      editId: parsed.data.editId,
+      kind,
+      pageId: parsed.data.pageId,
+      pageName: parsed.data.pageName,
+      title: parsed.data.title,
+      content: artifactContent,
+      url: parsed.data.url,
+      imageUrl: parsed.data.imageUrl,
+      accent: parsed.data.accent,
+      author: parsed.data.author,
+      slides: parsed.data.slides,
+      x: parsed.data.x,
+      y: parsed.data.y,
+      width: parsed.data.width,
+      height: parsed.data.height,
+    });
+
+    if ("error" in result) {
+      const status = result.error === "not_found" ? 404 : 401;
+      return Response.json(
+        {
+          error: result.error,
+          message:
+            result.error === "not_found" ? "Board not found" : "Invalid credentials",
+        },
+        { status }
+      );
+    }
+
+    const data = await getBoard({ id });
+    if (!data) {
+      return Response.json(
+        { error: "not_found", message: "Board not found" },
+        { status: 404 }
+      );
+    }
+
+    return Response.json({
+      ...boardResponse(data, { includeEdit: true }),
+      itemId: result.itemId,
+      itemUrl: `${baseUrl}/b/${id}/i/${result.itemId}`,
+      editItemUrl: parsed.data.editId
+        ? `${baseUrl}/be/${parsed.data.editId}/i/${result.itemId}`
+        : undefined,
+      placement: {
+        pageId: result.pageId,
+        x: result.x,
+        y: result.y,
+        width: result.width,
+        height: result.height,
+      },
+    });
+  }
+
   let diagramId = parsed.data.diagramId?.trim();
 
   if (!diagramId) {
@@ -276,6 +378,10 @@ export async function POST(
   return Response.json({
     ...boardResponse(data, { includeEdit: true }),
     itemId: result.itemId,
+    itemUrl: `${baseUrl}/b/${id}/i/${result.itemId}`,
+    editItemUrl: parsed.data.editId
+      ? `${baseUrl}/be/${parsed.data.editId}/i/${result.itemId}`
+      : undefined,
     placement: {
       pageId: result.pageId,
       x: result.x,

@@ -2,17 +2,24 @@
 import { ReactScanDev } from "@/components/react-scan-dev";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { ThemeProvider } from "@/components/theme-provider";
 import { QueryProvider } from "@/components/query-provider";
 import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
-import { ReactGrabDevScript } from "@/components/react-grab-dev-script";
 import { VercelAnalytics } from "@/components/vercel-analytics";
 import { baseUrl } from "@/lib/env";
 import { getThemeBootstrapScript } from "@/lib/theme";
 import "./globals.css";
 
 const isDevelopment = process.env.NODE_ENV === "development";
+const reactGrabDisableOnBoardRoutesScript = `
+(() => {
+  if (/^\\/(?:b|be)(?:\\/|$)/.test(window.location.pathname)) {
+    window.__REACT_GRAB_DISABLED__ = true;
+  }
+})();
+`;
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -103,6 +110,20 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{ __html: getThemeBootstrapScript() }}
         />
+        {isDevelopment ? (
+          <>
+            <script
+              dangerouslySetInnerHTML={{
+                __html: reactGrabDisableOnBoardRoutesScript,
+              }}
+            />
+            <Script
+              crossOrigin="anonymous"
+              src="//unpkg.com/react-grab/dist/index.global.js"
+              strategy="beforeInteractive"
+            />
+          </>
+        ) : null}
       </head>
       <ReactScanDev enabled={isDevelopment} />
       <body className="min-h-full flex flex-col bg-background text-foreground">
@@ -115,7 +136,6 @@ export default function RootLayout({
           </ThemeProvider>
         </QueryProvider>
         <VercelAnalytics />
-        <ReactGrabDevScript enabled={isDevelopment} />
       </body>
     </html>
   );

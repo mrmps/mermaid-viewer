@@ -10,6 +10,7 @@ const mockDeleteDiagram = vi.fn();
 const mockGetBoard = vi.fn();
 const mockUpdateBoard = vi.fn();
 const mockAddDiagramToBoard = vi.fn();
+const mockAddArtifactToBoard = vi.fn();
 const mockValidateMermaid = vi.fn();
 
 vi.mock("@mermaid-viewer/db", () => ({
@@ -21,6 +22,7 @@ vi.mock("@mermaid-viewer/db", () => ({
   getBoard: (...args: unknown[]) => mockGetBoard(...args),
   updateBoard: (...args: unknown[]) => mockUpdateBoard(...args),
   addDiagramToBoard: (...args: unknown[]) => mockAddDiagramToBoard(...args),
+  addArtifactToBoard: (...args: unknown[]) => mockAddArtifactToBoard(...args),
 }));
 
 vi.mock("@/lib/mermaid-parse", () => ({
@@ -223,6 +225,94 @@ describe("GET /api/b/[id] — Fetch board", () => {
     expect(json.url).toBe("https://merm.sh/b/board123");
     expect(json.editId).toBeUndefined();
     expect(json.editUrl).toBeUndefined();
+  });
+});
+
+describe("POST /api/b/[id] — Add board artifact", () => {
+  let POST: (req: NextRequest, ctx: { params: Promise<{ id: string }> }) => Promise<Response>;
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    mockAddArtifactToBoard.mockResolvedValue({
+      itemId: "item123",
+      pageId: "page1",
+      x: 0,
+      y: 0,
+      width: 640,
+      height: 420,
+    });
+    mockGetBoard.mockResolvedValue({
+      board: {
+        id: "board123",
+        editId: "edit-board",
+        title: "Workspace",
+        updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+      },
+      state: {
+        version: 1,
+        activePageId: "page1",
+        pages: [{ id: "page1", name: "Page 1", items: [] }],
+      },
+    });
+    const mod = await import("../app/api/b/[id]/route");
+    POST = mod.POST;
+  });
+
+  it("accepts website ui as the artifact content and returns item page URLs", async () => {
+    const ui = '<main onclick="alert(1)"><h1>Launch</h1></main>';
+    const req = makeRequest("/api/b/board123", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        editId: "edit-board",
+        kind: "website",
+        title: "Launch page",
+        ui,
+      }),
+    });
+
+    const res = await POST(req, { params: Promise.resolve({ id: "board123" }) });
+
+    expect(res.status).toBe(200);
+    expect(mockAddArtifactToBoard).toHaveBeenCalledWith(
+      expect.objectContaining({
+        boardId: "board123",
+        editId: "edit-board",
+        kind: "website",
+        title: "Launch page",
+        content: ui,
+      })
+    );
+    const json = await res.json();
+    expect(json.itemUrl).toBe("https://merm.sh/b/board123/i/item123");
+    expect(json.editItemUrl).toBe("https://merm.sh/be/edit-board/i/item123");
+  });
+
+  it("passes multi-slide decks through to the board artifact layer", async () => {
+    const slides = [
+      { title: "Thesis", body: "One sharp point" },
+      { title: "Proof", bullets: ["Fast", "Safe"] },
+    ];
+    const req = makeRequest("/api/b/board123", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        editId: "edit-board",
+        kind: "slides",
+        title: "Pitch",
+        slides,
+      }),
+    });
+
+    const res = await POST(req, { params: Promise.resolve({ id: "board123" }) });
+
+    expect(res.status).toBe(200);
+    expect(mockAddArtifactToBoard).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: "slides",
+        slides,
+      })
+    );
   });
 });
 

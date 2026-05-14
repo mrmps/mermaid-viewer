@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Kbd } from "@/components/ui/kbd";
+import { Kbd, KbdGroup } from "@/components/ui/kbd";
+import { MessageSquare } from "@/components/icons/mingcute";
 
 export function FloatingChatButton() {
   return (
@@ -18,24 +19,18 @@ export function FloatingChatButton() {
         dark:hover:bg-zinc-700 dark:hover:border-zinc-500 dark:hover:shadow-[0_2px_6px_rgba(0,0,0,0.3),0_8px_24px_rgba(0,0,0,0.4)]"
     >
       <span className="relative flex items-center justify-center size-5">
-        <span className="absolute inset-0 rounded-full bg-violet-500/10 group-hover:bg-violet-500/20 transition-colors duration-200" />
-        <svg
-          className="relative size-3.5 text-violet-600 dark:text-violet-400"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-        </svg>
+        <span className="absolute inset-0 rounded-full bg-sky-500/10 group-hover:bg-sky-500/20 transition-colors duration-200" />
+        <MessageSquare className="relative size-3.5 text-sky-600 dark:text-sky-400" />
       </span>
       <span>Create with chat</span>
-      <Kbd className="ml-1 h-6 px-1.5 gap-0.5 text-[11px] font-medium bg-zinc-100/80 border-zinc-200 text-zinc-500 dark:bg-zinc-700/60 dark:border-zinc-600 dark:text-zinc-300">
-        <span className="text-[13px] leading-none">⌘</span>
-        <span>I</span>
-      </Kbd>
+      <KbdGroup className="ml-1 gap-0.5">
+        <Kbd className="h-6 min-w-5 bg-zinc-100/80 px-1.5 text-[11px] text-zinc-500 dark:bg-zinc-700/60 dark:text-zinc-300">
+          ⌘
+        </Kbd>
+        <Kbd className="h-6 min-w-5 bg-zinc-100/80 px-1.5 text-[11px] text-zinc-500 dark:bg-zinc-700/60 dark:text-zinc-300">
+          I
+        </Kbd>
+      </KbdGroup>
     </Link>
   );
 }

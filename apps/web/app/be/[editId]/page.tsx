@@ -1,40 +1,8 @@
-import { getBoardByEditId, type EnrichedBoardState } from "@mermaid-viewer/db";
+import { getBoardByEditId } from "@mermaid-viewer/db";
 import { notFound } from "next/navigation";
 import { BoardWorkspace } from "@/components/board-workspace";
-import type { BoardDocument } from "@/lib/board-state";
+import { toBoardDocument } from "@/lib/board-document";
 import type { Metadata } from "next";
-
-function toBoardDocument(state: EnrichedBoardState): BoardDocument {
-  return {
-    version: 1,
-    activePageId: state.activePageId,
-    pages: state.pages.map((page) => ({
-      id: page.id,
-      name: page.name,
-      items: page.items
-        .filter((item) => item.content)
-        .map((item) => ({
-          id: item.id,
-          kind: "diagram",
-          diagramId: item.diagramId,
-          diagramEditId: item.diagramEditId,
-          title: item.title,
-          content: item.content,
-          href: item.href,
-          editHref: item.editHref,
-          version: item.version,
-          x: item.x,
-          y: item.y,
-          width: item.width,
-          height: item.height,
-          renderer: item.renderer ?? "beautiful",
-          theme: item.theme ?? "zinc",
-          look: item.look ?? "classic",
-          updatedAt: item.updatedAt,
-        })),
-    })),
-  };
-}
 
 export async function generateMetadata({
   params,

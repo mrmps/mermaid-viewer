@@ -210,6 +210,15 @@ curl -X POST ${baseUrl}/api/b/:id \\
 
 Cards are placed in the nearest open slot by default. Pass \`pageId\`, \`pageName\`, \`x\`, \`y\`, \`width\`, or \`height\` when you need more control.
 
+**Publish a website UI artifact:**
+\`\`\`bash
+curl -X POST ${baseUrl}/api/b/:id \\
+  -H "Content-Type: application/json" \\
+  -d '{"editId": "BOARD_EDIT_ID", "kind": "website", "title": "Launch page", "ui": "<main><style>body{margin:0}</style><h1>Launch</h1></main>"}'
+\`\`\`
+
+Website \`ui\` is sanitized and rendered in a locked-down iframe: scripts, event handlers, unsafe URLs, external frames, form submissions, and network fetches are blocked. Use \`kind: "slides"\` plus a \`slides\` array for multi-slide presentations. Each added card returns an \`itemUrl\` for its own page.
+
 ## Supported Diagram Types
 
 flowchart, sequence, class, state, entity-relationship, gantt, pie, quadrant, requirement, gitgraph, mindmap, timeline, sankey, block, packet, kanban, architecture

@@ -1,7 +1,14 @@
 import { eq, and, asc, desc, count, inArray } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { db } from "./client";
-import { boards, diagrams, versions, type StoredBoardState } from "./schema";
+import {
+  boards,
+  diagrams,
+  versions,
+  type StoredBoardItemKind,
+  type StoredBoardSlide,
+  type StoredBoardState,
+} from "./schema";
 
 type DiagramRow = typeof diagrams.$inferSelect;
 type BoardRow = typeof boards.$inferSelect;
@@ -68,6 +75,21 @@ function createDefaultBoardState(): StoredBoardState {
   };
 }
 
+function normalizeBoardItemKind(value: unknown): StoredBoardItemKind {
+  return value === "website" ||
+    value === "slides" ||
+    value === "markdown" ||
+    value === "image" ||
+    value === "text" ||
+    value === "drawing"
+    ? value
+    : "diagram";
+}
+
+function normalizeOptionalString(value: unknown) {
+  return typeof value === "string" && value.trim() ? value : undefined;
+}
+
 function parseLegacyDiagramEditId(value: unknown) {
   if (typeof value !== "string") return undefined;
   const read = (pathname: string) => {
@@ -80,6 +102,57 @@ function parseLegacyDiagramEditId(value: unknown) {
   } catch {
     return read(value.split(/[?#]/, 1)[0]);
   }
+}
+
+function getDefaultBoardItemContent(kind: StoredBoardItemKind) {
+  switch (kind) {
+    case "website":
+      return "Product story, interaction notes, and launch sections live here.";
+    case "slides":
+      return "Narrative deck";
+    case "markdown":
+      return "# Working notes\n\n- Add context\n- Capture decisions\n- Link supporting cards";
+    case "image":
+      return "Image reference";
+    case "text":
+      return "Write a note...";
+    case "drawing":
+      return "Freehand contribution";
+    case "diagram":
+      return undefined;
+  }
+}
+
+function normalizeSlides(value: unknown): StoredBoardSlide[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+
+  const slides = value.flatMap((slideValue): StoredBoardSlide[] => {
+      if (!slideValue || typeof slideValue !== "object") return [];
+      const slide = slideValue as Partial<StoredBoardSlide>;
+      const title = normalizeOptionalString(slide.title);
+      if (!title) return [];
+
+      const normalized: StoredBoardSlide = {
+        title,
+      };
+      const eyebrow = normalizeOptionalString(slide.eyebrow);
+      const body = normalizeOptionalString(slide.body);
+      const accent = normalizeOptionalString(slide.accent);
+      const bullets = Array.isArray(slide.bullets)
+        ? slide.bullets.filter(
+            (bullet): bullet is string =>
+              typeof bullet === "string" && Boolean(bullet.trim())
+          )
+        : undefined;
+      if (eyebrow) normalized.eyebrow = eyebrow;
+      if (body) normalized.body = body;
+      if (accent) normalized.accent = accent;
+      if (bullets?.length) normalized.bullets = bullets;
+
+      return [normalized];
+    });
+
+  return slides.length > 0 ? slides : undefined;
 }
 
 function normalizeBoardState(value: unknown): StoredBoardState {
@@ -100,32 +173,37 @@ function normalizeBoardState(value: unknown): StoredBoardState {
       if (Array.isArray(pageValue.items)) {
         pageValue.items.forEach((item) => {
           if (!item || typeof item !== "object") return;
+          const kind = normalizeBoardItemKind(item.kind);
           const diagramId =
             typeof item.diagramId === "string" ? item.diagramId : "";
-          if (!diagramId) return;
+          if (kind === "diagram" && !diagramId) return;
 
-            items.push({
-              id: typeof item.id === "string" && item.id ? item.id : nanoid(10),
-              kind: "diagram",
-              diagramId,
-              diagramEditId:
-                typeof item.diagramEditId === "string" && item.diagramEditId
-                  ? item.diagramEditId
-                  : parseLegacyDiagramEditId(item.editHref),
-              title:
-                typeof item.title === "string" && item.title.trim()
-                  ? item.title
-                  : undefined,
-              content:
-                typeof item.content === "string" && item.content
-                  ? item.content
-                  : undefined,
-              href:
-                typeof item.href === "string" && item.href ? item.href : undefined,
-              editHref:
-                typeof item.editHref === "string" && item.editHref
-                  ? item.editHref
-                  : undefined,
+          items.push({
+            id: typeof item.id === "string" && item.id ? item.id : nanoid(10),
+            kind,
+            diagramId:
+              kind === "diagram"
+                ? diagramId
+                : normalizeOptionalString(item.diagramId),
+            diagramEditId:
+              kind === "diagram"
+                ? normalizeOptionalString(item.diagramEditId) ??
+                  parseLegacyDiagramEditId(item.editHref)
+                : undefined,
+            title:
+              typeof item.title === "string" && item.title.trim()
+                ? item.title
+                : undefined,
+            content:
+              typeof item.content === "string" && item.content
+                ? item.content
+                : getDefaultBoardItemContent(kind),
+            href:
+              typeof item.href === "string" && item.href ? item.href : undefined,
+            editHref:
+              typeof item.editHref === "string" && item.editHref
+                ? item.editHref
+                : undefined,
               version:
                 typeof item.version === "number" && Number.isFinite(item.version)
                   ? item.version
@@ -157,6 +235,11 @@ function normalizeBoardState(value: unknown): StoredBoardState {
               item.look === "handDrawn" || item.look === "neo"
                 ? item.look
                 : "classic",
+            url: normalizeOptionalString(item.url),
+            imageUrl: normalizeOptionalString(item.imageUrl),
+            accent: normalizeOptionalString(item.accent),
+            author: normalizeOptionalString(item.author),
+            slides: normalizeSlides(item.slides),
             updatedAt:
               typeof item.updatedAt === "string" && item.updatedAt
                 ? item.updatedAt
@@ -265,12 +348,22 @@ function findOpenBoardPosition(
 }
 
 function getBoardDiagramIds(state: StoredBoardState) {
-  return [...new Set(state.pages.flatMap((page) => page.items.map((item) => item.diagramId)))];
+  return [
+    ...new Set(
+      state.pages.flatMap((page) =>
+        page.items
+          .filter(
+            (item) => (item.kind ?? "diagram") === "diagram" && item.diagramId
+          )
+          .map((item) => item.diagramId as string)
+      )
+    ),
+  ];
 }
 
 async function enrichBoardState(
   state: StoredBoardState,
-  opts: { boardEditId?: string } = {}
+  opts: { boardId?: string; boardEditId?: string } = {}
 ): Promise<EnrichedBoardState> {
   const diagramIds = getBoardDiagramIds(state);
 
@@ -303,28 +396,41 @@ async function enrichBoardState(
     pages: state.pages.map((page) => ({
       ...page,
       items: page.items.map((item) => {
-        const diagram = diagramsById.get(item.diagramId);
+        const isDiagram = (item.kind ?? "diagram") === "diagram";
+        const diagram =
+          isDiagram && item.diagramId ? diagramsById.get(item.diagramId) : null;
         const version = item.version ?? diagram?.version ?? 1;
+        const itemHref = opts.boardId ? `/b/${opts.boardId}/i/${item.id}` : "";
+        const editItemHref = opts.boardEditId
+          ? `/be/${opts.boardEditId}/i/${item.id}`
+          : itemHref;
         const diagramEditId =
           item.diagramEditId ??
           parseLegacyDiagramEditId(item.editHref) ??
           diagram?.editId;
-        const editHref = opts.boardEditId
-          ? `/be/${opts.boardEditId}?focus=${encodeURIComponent(item.diagramId)}`
-          : item.editHref && parseLegacyDiagramEditId(item.editHref) === undefined
-            ? item.editHref
-            : item.href ?? `/d/${item.diagramId}`;
+        const editHref =
+          isDiagram && editItemHref
+            ? editItemHref
+            : item.editHref &&
+                parseLegacyDiagramEditId(item.editHref) === undefined
+              ? item.editHref
+              : editItemHref || item.href || item.url || "";
         return {
           ...item,
-          diagramEditId,
+          diagramEditId: isDiagram ? diagramEditId : item.diagramEditId,
           title: item.title || diagram?.title || "Untitled",
-          content: item.content || diagram?.content || "",
+          content:
+            item.content ||
+            diagram?.content ||
+            getDefaultBoardItemContent(item.kind ?? "diagram") ||
+            "",
           href:
             item.href ??
             (diagram
-              ? `/d/${item.diagramId}?v=${version}`
-              : `/d/${item.diagramId}`),
-          editHref,
+              ? `/d/${item.diagramId ?? ""}?v=${version}`
+              : itemHref || item.url || ""),
+          editHref:
+            editHref,
           version,
           updatedAt: item.updatedAt ?? diagram?.updatedAt?.toISOString(),
         };
@@ -397,7 +503,7 @@ export async function createDiagram(opts: {
                 title,
                 content: opts.content,
                 href: `/d/${id}?v=1`,
-                editHref: `/be/${boardEditId}?focus=${id}`,
+                editHref: `/be/${boardEditId}/i/${itemId}`,
                 version: 1,
                 x: 0,
                 y: 0,
@@ -610,7 +716,7 @@ export async function createBoard(opts: {
         title: diagram.title,
         content,
         href: `/d/${diagram.id}?v=${diagram.currentVersion}`,
-        editHref: `/be/${editId}?focus=${diagram.id}`,
+        editHref: `/be/${editId}/i/${itemId}`,
         version: diagram.currentVersion,
         x: 0,
         y: 0,
@@ -657,6 +763,7 @@ export async function getBoard(opts: { id: string }) {
 
   const state = normalizeBoardState(board.state);
   const enrichedState = await enrichBoardState(state, {
+    boardId: board.id,
     boardEditId: board.editId,
   });
 
@@ -672,6 +779,7 @@ export async function getBoardByEditId(opts: { editId: string }) {
 
   const state = normalizeBoardState(board.state);
   const enrichedState = await enrichBoardState(state, {
+    boardId: board.id,
     boardEditId: board.editId,
   });
 
@@ -707,7 +815,6 @@ export async function addDiagramToBoard(opts: {
   if (!diagram) return { error: "diagram_not_found" as const };
   const content = await getDiagramCurrentContent(diagram);
   const href = `/d/${diagram.id}?v=${diagram.currentVersion}`;
-  const editHref = `/be/${board.editId}?focus=${diagram.id}`;
   const updatedAt = diagram.updatedAt.toISOString();
 
   const state = normalizeBoardState(board.state);
@@ -737,6 +844,7 @@ export async function addDiagramToBoard(opts: {
 
   if (existing) {
     itemId = existing.id;
+    const editHref = `/be/${board.editId}/i/${itemId}`;
     existing.title = opts.title ?? diagram.title;
     existing.content = content;
     existing.href = href;
@@ -751,6 +859,7 @@ export async function addDiagramToBoard(opts: {
       y: opts.y,
     });
     itemId = nanoid(10);
+    const editHref = `/be/${board.editId}/i/${itemId}`;
     targetPage.items.push({
       id: itemId,
       kind: "diagram",
@@ -796,6 +905,124 @@ export async function addDiagramToBoard(opts: {
     width: item?.width ?? BOARD_ITEM_WIDTH,
     height: item?.height ?? BOARD_ITEM_HEIGHT,
   };
+}
+
+export async function addArtifactToBoard(opts: {
+  boardId: string;
+  secret?: string;
+  editId?: string;
+  kind: Exclude<StoredBoardItemKind, "diagram">;
+  pageId?: string;
+  pageName?: string;
+  title?: string;
+  content?: string;
+  url?: string;
+  imageUrl?: string;
+  accent?: string;
+  author?: string;
+  slides?: StoredBoardSlide[];
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+}) {
+  const board = await db.query.boards.findFirst({
+    where: eq(boards.id, opts.boardId),
+  });
+
+  if (!board) return { error: "not_found" as const };
+  if (!isBoardAuthorized(board, opts)) {
+    return { error: "unauthorized" as const };
+  }
+
+  const state = normalizeBoardState(board.state);
+  let targetPage = opts.pageId
+    ? state.pages.find((page) => page.id === opts.pageId)
+    : undefined;
+
+  if (!targetPage && opts.pageName?.trim()) {
+    targetPage = state.pages.find(
+      (page) => page.name.toLowerCase() === opts.pageName?.trim().toLowerCase()
+    );
+  }
+
+  if (!targetPage && opts.pageName?.trim()) {
+    targetPage = {
+      id: nanoid(10),
+      name: opts.pageName.trim(),
+      items: [],
+    };
+    state.pages.push(targetPage);
+  }
+
+  targetPage ??=
+    state.pages.find((page) => page.id === state.activePageId) ?? state.pages[0];
+
+  const size = getBoardItemSize(opts);
+  const position = findOpenBoardPosition(targetPage.items, size, {
+    x: opts.x,
+    y: opts.y,
+  });
+  const itemId = nanoid(10);
+  const href = `/b/${opts.boardId}/i/${itemId}`;
+  const editHref = `/be/${board.editId}/i/${itemId}`;
+  const updatedAt = new Date().toISOString();
+
+  targetPage.items.push({
+    id: itemId,
+    kind: opts.kind,
+    title: opts.title?.trim() || getArtifactTitle(opts.kind),
+    content:
+      opts.content?.trim() || getDefaultBoardItemContent(opts.kind) || "",
+    href,
+    editHref,
+    x: position.x,
+    y: position.y,
+    width: size.width,
+    height: size.height,
+    renderer: "beautiful",
+    theme: "zinc",
+    look: "classic",
+    url: opts.url?.trim() || undefined,
+    imageUrl: opts.imageUrl?.trim() || undefined,
+    accent: opts.accent?.trim() || undefined,
+    author: opts.author?.trim() || undefined,
+    slides: opts.slides,
+    updatedAt,
+  });
+
+  state.activePageId = targetPage.id;
+
+  await db
+    .update(boards)
+    .set({ state, updatedAt: new Date() })
+    .where(eq(boards.id, opts.boardId));
+
+  return {
+    itemId,
+    pageId: targetPage.id,
+    x: position.x,
+    y: position.y,
+    width: size.width,
+    height: size.height,
+  };
+}
+
+function getArtifactTitle(kind: Exclude<StoredBoardItemKind, "diagram">) {
+  switch (kind) {
+    case "website":
+      return "Website";
+    case "slides":
+      return "Slides";
+    case "markdown":
+      return "Markdown doc";
+    case "image":
+      return "Image";
+    case "text":
+      return "Text note";
+    case "drawing":
+      return "Drawing";
+  }
 }
 
 export async function updateBoard(opts: {
