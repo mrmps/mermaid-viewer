@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useSourcePanel } from "./diagram-layout";
 import { Button } from "@/components/ui/button";
 import { Code, Copy, Check, Save, X } from "@/components/icons/mingcute";
@@ -43,6 +43,7 @@ function SourcePanelInner({
   const [error, setError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const hasChanges = source !== content;
@@ -75,17 +76,18 @@ function SourcePanelInner({
 
       const data = await res.json();
 
-      // Navigate to the new version on the public diagram URL.
+      // Stay in the current editing surface when edit access is present.
       const params = new URLSearchParams(searchParams.toString());
       params.set("v", String(data.version));
-      router.push(`/d/${diagramId}?${params.toString()}`);
+      const nextPath = editId ? pathname : `/d/${diagramId}`;
+      router.push(`${nextPath}?${params.toString()}`);
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to save");
     } finally {
       setSaving(false);
     }
-  }, [source, editId, diagramId, hasChanges, searchParams, router]);
+  }, [source, editId, diagramId, hasChanges, pathname, searchParams, router]);
 
   if (!open) return null;
 

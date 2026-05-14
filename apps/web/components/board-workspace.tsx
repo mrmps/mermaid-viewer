@@ -198,6 +198,7 @@ type BoardTldrawContextValue = {
   onActivateContent: (itemId: string | null) => void;
   onCaptureUndoCheckpoint: () => void;
   onContentChange: (itemId: string, content: string) => void;
+  onOpenSource: (itemId: string) => void;
   onSelectItem: (itemId: string | null) => void;
   onTitleChange: (itemId: string, title: string) => void;
 };
@@ -318,13 +319,13 @@ function BoardTldrawArtifactShape({ shape }: { shape: BoardArtifactShape }) {
         onCardPointerDown={(event) => {
           const target = event.target as HTMLElement;
 
-          if (event.button === 0) {
-            context.onSelectItem(item.id);
-          }
-
           if (target.closest("[data-board-control]")) {
             editor.markEventAsHandled(event);
             return;
+          }
+
+          if (event.button === 0) {
+            context.onSelectItem(item.id);
           }
 
           if (!target.closest("[data-board-content-activator]")) {
@@ -430,6 +431,7 @@ function BoardTldrawArtifactShape({ shape }: { shape: BoardArtifactShape }) {
           });
         }}
         onContentChange={(content) => context.onContentChange(item.id, content)}
+        onOpenSource={() => context.onOpenSource(item.id)}
         onTitleChange={(title) => context.onTitleChange(item.id, title)}
       />
     </HTMLContainer>
@@ -450,6 +452,7 @@ type BoardTldrawCanvasProps = {
   onCaptureUndoCheckpoint: () => void;
   onContentChange: (itemId: string, content: string) => void;
   onEditorChange: (editor: Editor | null) => void;
+  onOpenSource: (itemId: string) => void;
   onSelectItem: (itemId: string | null) => void;
   onTitleChange: (itemId: string, title: string) => void;
   readOnly: boolean;
@@ -468,6 +471,7 @@ function BoardTldrawCanvas({
   onCaptureUndoCheckpoint,
   onContentChange,
   onEditorChange,
+  onOpenSource,
   onSelectItem,
   onTitleChange,
   readOnly,
@@ -502,6 +506,7 @@ function BoardTldrawCanvas({
       onActivateContent,
       onCaptureUndoCheckpoint,
       onContentChange,
+      onOpenSource,
       onSelectItem,
       onTitleChange,
     }),
@@ -513,6 +518,7 @@ function BoardTldrawCanvas({
       onActivateContent,
       onCaptureUndoCheckpoint,
       onContentChange,
+      onOpenSource,
       onSelectItem,
       onTitleChange,
       selectedItemId,
@@ -1309,6 +1315,12 @@ export function BoardWorkspace({
   function showItemSettings(itemId: string) {
     setSelectedItemId(itemId);
     if (isCompactViewport()) setSidebarOpen(false);
+  }
+
+  function openItemSource(itemId: string) {
+    setSelectedItemId(itemId);
+    if (isCompactViewport()) setSidebarOpen(false);
+    setToolPanel("source");
   }
 
   function toggleToolPanel(panel: "source" | "chat") {
@@ -2148,6 +2160,7 @@ export function BoardWorkspace({
             )
           }
           onEditorChange={setTldrawEditor}
+          onOpenSource={openItemSource}
           onSelectItem={(itemId) => {
             if (itemId) {
               showItemSettings(itemId);
@@ -3511,6 +3524,7 @@ function BoardDiagramCard({
   onActivateContent,
   onCardPointerDown,
   onContentChange,
+  onOpenSource,
   onTitleChange,
 }: {
   canEdit: boolean;
@@ -3521,14 +3535,16 @@ function BoardDiagramCard({
   onActivateContent: () => void;
   onCardPointerDown: (event: ReactPointerEvent<HTMLElement>) => void;
   onContentChange: (content: string) => void;
+  onOpenSource: () => void;
   onTitleChange: (title: string) => void;
 }) {
   const isMarkdown = (item.kind ?? "diagram") === "markdown";
+  const isDiagram = (item.kind ?? "diagram") === "diagram";
 
   return (
     <article
       className={cn(
-        "board-diagram-card board-artifact-card h-full w-full overflow-visible rounded-lg border text-zinc-950",
+        "board-diagram-card board-artifact-card h-full w-full overflow-visible rounded-lg border text-[var(--board-card-text)]",
         isSelected ? "board-selected-card" : "border-transparent",
         canEdit ? "cursor-grab active:cursor-grabbing" : ""
       )}
@@ -3572,6 +3588,21 @@ function BoardDiagramCard({
               {getKindIcon(item.kind, "size-3")}
               {getKindLabel(item.kind)}
             </span>
+            {canEdit && isDiagram ? (
+              <button
+                aria-label="Edit diagram source"
+                className="inline-flex size-7 shrink-0 items-center justify-center rounded-md text-[var(--board-card-text-muted)] hover:bg-[var(--board-card-surface-muted)] hover:text-[var(--board-card-text)]"
+                data-board-control
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onOpenSource();
+                }}
+                title="Edit diagram source"
+                type="button"
+              >
+                <Pencil className="size-3.5" />
+              </button>
+            ) : null}
           </div>
         )}
 
@@ -3624,7 +3655,6 @@ function BoardArtifactPreview({
         look={item.look}
         renderer={item.renderer}
         theme={item.theme}
-        uiMode="light"
       />
     );
   }
@@ -3685,14 +3715,14 @@ function WebsitePreview({
   const iframeCanReceivePointer = !canEdit || isContentInteractive;
 
   return (
-    <div className="board-preview-browser flex h-full min-h-0 flex-col overflow-hidden rounded-md border text-zinc-950">
+    <div className="board-preview-browser flex h-full min-h-0 flex-col overflow-hidden rounded-md border text-[var(--board-card-text)]">
       <div className="board-preview-browser-bar flex h-9 shrink-0 items-center gap-2 border-b px-3">
         <div className="flex gap-1">
           <span className="size-2.5 rounded-full bg-[#ff5f57]" />
           <span className="size-2.5 rounded-full bg-[#ffbd2e]" />
           <span className="size-2.5 rounded-full bg-[#28c840]" />
         </div>
-        <div className="min-w-0 flex-1 truncate rounded-md bg-zinc-100 px-2.5 py-1 text-[0.7rem] font-medium text-zinc-500">
+        <div className="min-w-0 flex-1 truncate rounded-md bg-[var(--board-card-surface-muted)] px-2.5 py-1 text-[0.7rem] font-medium text-[var(--board-card-text-muted)]">
           {host}
         </div>
       </div>

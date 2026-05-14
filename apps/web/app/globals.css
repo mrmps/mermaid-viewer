@@ -95,6 +95,11 @@
   --board-floating-shadow: rgb(24 24 27 / 0.13);
   --board-card-ring: rgb(24 24 27 / 0.10);
   --board-card-shadow: rgb(24 24 27 / 0.12);
+  --board-card-surface: rgb(250 250 250);
+  --board-card-surface-raised: rgb(255 255 255 / 0.62);
+  --board-card-surface-muted: rgb(244 244 245);
+  --board-card-text: rgb(24 24 27);
+  --board-card-text-muted: rgb(82 82 91);
   --board-accent: rgb(31 99 151);
   --board-accent-soft: rgb(31 99 151 / 0.08);
   --board-accent-line: rgb(31 99 151 / 0.52);
@@ -153,6 +158,11 @@
   --board-floating-shadow: rgb(0 0 0 / 0.34);
   --board-card-ring: rgb(244 244 245 / 0.12);
   --board-card-shadow: rgb(0 0 0 / 0.32);
+  --board-card-surface: rgb(18 18 19);
+  --board-card-surface-raised: rgb(28 28 30 / 0.74);
+  --board-card-surface-muted: rgb(38 38 42);
+  --board-card-text: rgb(244 244 245);
+  --board-card-text-muted: rgb(161 161 170);
   --board-accent: rgb(96 165 203);
   --board-accent-soft: rgb(96 165 203 / 0.10);
   --board-accent-line: rgb(96 165 203 / 0.58);
@@ -195,6 +205,11 @@
     --board-floating-shadow: color(display-p3 0.08 0.08 0.09 / 0.13);
     --board-card-ring: color(display-p3 0.12 0.12 0.14 / 0.10);
     --board-card-shadow: color(display-p3 0.08 0.08 0.09 / 0.12);
+    --board-card-surface: color(display-p3 0.982 0.982 0.986);
+    --board-card-surface-raised: color(display-p3 0.998 0.997 1 / 0.62);
+    --board-card-surface-muted: color(display-p3 0.956 0.956 0.964);
+    --board-card-text: color(display-p3 0.12 0.12 0.14);
+    --board-card-text-muted: color(display-p3 0.36 0.36 0.39);
     --board-accent: color(display-p3 0.12 0.38 0.58);
     --board-accent-soft: color(display-p3 0.12 0.38 0.58 / 0.085);
     --board-accent-line: color(display-p3 0.12 0.38 0.58 / 0.54);
@@ -234,6 +249,11 @@
     --board-floating-shadow: color(display-p3 0 0 0 / 0.34);
     --board-card-ring: color(display-p3 0.92 0.92 0.95 / 0.12);
     --board-card-shadow: color(display-p3 0 0 0 / 0.32);
+    --board-card-surface: color(display-p3 0.07 0.07 0.075);
+    --board-card-surface-raised: color(display-p3 0.11 0.11 0.122 / 0.74);
+    --board-card-surface-muted: color(display-p3 0.15 0.15 0.165);
+    --board-card-text: color(display-p3 0.92 0.92 0.95);
+    --board-card-text-muted: color(display-p3 0.62 0.62 0.65);
     --board-accent: color(display-p3 0.38 0.65 0.78);
     --board-accent-soft: color(display-p3 0.38 0.65 0.78 / 0.12);
     --board-accent-line: color(display-p3 0.38 0.65 0.78 / 0.62);
@@ -610,9 +630,9 @@
   }
 
   .board-diagram-card {
-    background: rgb(255 255 255);
+    background: var(--board-card-surface);
     box-shadow:
-      0 0 0 1px rgb(24 24 27 / 0.095),
+      0 0 0 1px var(--board-card-ring),
       0 12px 28px -24px var(--board-card-shadow),
       0 1px 2px rgb(0 0 0 / 0.055);
     transition:
@@ -628,41 +648,49 @@
       0 1px 2px rgb(0 0 0 / 0.08);
   }
 
+  .board-artifact-card.board-diagram-card {
+    background: var(--board-card-surface);
+    box-shadow:
+      0 0 0 1px var(--board-card-ring),
+      0 12px 28px -24px var(--board-card-shadow),
+      0 1px 2px rgb(0 0 0 / 0.055);
+  }
+
   .board-artifact-frame {
-    background: rgb(255 255 255);
-    box-shadow: inset 0 0 0 1px rgb(24 24 27 / 0.035);
+    background: var(--board-card-surface);
+    box-shadow: inset 0 0 0 1px var(--board-card-ring);
   }
 
   .board-artifact-header {
-    background: rgb(250 250 250);
-    border-color: rgb(24 24 27 / 0.085);
+    background: var(--board-card-surface-raised);
+    border-color: var(--board-card-ring);
   }
 
   .board-artifact-title-input {
-    color: rgb(24 24 27);
+    color: var(--board-card-text);
   }
 
   .board-artifact-title-input::placeholder {
-    color: rgb(113 113 122 / 0.68);
+    color: color-mix(in oklab, var(--board-card-text-muted) 70%, transparent);
   }
 
   .board-artifact-kind-chip {
-    background: rgb(244 244 245);
-    color: rgb(82 82 91);
-    box-shadow: inset 0 0 0 1px rgb(24 24 27 / 0.06);
+    background: var(--board-card-surface-muted);
+    color: var(--board-card-text-muted);
+    box-shadow: inset 0 0 0 1px var(--board-card-ring);
   }
 
   .board-artifact-body {
-    background: rgb(255 255 255);
+    background: var(--board-card-surface);
   }
 
   .board-selected-header {
-    background: rgb(249 250 251);
+    background: var(--board-card-surface-raised);
     border-color: var(--board-accent-line);
   }
 
   .board-selected-body {
-    background: rgb(255 255 255);
+    background: var(--board-card-surface);
   }
 
   .board-selected-text {
@@ -678,18 +706,19 @@
   }
 
   .board-preview-browser {
-    border-color: rgb(24 24 27 / 0.10);
-    background: rgb(248 250 252);
+    border-color: var(--board-card-ring);
+    background: var(--board-card-surface);
+    color: var(--board-card-text);
   }
 
   .board-preview-browser-bar {
-    border-color: rgb(24 24 27 / 0.08);
-    background: rgb(255 255 255);
+    border-color: var(--board-card-ring);
+    background: var(--board-card-surface-raised);
   }
 
   .board-preview-shell {
-    border-color: rgb(24 24 27 / 0.09);
-    background: rgb(250 250 250);
+    border-color: var(--board-card-ring);
+    background: var(--board-card-surface);
   }
 
   .linear-item-card {

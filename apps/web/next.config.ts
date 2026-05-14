@@ -1,9 +1,16 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { NextConfig } from "next";
+
+const appDir = path.dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
   devIndicators: false,
   transpilePackages: ["@mermaid-viewer/db"],
   serverExternalPackages: ["mermaid", "dompurify"],
+  turbopack: {
+    root: path.join(appDir, "../.."),
+  },
   async rewrites() {
     return [
       {
